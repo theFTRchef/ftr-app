@@ -153,6 +153,19 @@ function halfText(settings, item) {
   return `½ tray ${Number.isInteger(v) ? "$" + v : "$" + v.toFixed(2)}`;
 }
 
+function shortTime(t) {
+  const [h, m] = t.split(":").map(Number);
+  return `${((h + 11) % 12) + 1}${m ? ":" + String(m).padStart(2, "0") : ""} ${h < 12 ? "AM" : "PM"}`;
+}
+
+function ldsInfo(menu, lds) {
+  const { ldsSessions, ldsExtension } = require("./availability");
+  const sess = ldsSessions(menu).map((w) => `${shortTime(w.start)}–${shortTime(w.end)}`).join(" or ");
+  const ext = ldsExtension(menu);
+  const per = Number(lds.pricePerHundred || 0) / 100;
+  return `On site ${sess}. Extra ${ext.minutes} min $${ext.fee}. Extra doses $${per} each (in ${Number(lds.extraDoseIncrement) || 10}s, while supplies last).`;
+}
+
 function buildSvg(menu) {
   const s = menu.settings || {};
   const parts = [];
@@ -177,12 +190,14 @@ function buildSvg(menu) {
     (a.type === "live-dose-station" ? 0 : 1) - (b.type === "live-dose-station" ? 0 : 1)
   );
 
+  let pickupNoteDone = false;
   for (const cat of cats) {
     if (cat.type === "live-dose-station") {
       const lds = cat.liveDoseStation || {};
       const descLines = wrap(
-        `${lds.mdTitle || "Mysore Masale Dose"} and ${lds.odTitle || "Onion Dose"}, cooked fresh at your event by our crew.`,
-        22, inner - 48, 2
+        `${lds.mdTitle || "Mysore Masale Dose"} and ${lds.odTitle || "Onion Dose"}, cooked fresh at your event by our crew. ` +
+          ldsInfo(menu, lds),
+        22, inner - 48, 4
       );
       const h = 64 + descLines.length * 30 + 96 + 24;
       parts.push(`<rect x="${PAD}" y="${y}" width="${inner}" height="${h}" rx="24" fill="${C.turmericSoft}" stroke="${C.turmeric}" stroke-width="2"/>`);
@@ -214,6 +229,15 @@ function buildSvg(menu) {
 
     const items = cat.items || [];
     if (!items.length) continue;
+    if (!pickupNoteDone) {
+      pickupNoteDone = true;
+      const { pickupTimes, pickupOnly } = require("./availability");
+      const pt = pickupTimes(menu);
+      const note = `${pickupOnly(menu) ? "Catering is pickup only · " : ""}Lunch pickup ${shortTime(pt.am)} · Dinner pickup ${shortTime(pt.pm)}`;
+      parts.push(`<rect x="${PAD}" y="${y}" width="${inner}" height="48" rx="14" fill="${C.leafSoft}"/>`);
+      parts.push(txt({ x: W / 2, y: y + 32, size: 21, weight: 700, fill: C.leaf, anchor: "middle" }, note));
+      y += 66;
+    }
     // Section heading
     parts.push(txt({ x: PAD + 4, y: y + 22, size: 19, weight: 700, fill: C.muted, extra: 'letter-spacing="2"' }, String(cat.title || "").toUpperCase()));
     y += 40;

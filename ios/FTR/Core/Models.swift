@@ -87,6 +87,13 @@ struct LiveDoseInfo: Decodable, Hashable {
     let odDescription: String
     let delayFeePerHour: Double
     let options: [Option]
+    /// Standard on-site serving sessions (admin › Setup › Standard times).
+    struct Session: Decodable, Hashable { let start: String; let end: String; let label: String; let title: String }
+    struct Extension: Decodable, Hashable { let minutes: Int; let fee: Double }
+    let sessions: [Session]?
+    let extension: Extension?
+    let extraDoseNote: String?
+    let setupMinutes: Int?
 }
 
 struct AvailabilityResponse: Decodable {
@@ -159,15 +166,20 @@ struct OrderLine: Decodable, Hashable {
     let odQty: Int?
     let setupFee: Double?
     let travelFee: Double?
+    let extensionMinutes: Int?
+    let extensionFee: Double?
 }
 
 struct OrderPreview: Decodable {
     struct Schedule: Decodable {
         let arrival: String
-        let firstDose: String
-        let lastDose: String
-        let wrapUp: String
-        let delayFeePerHour: Double
+        let servingStart: String
+        let servingEnd: String
+        let sessionEnd: String?
+        let extraMinutes: Int
+        let extension: LiveDoseInfo.Extension?
+        let extraDoseNote: String?
+        let delayFeePerHour: Double?
     }
     struct OutOfRange: Decodable { let miles: Double; let max: Double }
     struct Payment: Decodable { let deposit: Bool; let percent: Double?; let amount: Double?; let text: String }
@@ -230,6 +242,14 @@ struct Order: Decodable, Identifiable, Hashable {
     let quote: Quote?
     let payment: Payment?
     let canUploadProof: Bool
+    /// Chef changed the time before approving.
+    struct TimeChange: Decodable, Hashable { let from: String; let to: String; let at: String? }
+    let timeChange: TimeChange?
+    /// Messages between Chef and the customer about this order.
+    struct ChatLine: Decodable, Hashable { let from: String; let text: String; let at: String? }
+    let chat: [ChatLine]?
+    /// Chef has a chat open about this order, so the customer can reply.
+    let chatOpen: Bool?
 
     var id: String { orderId }
     var isCustom: Bool { type == "custom" }
@@ -244,7 +264,7 @@ struct Order: Decodable, Identifiable, Hashable {
     }
 
     var createdDate: Date? { createdAt.flatMap(ISO8601.parse) }
-    var needsCustomerAction: Bool { stage == .deposit_due || (quote?.open ?? false) }
+    var needsCustomerAction: Bool { stage == .deposit_due || (quote?.open ?? false) || (chatOpen ?? false) }
 }
 
 struct OrdersResponse: Decodable { let orders: [Order] }

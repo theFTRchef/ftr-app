@@ -24,8 +24,8 @@ const appCarts = require("./appCarts");
 const { verifyAddress } = require("./geocode");
 const { itemsText } = require("./sheets");
 const { paymentText, deadlineLabel } = require("./paymentText");
-const { pickupTimes, offersCatering, offersLiveDose, pickupOnly } = require("./availability");
-const { formatTimeLabel, liveDoseSchedule } = require("./timeUtils");
+const { pickupTimes, offersCatering, offersLiveDose, pickupOnly, ldsSessions, ldsExtension } = require("./availability");
+const { formatTimeLabel } = require("./timeUtils");
 const { sendText } = require("./messaging");
 
 const flow = () => require("./orderFlow").shared;
@@ -140,6 +140,34 @@ function ldsCategory(menu) {
   return (menu.categories || []).find((c) => c.type === "live-dose-station") || null;
 }
 
+/** "18:30" from minutes after midnight. */
+function hhmm(min) {
+  const m = ((min % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+function minutesOf(t) {
+  const [h, m] = String(t).split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+
+/** The LIVE Dose on-site sessions, extra-time offer and extra-dose note (Setup > Standard times). */
+function ldsTimes(menu) {
+  const f = flow();
+  const lds = f.liveDoseConfig(menu) || {};
+  const ext = ldsExtension(menu);
+  return {
+    sessions: ldsSessions(menu).map((w) => ({
+      start: w.start,
+      end: w.end,
+      label: w.label,
+      title: `${formatTimeLabel(w.start)} - ${formatTimeLabel(w.end)}`
+    })),
+    extension: { minutes: ext.minutes, fee: ext.fee },
+    extraDoseNote: f.extraDoseText(lds),
+    setupMinutes: Number(lds.setupMinutes) > 0 ? Number(lds.setupMinutes) : 30
+  };
+}
+
 function shortTime(t) {
   return formatTimeLabel(t).replace(":00 ", " ");
 }
@@ -230,6 +258,7 @@ function menuPayload() {
             odTitle: l.odTitle || "Onion Dose",
             odDescription: l.odDescription || "",
             delayFeePerHour: Number(l.delayFeePerHour) || 0,
+            ...ldsTimes(menu),
             options: totals.map((n) => ({
               total: n,
               price: money2((n * Number(l.pricePerHundred)) / 100 + Number(l.setupFee || 0))
@@ -427,6 +456,8 @@ async function buildOrder(phone, body) {
       throw new ApiError(400, `Please split the plates in steps of ${inc}.`, "bad_qty");
     }
     const price = (total * lds.pricePerHundred) / 100 + lds.setupFee;
+    const ext = ldsExtension(menu);
+    const extend = !!(body.liveDose && body.liveDose.extend);
     cart.push({
       id: `${cat.id}-order`,
       title: "LIVE Dose Station",
@@ -435,7 +466,9 @@ async function buildOrder(phone, body) {
       odQty: total - md,
       setupFee: lds.setupFee,
       qty: 1,
-      price,
+      extensionMinutes: extend ? ext.minutes : 0,
+      extensionFee: extend ? ext.fee : 0,
+      price: price + (extend ? ext.fee : 0),
       note: String((body.liveDose && body.liveDose.note) || "").trim().slice(0, 300) || null
     });
   }
@@ -527,17 +560,22 @@ async function buildOrder(phone, body) {
     const [slotStart, slotEnd] = slot.id.slice(5).split("-");
     requestedTime = `${f.formatDateLabel(date)}, ${formatTimeLabel(slotStart)} - ${formatTimeLabel(slotEnd)}`;
     if (kind === "lds") {
-      const plates = cart[0].mdQty + cart[0].odQty;
-      const s = liveDoseSchedule(slotStart, plates, f.liveDoseConfig(menu));
-      requestedTime = `${f.formatDateLabel(date)}, crew arrival ${formatTimeLabel(s.arrival)} - wrap-up ${formatTimeLabel(
-        s.wrapUp
-      )} (first dose ${formatTimeLabel(s.firstDose)}, last dose ${formatTimeLabel(s.lastDose)})`;
+      // Standard on-site session (Setup > Standard times), plus any extra time.
+      const t = ldsTimes(menu);
+      const extMin = cart[0].extensionMinutes || 0;
+      const endLabel = formatTimeLabel(hhmm(minutesOf(slotEnd) + extMin));
+      requestedTime = `${f.formatDateLabel(date)}, LIVE Dose serving ${formatTimeLabel(slotStart)} - ${endLabel}${
+        extMin ? ` (incl. ${extMin} extra min)` : ""
+      }`;
       schedule = {
-        arrival: formatTimeLabel(s.arrival),
-        firstDose: formatTimeLabel(s.firstDose),
-        lastDose: formatTimeLabel(s.lastDose),
-        wrapUp: formatTimeLabel(s.wrapUp),
-        delayFeePerHour: s.delayFeePerHour
+        arrival: formatTimeLabel(hhmm(minutesOf(slotStart) - t.setupMinutes)),
+        servingStart: formatTimeLabel(slotStart),
+        servingEnd: endLabel,
+        sessionEnd: formatTimeLabel(slotEnd),
+        extraMinutes: extMin,
+        extension: t.extension,
+        extraDoseNote: t.extraDoseNote,
+        delayFeePerHour: Number((f.liveDoseConfig(menu) || {}).delayFeePerHour) || 0
       };
     }
   }
@@ -579,11 +617,11 @@ async function buildOrder(phone, body) {
           deposit: true,
           percent: pay.depositPercent,
           amount: payments.depositFor(subtotal, menu),
-          text: `${pay.depositPercent}% Zelle deposit after Chef approves, balance at ${
-            kind === "lds" ? "the event" : fulfillment === "pickup" ? "pickup" : "delivery"
+          text: `${pay.depositPercent}% Zelle deposit after Chef approves, balance ${
+            kind === "lds" ? "on the day of your event" : fulfillment === "pickup" ? "at pickup" : "at delivery"
           }.`
         }
-      : { deposit: false, text: `Payment is collected at ${kind === "lds" ? "the event" : fulfillment}.` }
+      : { deposit: false, text: `Payment is collected ${kind === "lds" ? "on the day of your event" : `at ${fulfillment}`}.` }
   };
   return { order, summary, addressMatch };
 }
@@ -600,6 +638,8 @@ function linePayload(l) {
       odQty: l.odQty || 0,
       setupFee: l.setupFee || 0,
       travelFee: l.travelFee || 0,
+      extensionMinutes: l.extensionMinutes || 0,
+      extensionFee: l.extensionFee || 0,
       qty: 1,
       qtyLabel: "1",
       note: l.note || null,
@@ -647,7 +687,9 @@ function orderPayload(o) {
     updatedAt: o.updatedAt || null,
     eventDate: o.eventDate || null,
     eventDateLabel: o.eventDate ? flow().formatDateLabel(o.eventDate) : null,
-    requestedTime: o.requestedTime || null,
+    // While Chef is still deciding, a changed time isn't shown yet: the
+    // customer is told the new time when Chef approves (same as WhatsApp).
+    requestedTime: (o.pending && o.timeChangedByChef ? o.requestedTimeOriginal || o.timeChangedByChef.from : o.requestedTime) || null,
     fulfillment: o.fulfillment || null,
     address: o.address || null,
     subtotal: money2(o.subtotal),
@@ -674,6 +716,11 @@ function orderPayload(o) {
         }
       : null,
     canUploadProof: !!p && (p.state === "awaiting" || p.state === "review"),
+    // Chef changed the time before approving (WhatsApp: Edit / message > Change time).
+    timeChange: o.timeChangedByChef && !o.pending ? { from: o.timeChangedByChef.from, to: o.timeChangedByChef.to, at: o.timeChangedByChef.at || null } : null,
+    // Chef's chat about this order, and whether the customer can reply right now.
+    chat: (o.chat || []).map((m) => ({ from: m.from === "chef" ? "chef" : "customer", text: String(m.text || ""), at: m.at || null })),
+    chatOpen: !!(o.pending && (flow().chatFor(o.customerPhone) || {}).orderId === o.orderId),
     channel: o.channel || "whatsapp"
   };
 }
@@ -921,6 +968,27 @@ function router() {
       const created = ordersFor(req.phone).find((o) => !before.has(o.orderId));
       if (created) orderDb.update(created.orderId, { channel: "app" });
       res.status(201).json(created ? orderPayload(orderDb.get(created.orderId)) : { ok: true });
+    })
+  );
+
+  // Reply to Chef while Chef has a chat open about this order (WhatsApp:
+  // Edit / message > Message customer). Goes to Chef's WhatsApp exactly like
+  // a WhatsApp reply would, with Approve / Edit / Decline buttons.
+  r.post(
+    "/orders/:id/chat",
+    requireUser,
+    wrap(async (req, res) => {
+      const o = ownOrder(req.phone, req.params.id);
+      const text = String((req.body && req.body.text) || "").trim().slice(0, 1500);
+      if (!text) throw new ApiError(400, "Please type your message for Chef.");
+      rateLimit(`chat:${req.phone}`, 40, 60 * 60 * 1000);
+      const open = flow().chatFor(req.phone);
+      if (!o.pending || !open || open.orderId !== o.orderId) {
+        throw new ApiError(409, "Chef has closed this chat. Use Ask a question to send Chef a message.", "chat_closed");
+      }
+      const handled = await flow().relayCustomerMessage(req.phone, true, text, false);
+      if (!handled) throw new ApiError(409, "Chef has closed this chat. Use Ask a question to send Chef a message.", "chat_closed");
+      res.json(orderPayload(orderDb.get(o.orderId)));
     })
   );
 

@@ -204,8 +204,10 @@ struct CheckoutView: View {
     @State private var placing = false
     @State private var placeError: String?
     @State private var requestId = UUID().uuidString
+    @State private var extendTime = false
 
     private var isLDS: Bool { model.cart.isLiveDose }
+    private var ldsInfo: LiveDoseInfo? { model.categories.first(where: { $0.kind == .lds })?.liveDose }
     private var pickupOnly: Bool { model.config?.cateringPickupOnly ?? true }
     private var needsAddress: Bool { isLDS || fulfillment == "delivery" }
 
@@ -230,6 +232,7 @@ struct CheckoutView: View {
                 if needsAddress { addressSection }
                 dateSection
                 if date != nil { slotSection }
+                if isLDS, slot != nil { ldsTimeSection }
                 reviewSection
             }
             .padding(16)
@@ -394,7 +397,7 @@ struct CheckoutView: View {
 
     private var slotSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            stepTitle(isLDS ? "Crew arrival" : fulfillment == "pickup" ? "Pickup time" : "Delivery window")
+            stepTitle(isLDS ? "On-site serving time" : fulfillment == "pickup" ? "Pickup time" : "Delivery window")
             ForEach(date?.slots ?? []) { s in
                 Button { withAnimation(.snappy) { slot = s } } label: {
                     HStack {
@@ -410,6 +413,58 @@ struct CheckoutView: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    /// LIVE Dose: the session's schedule, extra doses note and the extra-time offer.
+    private var ldsTimeSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            stepTitle("Your LIVE Dose schedule")
+            Panel {
+                if let s = slot {
+                    let parts = s.title.components(separatedBy: " - ")
+                    if let start = parts.first, let setup = ldsInfo?.setupMinutes, let arrive = Self.shift(start, by: -setup) {
+                        scheduleRow("Crew arrives to set up", "about \(arrive)")
+                    }
+                    scheduleRow("Serving on site", s.title)
+                }
+                if let note = ldsInfo?.extraDoseNote {
+                    Text(note).font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                }
+            }
+            if let ext = ldsInfo?.extension {
+                Text("Need longer? Add \(ext.minutes) extra minutes of serving for \(Money.text(ext.fee)).")
+                    .font(Typeface.body(15))
+                HStack(spacing: 10) {
+                    choiceButton("No, that's fine", selected: !extendTime) { extendTime = false }
+                    choiceButton("Add \(ext.minutes) min +\(Money.text(ext.fee))", selected: extendTime) { extendTime = true }
+                }
+            }
+        }
+    }
+
+    private func choiceButton(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button { withAnimation(.snappy) { action() } } label: {
+            HStack(spacing: 8) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                Text(title).font(Typeface.body(15, weight: .semibold)).monospacedDigit()
+            }
+            .foregroundStyle(selected ? Palette.leafInk : Palette.ink)
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .padding(.horizontal, 10)
+            .background(selected ? Palette.leaf : Palette.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(selected ? .clear : Palette.line))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    /// "7:00 PM" moved by some minutes, e.g. -30 -> "6:30 PM".
+    static func shift(_ label: String, by minutes: Int) -> String? {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "h:mm a"
+        guard let d = f.date(from: label.trimmingCharacters(in: .whitespaces)) else { return nil }
+        return f.string(from: d.addingTimeInterval(TimeInterval(minutes * 60)))
     }
 
     @ViewBuilder private var reviewSection: some View {
@@ -434,6 +489,9 @@ struct CheckoutView: View {
                     if let fee = p.travelFee, fee > 0 {
                         Text("Includes \(Money.text(fee)) travel (\(p.travelRule ?? ""))").font(Typeface.body(14)).foregroundStyle(Palette.muted)
                     }
+                    if let l = p.lines.first(where: { ($0.extensionFee ?? 0) > 0 }), let fee = l.extensionFee {
+                        Text("Includes \(Money.text(fee)) for \(l.extensionMinutes ?? 30) extra minutes of serving").font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                    }
                     if p.travelFeeUnknown {
                         Text("Chef will add any travel fee after checking the address.").font(Typeface.body(14)).foregroundStyle(Palette.muted)
                     }
@@ -449,10 +507,9 @@ struct CheckoutView: View {
                     Label(p.requestedTime, systemImage: "calendar").font(Typeface.body(15))
                     if let s = p.schedule {
                         VStack(alignment: .leading, spacing: 4) {
-                            scheduleRow("Crew arrives", s.arrival)
-                            scheduleRow("First dose ready", s.firstDose)
-                            scheduleRow("Last dose ready", s.lastDose)
-                            scheduleRow("Wrap-up complete", s.wrapUp)
+                            scheduleRow("Crew arrives", "about \(s.arrival)")
+                            scheduleRow("Serving on site", "\(s.servingStart) - \(s.servingEnd)")
+                            if s.extraMinutes > 0 { scheduleRow("Extra time", "\(s.extraMinutes) min") }
                         }
                         .padding(.leading, 30)
                     }
@@ -489,7 +546,7 @@ struct CheckoutView: View {
         return OrderRequest(
             kind: isLDS ? "lds" : "catering",
             items: isLDS ? nil : model.cart.lines.map { .init(itemId: $0.itemId, qty: $0.qty, note: $0.note) },
-            liveDose: model.cart.liveDose.map { .init(total: $0.total, md: $0.md, note: $0.note) },
+            liveDose: model.cart.liveDose.map { .init(total: $0.total, md: $0.md, note: $0.note, extend: extendTime) },
             fulfillment: isLDS ? "delivery" : fulfillment,
             date: date?.date,
             slotId: slot?.id,
@@ -502,7 +559,7 @@ struct CheckoutView: View {
     }
 
     private var previewKey: String {
-        [date?.date ?? "", slot?.id ?? "", fulfillment, chosenMatch?.label ?? "", "\(useUnverified)\(askChef)\(pickupAgreed)\(addressReady)", "\(model.cart.subtotal)"].joined(separator: "|")
+        [date?.date ?? "", slot?.id ?? "", fulfillment, chosenMatch?.label ?? "", "\(useUnverified)\(askChef)\(pickupAgreed)\(addressReady)\(extendTime)", "\(model.cart.subtotal)"].joined(separator: "|")
     }
 
     private func loadDates() async {

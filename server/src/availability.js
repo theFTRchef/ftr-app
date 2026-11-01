@@ -15,7 +15,37 @@
  */
 const { isValidTime, timeToMinutes } = require("./timeUtils");
 
-const DEFAULT_PICKUP_TIMES = { am: "11:30", pm: "18:00" };
+const DEFAULT_PICKUP_TIMES = { am: "11:30", pm: "18:30" };
+
+// Standard LIVE Dose Station on-site times, used on every chef day.
+const DEFAULT_LDS_SESSIONS = [
+  { start: "11:00", end: "13:00", label: "Lunch" },
+  { start: "19:00", end: "21:00", label: "Evening" }
+];
+const DEFAULT_LDS_EXTENSION = { minutes: 30, fee: 100 };
+
+function ldsSessions(menu) {
+  const list = menu?.availability?.liveDoseSessions;
+  const ok = Array.isArray(list) ? list.filter((w) => w && isValidTime(w.start) && isValidTime(w.end) && timeToMinutes(w.end) > timeToMinutes(w.start)) : [];
+  const out = ok.length ? ok : DEFAULT_LDS_SESSIONS;
+  return out.map((w, i) => ({ start: w.start, end: w.end, label: w.label || (timeToMinutes(w.start) < 15 * 60 ? "Lunch" : "Evening") || `Session ${i + 1}` }));
+}
+
+function ldsExtension(menu) {
+  const e = menu?.availability?.ldsExtension || {};
+  return {
+    minutes: Number(e.minutes) > 0 ? Number(e.minutes) : DEFAULT_LDS_EXTENSION.minutes,
+    fee: Number(e.fee) >= 0 && e.fee !== "" && e.fee != null ? Number(e.fee) : DEFAULT_LDS_EXTENSION.fee
+  };
+}
+
+/** Standard sessions a day offers: a session is on if any of the day's LIVE Dose windows overlaps it. */
+function sessionsForDay(menu, entry) {
+  const wins = toWindowList(entry.liveDose).filter((w) => isValidTime(w.start) && isValidTime(w.end));
+  return ldsSessions(menu).filter((s) =>
+    wins.some((w) => timeToMinutes(w.start) < timeToMinutes(s.end) && timeToMinutes(w.end) > timeToMinutes(s.start))
+  );
+}
 
 function toWindowList(value) {
   if (!value) return [];
@@ -73,21 +103,33 @@ function pickupOnly(menu) {
 }
 
 /**
- * The menu as customers see it: with catering set to pickup-only, catering
- * delivery windows are left out everywhere (date list, calendar, checkout).
+ * The menu as customers see it: LIVE Dose windows become the standard
+ * on-site sessions, and with catering set to pickup-only, catering delivery
+ * windows are left out everywhere (date list, calendar, checkout).
  */
 function customerView(menu) {
-  if (!pickupOnly(menu) || !menu.availability || !Array.isArray(menu.availability.dates)) return menu;
+  if (!menu || !menu.availability || !Array.isArray(menu.availability.dates)) return menu;
+  const noDelivery = pickupOnly(menu);
   return {
     ...menu,
     availability: {
       ...menu.availability,
-      dates: menu.availability.dates.map((d) => ({ ...normalizeDateEntry(d), catering: [] }))
+      dates: menu.availability.dates.map((d) => {
+        const e = normalizeDateEntry(d);
+        // LIVE Dose is only ever offered at the standard on-site times.
+        e.liveDose = sessionsForDay(menu, e).map((s) => ({ start: s.start, end: s.end, label: s.label }));
+        if (noDelivery) e.catering = [];
+        return e;
+      })
     }
   };
 }
 
 module.exports = {
+  DEFAULT_LDS_SESSIONS,
+  ldsSessions,
+  ldsExtension,
+  sessionsForDay,
   pickupOnly,
   customerView,
   DEFAULT_PICKUP_TIMES,

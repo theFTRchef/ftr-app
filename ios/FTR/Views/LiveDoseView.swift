@@ -70,6 +70,27 @@ struct LiveDoseView: View {
                             .lineLimit(2...4).font(Typeface.body(16)).fieldStyle()
                     }
 
+                    if let sessions = lds.sessions, !sessions.isEmpty {
+                        Panel {
+                            Text("On-site serving times").font(Typeface.body(17, weight: .bold))
+                            ForEach(sessions, id: \.self) { s in
+                                HStack {
+                                    Text(s.label).foregroundStyle(Palette.muted)
+                                    Spacer()
+                                    Text(s.title).monospacedDigit()
+                                }
+                                .font(Typeface.body(15))
+                            }
+                            if let ext = lds.extension {
+                                Text("Need longer? Add \(ext.minutes) extra minutes for \(Money.text(ext.fee)) when you book.")
+                                    .font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                            }
+                            if let note = lds.extraDoseNote {
+                                Text(note).font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                            }
+                        }
+                    }
+
                     VStack(alignment: .leading, spacing: 8) {
                         Notice(tone: .info, icon: "car", text: "Travel: \(model.config?.delivery.ldsTravelRule ?? "first miles included"). You'll see the exact fee once you enter the event address.")
                         if lds.delayFeePerHour > 0 {

@@ -41,6 +41,11 @@ async function updateOrderSubtotal(orderId, subtotal) {
   await toSheet(`subtotal ${orderId}`, () => sheets.updateOrderSubtotal(orderId, subtotal));
 }
 
+async function updateOrderTime(orderId, requestedTime) {
+  orderDb.update(orderId, { requestedTime });
+  await toSheet(`time ${orderId}`, () => sheets.updateOrderTime(orderId, requestedTime));
+}
+
 async function updateOrderPayment(orderId, text) {
   await toSheet(`payment ${orderId}`, () => sheets.updateOrderPayment(orderId, text));
 }
@@ -81,6 +86,7 @@ module.exports = {
   updateOrderStatus,
   updateOrderSubtotal,
   updateOrderPayment,
+  updateOrderTime,
   sheetConfigured,
   deleteOrder,
   resetAllOrders

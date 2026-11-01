@@ -101,7 +101,8 @@ function itemsText(order) {
         if (l.mdQty) parts.push(`${l.mdQty} Mysore Masale Dose`);
         if (l.odQty) parts.push(`${l.odQty} Onion Dose`);
         const travel = l.travelFee ? ` (+$${Number(l.travelFee).toFixed(2)} travel)` : "";
-        return `LIVE Dose Station: ${parts.join(" + ")}${travel}${note}`;
+        const ext = l.extensionFee ? ` (+$${Number(l.extensionFee).toFixed(2)} for ${l.extensionMinutes} extra min)` : "";
+        return `LIVE Dose Station: ${parts.join(" + ")}${travel}${ext}${note}`;
       }
       return `${Number.isInteger(Number(l.qty)) ? l.qty : (Math.floor(l.qty) || "") + "½"}x ${l.title}${Number.isInteger(Number(l.qty)) ? "" : " (half tray)"}${note}`;
     })
@@ -173,6 +174,10 @@ async function setCell(orderId, col, value) {
 
 async function updateOrderStatus(orderId, status) {
   return setCell(orderId, STATUS_COL, status);
+}
+
+async function updateOrderTime(orderId, text) {
+  return setCell(orderId, "I", text || "");
 }
 
 async function updateOrderPayment(orderId, text) {
@@ -248,6 +253,7 @@ module.exports = {
   updateOrderStatus,
   updateOrderSubtotal,
   updateOrderPayment,
+  updateOrderTime,
   syncAll,
   HEADER,
   itemsText

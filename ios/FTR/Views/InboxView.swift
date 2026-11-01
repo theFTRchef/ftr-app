@@ -9,12 +9,13 @@ struct InboxView: View {
     @State private var filter: Filter = .all
 
     enum Filter: String, CaseIterable, Identifiable {
-        case all = "All", decisions = "Approvals & declines", payments = "Payments"
+        case all = "All", decisions = "Approvals & declines", messages = "Messages from Chef", payments = "Payments"
         var id: String { rawValue }
         func includes(_ tag: String?) -> Bool {
             switch self {
             case .all: return true
             case .decisions: return ["approved", "declined", "quote", "released"].contains(tag ?? "")
+            case .messages: return tag == "chef_message"
             case .payments: return ["deposit_due", "reminder", "paid", "not_received", "screenshot", "released"].contains(tag ?? "")
             }
         }
@@ -96,8 +97,8 @@ struct InboxView: View {
                 HStack {
                     if let d = m.date { Text(d, format: .dateTime.month(.abbreviated).day().hour().minute()) }
                     Spacer()
-                    if let id = m.orderId, model.orders.contains(where: { $0.orderId == id }) {
-                        Button("View order") {
+                    if let id = m.orderId, let o = model.orders.first(where: { $0.orderId == id }) {
+                        Button(m.tag == "chef_message" && o.chatOpen == true ? "Reply" : "View order") {
                             model.openOrderId = id
                             model.selectedTab = .orders
                         }
@@ -143,7 +144,7 @@ struct TagChip: View {
 
     private var good: Bool { ["approved", "paid"].contains(tag) }
     private var bad: Bool { ["declined", "released", "not_received"].contains(tag) }
-    private var todo: Bool { ["deposit_due", "reminder", "quote"].contains(tag) }
+    private var todo: Bool { ["deposit_due", "reminder", "quote", "chef_message"].contains(tag) }
     private var icon: String {
         switch tag {
         case "approved": "checkmark.seal.fill"
@@ -153,6 +154,7 @@ struct TagChip: View {
         case "deposit_due", "reminder": "dollarsign.circle.fill"
         case "quote": "text.bubble.fill"
         case "screenshot": "photo.fill"
+        case "chef_message": "message.fill"
         default: "bell.fill"
         }
     }

@@ -57,6 +57,7 @@ function actionFor(button) {
 const TAGS = [
   ["paid", "Payment confirmed", /^Payment received - thank you/i],
   ["not_received", "Payment not received", /hasn't received your Zelle deposit/i],
+  ["chef_message", "Message from Chef", /^Message from Chef about your order/i],
   ["released", "Released", /has been released/i],
   ["reminder", "Deposit reminder", /^Reminder: the .* deposit/i],
   ["deposit_due", "Deposit due", /please send a \d+% deposit by Zelle|Scan with your bank app to pay/i],
@@ -64,7 +65,7 @@ const TAGS = [
   ["declined", "Declined", /not able to take|isn't able to take|isn't able to bring|declined\b/i],
   ["approved", "Approved", /Chef approved your order|order .* is confirmed!|^Confirmed! Your custom order|Chef can bring the LIVE Dose Station|accepted the quote/i],
   ["quote", "Quote ready", /^Request .*\n.*\n\nPrice:/i],
-  ["received", "Received", /is being reviewed|has gone to the chef|passed your question along/i]
+  ["received", "Received", /is being reviewed|has gone to the chef|passed your question along|Chef will confirm your order .* shortly/i]
 ];
 
 const PUSH_TITLES = {
@@ -77,7 +78,8 @@ const PUSH_TITLES = {
   released: "Order released",
   quote: "Your quote is ready",
   screenshot: "Screenshot received",
-  received: "Order received"
+  received: "Order received",
+  chef_message: "Message from Chef"
 };
 
 function classify(entry) {
@@ -92,7 +94,9 @@ function classify(entry) {
  * In the app the screenshot goes on the order page, so say that instead.
  */
 function forApp(text) {
-  return String(text).replace(
+  return String(text)
+    .replace(/\(Just reply here to answer Chef\.\)/gi, "(Tap Reply to answer Chef.)")
+    .replace(
     /\*?PLEASE UPLOAD THE SCREENSHOT CONFIRMATION HERE\.?\*?/gi,
     "take a screenshot of the Zelle confirmation and upload it on your order page (tap View order, then Upload payment confirmation)."
   );

@@ -148,6 +148,20 @@ function saveMenu(menu) {
       throw new Error(`${label} time must be a valid time`);
     }
   }
+  const sess = Array.isArray(menu.availability.liveDoseSessions) ? menu.availability.liveDoseSessions : null;
+  if (sess) {
+    sess.forEach((w, i) => {
+      if (!isValidTime(w.start) || !isValidTime(w.end) || w.end <= w.start) {
+        throw new Error(`LIVE Dose session ${i + 1} needs a start time before its end time`);
+      }
+    });
+    menu.availability.liveDoseSessions = sess.map((w) => ({ start: w.start, end: w.end, ...(w.label ? { label: String(w.label).slice(0, 20) } : {}) }));
+  }
+  const ext = menu.availability.ldsExtension || {};
+  menu.availability.ldsExtension = {
+    minutes: Number(ext.minutes) > 0 ? Number(ext.minutes) : 30,
+    fee: Number(ext.fee) >= 0 && ext.fee !== "" && ext.fee != null ? Number(ext.fee) : 100
+  };
   menu.availability.pickupTimes = {
     am: pt.am || DEFAULT_PICKUP_TIMES.am,
     pm: pt.pm || DEFAULT_PICKUP_TIMES.pm

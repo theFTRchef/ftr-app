@@ -187,20 +187,32 @@ app.post("/admin/api/orders/:id/decision", requireAdminAuth, async (req, res) =>
   const id = req.params.id;
   const o = orderDb.get(id);
   if (!o) return res.status(404).send("Order not found");
-  const { action, price, note } = req.body || {};
+  const { action, price, note, time, message } = req.body || {};
   const pay = o.payment && ["awaiting", "review"].includes(o.payment.state);
   const custom = o.type === "custom";
   const ok =
-    (["approve", "decline"].includes(action) && o.pending && !custom && /pending approval/i.test(o.status || "")) ||
+    (["approve", "decline", "time", "message", "endchat"].includes(action) && o.pending && !custom && /pending approval/i.test(o.status || "")) ||
     (["paid", "unpaid"].includes(action) && pay) ||
     (["quote", "cdecline"].includes(action) && o.pending && custom && !o.quoted);
   if (!ok) return res.status(409).send("This order isn't waiting on that any more - refresh to see where it is.");
   if (action === "quote" && !(Number(price) > 0)) return res.status(400).send("Enter the price for the quote.");
+  if (action === "time" && !String(time || "").trim()) return res.status(400).send('Enter the new time, e.g. "12:30 PM".');
+  if (action === "message" && !String(message || "").trim()) return res.status(400).send("Type your message to the customer.");
+  if (action === "time" && !require("./orderFlow").shared.parseChefTime(String(time), o)) {
+    return res.status(400).send('Couldn\'t read that time. Use e.g. "12:30 PM", "6:30 PM - 8:30 PM", or "11/8 12:30 PM" to change the day too.');
+  }
   const reply = (rid) => handleIncoming({ from: owner, message_type: "reply", reply: { id: rid, title: rid } });
   const text = (t) => handleIncoming({ from: owner, message_type: "text", text: t });
   try {
     if (action === "approve") await reply(`approve:${id}`);
     else if (action === "decline") await reply(`decline:${id}`);
+    else if (action === "time") {
+      await reply(`edt:${id}`);
+      await text(String(time).trim());
+    } else if (action === "message") {
+      await reply(`msg:${id}`);
+      await text(String(message).trim().slice(0, 1500));
+    } else if (action === "endchat") await reply(`chatend:${id}`);
     else if (action === "paid") await reply(`paid:${id}`);
     else if (action === "unpaid") await reply(`unpaid:${id}`);
     else if (action === "quote") {

@@ -54,7 +54,7 @@ struct SavedCartResponse: Decodable {
 
 struct OrderRequest: Encodable {
     struct Item: Encodable { let itemId: String; let qty: Double; let note: String? }
-    struct LDS: Encodable { let total: Int; let md: Int; let note: String? }
+    struct LDS: Encodable { let total: Int; let md: Int; let note: String?; var extend: Bool = false }
     var kind: String
     var items: [Item]?
     var liveDose: LDS?
@@ -162,6 +162,13 @@ final class AppModel {
         guard let o = try? await (api.get("orders/\(id)") as Order) else { return nil }
         if let idx = orders.firstIndex(where: { $0.orderId == id }) { orders[idx] = o } else { orders.insert(o, at: 0) }
         return o
+    }
+
+    /// Send a reply to Chef's chat about an order. Throws with Chef-facing errors (e.g. chat closed).
+    func replyToChef(orderId: String, text: String) async throws {
+        struct B: Encodable { let text: String }
+        let o: Order = try await api.post("orders/\(orderId)/chat", B(text: text))
+        if let idx = orders.firstIndex(where: { $0.orderId == orderId }) { orders[idx] = o } else { orders.insert(o, at: 0) }
     }
 
     // MARK: account

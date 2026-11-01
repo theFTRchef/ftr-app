@@ -83,6 +83,10 @@ struct OrdersView: View {
                     }
                     Text(o.whenText)
                         .font(Typeface.body(14)).foregroundStyle(Palette.muted).lineLimit(2).multilineTextAlignment(.leading)
+                    if o.chatOpen == true {
+                        Label("Chef sent you a message", systemImage: "message.fill")
+                            .font(Typeface.body(14, weight: .semibold)).foregroundStyle(Palette.turmericInk)
+                    }
                     HStack {
                         Text(o.orderId).font(Typeface.body(13)).foregroundStyle(Palette.muted)
                         Spacer()
@@ -246,11 +250,15 @@ struct OrderDetailView: View {
                         Text(o.title).font(Typeface.display(28)).foregroundStyle(Palette.ink)
                         if let t = o.requestedTime { Text(t).font(Typeface.body(16)).foregroundStyle(Palette.muted) }
                     }
+                    if let c = o.timeChange {
+                        Notice(tone: .warn, icon: "clock.arrow.circlepath", text: "Chef has set your time to \(c.to). You asked for \(c.from).")
+                    }
                     if o.stage == .closed {
                         Notice(tone: .bad, icon: "xmark.circle", text: closedText(o))
                     } else {
                         TiffinProgress(order: o)
                     }
+                    if o.chatOpen == true || !(o.chat ?? []).isEmpty { ChefChatPanel(order: o) }
                     if let q = o.quote, q.open { quotePanel(o, q) }
                     if let p = o.payment, o.canUploadProof { depositPanel(o, p) }
                     if let p = o.payment, p.state == "paid" {
@@ -509,5 +517,92 @@ extension UIImage {
         let format = UIGraphicsImageRendererFormat.preferred()
         format.scale = 1
         return UIGraphicsImageRenderer(size: target, format: format).image { _ in draw(in: CGRect(origin: .zero, size: target)) }
+    }
+}
+
+
+// MARK: - Chat with Chef
+
+/// Chef's messages about this order (sent from the approval card) and the
+/// customer's replies. The reply box shows while Chef has the chat open.
+struct ChefChatPanel: View {
+    @Environment(AppModel.self) private var model
+    let order: Order
+    @State private var text = ""
+    @State private var sending = false
+    @State private var error: String?
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        Panel(padding: 16) {
+            HStack {
+                Text("Messages with Chef").font(Typeface.display(20, relativeTo: .title3))
+                Spacer()
+                if order.chatOpen == true {
+                    Text("Chef is waiting").font(Typeface.body(13, weight: .semibold))
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Palette.turmeric.opacity(0.25), in: Capsule())
+                        .foregroundStyle(Palette.turmericInk)
+                }
+            }
+            ForEach(Array((order.chat ?? []).enumerated()), id: \.offset) { _, m in
+                bubble(m)
+            }
+            if order.chatOpen == true {
+                HStack(alignment: .bottom, spacing: 8) {
+                    TextField("Reply to Chef", text: $text, axis: .vertical)
+                        .lineLimit(1...5)
+                        .font(Typeface.body(16))
+                        .focused($focused)
+                        .fieldStyle()
+                    Button { Task { await send() } } label: {
+                        if sending { ProgressView().tint(Palette.leafInk).frame(width: 44, height: 44) }
+                        else { Image(systemName: "arrow.up").font(.system(size: 18, weight: .bold)).frame(width: 44, height: 44) }
+                    }
+                    .foregroundStyle(Palette.leafInk)
+                    .background(Palette.leaf, in: Circle())
+                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || sending)
+                    .accessibilityLabel("Send to Chef")
+                }
+                Text("Chef gets this on WhatsApp right away. Chef will approve your order once you've sorted it out.")
+                    .font(Typeface.body(13)).foregroundStyle(Palette.muted)
+            } else {
+                Text("Chef has closed this chat. Use Ask a question in Account to message Chef.")
+                    .font(Typeface.body(13)).foregroundStyle(Palette.muted)
+            }
+            if let error { Notice(tone: .bad, icon: "exclamationmark.circle", text: error) }
+        }
+    }
+
+    private func bubble(_ m: Order.ChatLine) -> some View {
+        let mine = m.from != "chef"
+        return HStack {
+            if mine { Spacer(minLength: 40) }
+            VStack(alignment: mine ? .trailing : .leading, spacing: 2) {
+                Text(mine ? "You" : "Chef").font(Typeface.body(12, weight: .semibold)).foregroundStyle(Palette.muted)
+                Text(m.text)
+                    .font(Typeface.body(16))
+                    .foregroundStyle(mine ? Palette.leafInk : Palette.ink)
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .background(mine ? Palette.leaf : Palette.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(mine ? .clear : Palette.line))
+            }
+            if !mine { Spacer(minLength: 40) }
+        }
+    }
+
+    private func send() async {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        sending = true
+        error = nil
+        defer { sending = false }
+        do {
+            try await model.replyToChef(orderId: order.orderId, text: t)
+            text = ""
+        } catch {
+            self.error = (error as? APIError)?.message ?? error.localizedDescription
+            _ = await model.refreshOrder(order.orderId)
+        }
     }
 }

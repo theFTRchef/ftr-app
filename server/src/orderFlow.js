@@ -5,11 +5,11 @@ const ownerState = require("./ownerState");
 const { sendText, sendButtons, sendList, sendImage, choiceFromNumber } = require("./messaging");
 const calendarImage = require("./calendarImage");
 const menuImage = require("./menuImage");
-const { appendOrder, updateOrderStatus, updateOrderSubtotal } = require("./records");
+const { appendOrder, updateOrderStatus, updateOrderSubtotal, updateOrderTime } = require("./records");
 const customerStore = require("./customerStore");
 const { verifyAddress, milesBetween } = require("./geocode");
 const { generateSlots, formatTimeLabel, liveDoseSchedule, liveDoseTotalMinutes } = require("./timeUtils");
-const { normalizeDateEntry, pickupTimes, offersCatering, offersLiveDose, customerView, pickupOnly } = require("./availability");
+const { normalizeDateEntry, pickupTimes, offersCatering, offersLiveDose, customerView, pickupOnly, ldsExtension } = require("./availability");
 
 /** The menu as customers see it (catering delivery hidden when pickup-only). */
 function botMenu() {
@@ -185,10 +185,13 @@ function availabilitySummary(menu) {
 function timeOptionsFor(menu, d, cart, fulfillment) {
   const { hasLiveDose } = cartOrderTypes(cart);
   if (hasLiveDose) {
-    const len = requiredSlotMinutes(menu, cart);
-    return d.liveDose.flatMap((w) =>
-      generateSlots(w, len).map((s) => ({ id: `slot:${s.start}-${s.end}`, title: s.label }))
-    );
+    // Standard on-site sessions (customerView has already mapped the day's
+    // LIVE Dose windows onto them).
+    return d.liveDose.map((w) => ({
+      id: `slot:${w.start}-${w.end}`,
+      title: `${formatTimeLabel(w.start)} - ${formatTimeLabel(w.end)}`,
+      description: `${w.label || "LIVE Dose"} session - on-site serving time`
+    }));
   }
   if (fulfillment === "pickup") {
     const pt = pickupTimes(menu);
@@ -232,9 +235,10 @@ function lineLabel(l) {
     const travel = l.travelFee
       ? ` (+$${l.travelFee.toFixed(2)} travel, ~${l.travelMiles} mi)`
       : "";
+    const ext = l.extensionFee ? ` (+$${Number(l.extensionFee).toFixed(2)} for ${l.extensionMinutes} extra min)` : "";
     return `- LIVE Dose Station: ${parts.join(" + ")}${note} (+$${l.setupFee.toFixed(
       2
-    )} setup)${travel} ($${l.price.toFixed(2)})`;
+    )} setup)${travel}${ext} ($${l.price.toFixed(2)})`;
   }
   const note = l.note ? ` (${l.note})` : "";
   return `- ${fmtQty(l.qty)}x ${l.title}${Number.isInteger(Number(l.qty)) ? "" : " (half tray)"}${note} ($${(l.qty * l.price).toFixed(2)})`;
@@ -528,6 +532,22 @@ function effectiveMaxQty(menu, item) {
  * doesn't fit the generic single-item + quantity model, so it gets its
  * own mini-flow instead of a normal item list.
  */
+/** "$10 per dose, in 10s" - extra doses on site, at the same per-plate rate. */
+function extraDoseText(lds) {
+  const per = Number(lds.pricePerHundred || 0) / 100;
+  const inc = Number(lds.extraDoseIncrement) > 0 ? Number(lds.extraDoseIncrement) : 10;
+  return `Extra doses on site (while supplies last): $${per % 1 ? per.toFixed(2) : per} per dose, in ${inc}s.`;
+}
+
+function ldsTimesText(menu) {
+  const s = require("./availability").ldsSessions(menu);
+  const ext = ldsExtension(menu);
+  return (
+    `On-site serving times: ${s.map((w) => `${formatTimeLabel(w.start)} - ${formatTimeLabel(w.end)} (${w.label.toLowerCase()})`).join(" or ")}. ` +
+    `Extra ${ext.minutes} minutes: $${ext.fee}.`
+  );
+}
+
 async function sendLiveDoseTotalPrompt(to, category) {
   const lds = category.liveDoseStation;
   const options = [];
@@ -543,7 +563,9 @@ async function sendLiveDoseTotalPrompt(to, category) {
   }));
   await sendList(to, {
     header: category.title,
-    body: `How many plates total would you like from the LIVE Dose Station? This is a combined total across Mysore Masale Dose and Onion Dose (${lds.minTotal}-${lds.maxTotal}, in ${lds.increment}s). A $${lds.setupFee} setup fee applies once per order.`,
+    body:
+      `How many plates total would you like from the LIVE Dose Station? This is a combined total across Mysore Masale Dose and Onion Dose (${lds.minTotal}-${lds.maxTotal}, in ${lds.increment}s). A $${lds.setupFee} setup fee applies once per order.\n\n` +
+      `${ldsTimesText(botMenu())}\n${extraDoseText(lds)}`,
     buttonLabel: "Choose total",
     sections: [{ title: "Combined total", rows }]
   });
@@ -820,10 +842,13 @@ async function sendOrderSummary(to, session) {
   const subtotal = cartSubtotal(session.cart);
   const isCateringDelivery =
     session.fulfillment === "delivery" && !cartOrderTypes(session.cart).hasLiveDose;
-  const fulfillmentLine =
-    session.fulfillment === "delivery"
-      ? `Delivery to: ${session.address}`
-      : "Pickup";
+  const isLds = cartOrderTypes(session.cart).hasLiveDose;
+  const fulfillmentLine = isLds
+    ? `Event location: ${session.address}`
+    : session.fulfillment === "delivery"
+    ? `Delivery to: ${session.address}`
+    : "Pickup";
+  const balanceWhen = isLds ? "on the day of your event" : session.fulfillment === "pickup" ? "at pickup" : "at delivery";
   const feeLine = isCateringDelivery
     ? "\nDelivery fee: based on distance - the chef will add it when confirming"
     : "";
@@ -831,8 +856,8 @@ async function sendOrderSummary(to, session) {
     2
   )}${feeLine}\n${fulfillmentLine}\nRequested time: ${session.requestedTime}\nPayment: ${
     payments.enabled()
-      ? `${payments.settings().depositPercent}% Zelle deposit after Chef approves, balance at ${session.fulfillment === "pickup" ? "pickup" : "delivery"}`
-      : `collected at ${session.fulfillment}`
+      ? `${payments.settings().depositPercent}% Zelle deposit after Chef approves, balance ${balanceWhen}`
+      : `collected ${balanceWhen}`
   }\n\nShall I send this in for approval?`;
   await sendButtons(to, {
     body: summary,
@@ -917,7 +942,7 @@ async function sendApprovalPrompt(ownerNumber, id, order) {
     )}\n${fulfillmentLine}\nRequested time: ${order.requestedTime}${rangeLine}`,
     buttons: [
       { id: `approve:${id}`, title: "Approve" },
-      { id: `editprice:${id}`, title: "Edit price" },
+      { id: `editprice:${id}`, title: "Edit / message" },
       { id: `decline:${id}`, title: "Decline" }
     ]
   }).catch((err) =>
@@ -925,12 +950,105 @@ async function sendApprovalPrompt(ownerNumber, id, order) {
   );
 }
 
+// ---------------------------------------------------------------------
+// Chef <-> customer chat before approving, relayed through the FTR
+// number. Open chats are saved in data/chats.json (survive restarts) and
+// every message is kept on the order (order.chat) for the record.
+// ---------------------------------------------------------------------
+const chatFile = require("./jsonFile");
+function openChats() {
+  return chatFile.read("chats.json", {}) || {};
+}
+function chatFor(phone) {
+  return openChats()[phone] || null;
+}
+function setChat(phone, value) {
+  const all = openChats();
+  if (value) all[phone] = value;
+  else delete all[phone];
+  chatFile.write("chats.json", all);
+}
+function logChat(orderId, from, text) {
+  const order = require("./orderDb").get(orderId);
+  if (!order) return;
+  const chat = [...(order.chat || []), { from, text, at: new Date().toISOString() }];
+  require("./orderDb").update(orderId, { chat });
+}
+
+async function startChat(ownerNumber, id, order) {
+  setChat(order.customerPhone, { orderId: id, openedAt: new Date().toISOString() });
+  ownerState.set(ownerNumber, { orderId: id, mode: "chat", phone: order.customerPhone });
+  return sendText(
+    ownerNumber,
+    `Chat with ${order.customerName || order.customerPhone} about ${id} is open.\n\n` +
+      `Type your message - it goes to them from the FTR number, and their replies come back here. ` +
+      `Tap Approve or Decline on the order when you're ready (that ends the chat).`
+  );
+}
+
+function endChat(ownerNumber, id, phone) {
+  const c = phone ? chatFor(phone) : null;
+  if (c && c.orderId === id) setChat(phone, null);
+  const st = ownerState.get(ownerNumber);
+  if (st && st.orderId === id) ownerState.clear(ownerNumber);
+}
+
+async function sendChefMessage(ownerNumber, state, order, text) {
+  try {
+    await sendText(order.customerPhone, `Message from Chef about your order ${state.orderId}:\n\n${text}\n\n(Just reply here to answer Chef.)`);
+    logChat(state.orderId, "chef", text);
+  } catch (err) {
+    return sendText(ownerNumber, `Couldn't deliver that (WhatsApp may block it if they haven't messaged in 24 hours). Try calling ${order.customerPhone}.`);
+  }
+  if (!state.acked) {
+    ownerState.set(ownerNumber, { ...state, acked: true });
+    return sendButtons(ownerNumber, {
+      body: `Sent to ${order.customerName || order.customerPhone}. Keep typing to send more.`,
+      buttons: [
+        { id: `approve:${state.orderId}`, title: "Approve" },
+        { id: `chatend:${state.orderId}`, title: "End chat" },
+        { id: `decline:${state.orderId}`, title: "Decline" }
+      ]
+    });
+  }
+}
+
+/** Customer replied while Chef has a chat open with them. Returns true if handled. */
+async function relayCustomerMessage(from, isText, text, isReply) {
+  if (isReply) return false; // button taps carry on as normal
+  const c = chatFor(from);
+  if (!c) return false;
+  const order = pendingOrderStore.get(c.orderId);
+  if (!order) {
+    setChat(from, null);
+    return false;
+  }
+  const ownerNumber = process.env.OWNER_WHATSAPP_NUMBER;
+  if (!isText) {
+    await sendText(from, "Please type your message for Chef as text.");
+    return true;
+  }
+  logChat(c.orderId, "customer", text);
+  ownerState.set(ownerNumber, { orderId: c.orderId, mode: "chat", phone: from, acked: true });
+  await sendButtons(ownerNumber, {
+    header: `Reply about ${c.orderId}`.slice(0, 60),
+    body: `${order.customerName || from} says:\n\n${text}\n\n(Your next message goes to them.)`.slice(0, 1024),
+    buttons: [
+      { id: `approve:${c.orderId}`, title: "Approve" },
+      { id: `editprice:${c.orderId}`, title: "Edit / message" },
+      { id: `decline:${c.orderId}`, title: "Decline" }
+    ]
+  }).catch((err) => console.error("Couldn't relay customer reply:", err.message));
+  return true;
+}
+
 async function approveOrder(id, order, ownerNumber) {
+  endChat(ownerNumber, id, order.customerPhone);
   pendingOrderStore.remove(id);
   if (payments.enabled()) {
     await sendText(
       order.customerPhone,
-      `Good news - Chef approved your order ${id}! Total: $${order.subtotal.toFixed(2)}.`
+      `Good news - Chef approved your order ${id}! Total: $${order.subtotal.toFixed(2)}.\nTime: ${order.requestedTime}` + chefTimeNote(order)
     ).catch((err) => console.error(`Failed to send approval for ${id}:`, err.message));
     try {
       const pay = await payments.requestDeposit(order);
@@ -958,11 +1076,9 @@ async function approveOrder(id, order, ownerNumber) {
   );
   await sendText(
     order.customerPhone,
-    `Good news - your order ${id} is confirmed! Subtotal: $${order.subtotal.toFixed(
-      2
-    )}. We'll have it ready for your requested time. Payment will be collected at ${
-      order.fulfillment
-    }. See you then!`
+    `Good news - your order ${id} is confirmed! Subtotal: $${order.subtotal.toFixed(2)}.\nTime: ${order.requestedTime}` +
+      chefTimeNote(order) +
+      `\n\nPayment will be collected ${(order.cart || []).some((l) => l.isLiveDoseStation) ? "on the day of your event" : `at ${order.fulfillment}`}. See you then!`
   );
   if (ownerNumber) {
     await sendText(ownerNumber, `Order ${id} confirmed - customer notified.`);
@@ -970,6 +1086,7 @@ async function approveOrder(id, order, ownerNumber) {
 }
 
 async function declineOrder(id, order, ownerNumber) {
+  endChat(ownerNumber, id, order.customerPhone);
   pendingOrderStore.remove(id);
   await updateOrderStatus(id, "Declined").catch((err) =>
     console.error(`Failed to update sheet status for ${id}:`, err.message)
@@ -1065,6 +1182,40 @@ async function handleOwnerReply(payload) {
       return;
     }
 
+    if (isText && pendingEdit.mode === "chat") {
+      return sendChefMessage(ownerNumber, pendingEdit, order, text);
+    }
+
+    if (isText && pendingEdit.mode === "awaiting-time") {
+      const change = parseChefTime(text, order);
+      if (!change) {
+        return sendText(
+          ownerNumber,
+          `Sorry, I couldn't read that time. Please reply like "12:30 PM" or "6:30 PM - 8:30 PM" (with AM/PM), or "11/8 12:30 PM" to change the day too.`
+        );
+      }
+      const original = order.requestedTimeOriginal || order.requestedTime || "";
+      order.requestedTimeOriginal = original;
+      order.requestedTime = `${change.label} (set by Chef)`;
+      order.timeChangedByChef = { from: original, to: change.label, at: new Date().toISOString() };
+      if (change.date) {
+        order.eventDate = change.date;
+      }
+      pendingOrderStore.create(pendingEdit.orderId, order);
+      ownerState.clear(ownerNumber);
+      await updateOrderTime(pendingEdit.orderId, order.requestedTime).catch((err) =>
+        console.error(`Failed to update sheet time for ${pendingEdit.orderId}:`, err.message)
+      );
+      return sendButtons(ownerNumber, {
+        body: `Order ${pendingEdit.orderId} time changed.\n\nCustomer asked: ${original}\nNew time: ${change.label}\n\nThe customer will see the new time when you approve.`,
+        buttons: [
+          { id: `approve:${pendingEdit.orderId}`, title: "Approve" },
+          { id: `editprice:${pendingEdit.orderId}`, title: "Edit / message" },
+          { id: `decline:${pendingEdit.orderId}`, title: "Decline" }
+        ]
+      });
+    }
+
     if (isText && pendingEdit.mode === "awaiting-subtotal") {
       const newSubtotal = parseFloat(text.replace(/[^0-9.]/g, ""));
       if (!newSubtotal || newSubtotal <= 0) {
@@ -1119,6 +1270,41 @@ async function handleOwnerReply(payload) {
     return declineOrder(id, order, ownerNumber);
   }
   if (action === "editprice") {
+    return sendButtons(ownerNumber, {
+      body: `Order ${id} - what would you like to do?\n\nTime now: ${order.requestedTime || "not set"}\nSubtotal: $${order.subtotal.toFixed(2)}`,
+      buttons: [
+        { id: `edp:${id}`, title: "Change price" },
+        { id: `edt:${id}`, title: "Change time" },
+        { id: `msg:${id}`, title: "Message customer" }
+      ]
+    });
+  }
+  if (action === "msg") {
+    return startChat(ownerNumber, id, order);
+  }
+  if (action === "chatend") {
+    endChat(ownerNumber, id, order.customerPhone);
+    await sendText(order.customerPhone, `Thanks! Chef will confirm your order ${id} here shortly.`).catch(() => {});
+    return sendButtons(ownerNumber, {
+      body: `Chat about ${id} ended. Approve or decline now?`,
+      buttons: [
+        { id: `approve:${id}`, title: "Approve" },
+        { id: `editprice:${id}`, title: "Edit / message" },
+        { id: `decline:${id}`, title: "Decline" }
+      ]
+    });
+  }
+  if (action === "edt") {
+    ownerState.set(ownerNumber, { orderId: id, mode: "awaiting-time" });
+    const lds = (order.cart || []).some((l) => l.isLiveDoseStation);
+    return sendText(
+      ownerNumber,
+      `Order ${id} - customer asked for: ${order.requestedTime || "no time"}.\n\n` +
+        `Reply with the time you'll do, e.g. ${lds ? `"6:30 PM - 8:30 PM" (serving time)` : `"12:30 PM"`}. ` +
+        `To change the day too, put the date first, e.g. "11/8 ${lds ? "11 AM - 1 PM" : "12:30 PM"}".`
+    );
+  }
+  if (action === "edp") {
     if (order.cart.length > 1) {
       ownerState.set(ownerNumber, { orderId: id, mode: "select-line" });
       return sendLineEditPrompt(ownerNumber, id, order);
@@ -1938,6 +2124,7 @@ const STEP_DOING = {
   AWAITING_SLOT: "choosing a time",
   AWAITING_CONFIRM: "reviewing your order",
   AWAITING_PICKUP_AGREE: "confirming pickup",
+  AWAITING_LDS_EXTEND: "choosing your LIVE Dose time",
   AWAITING_RANGE_APPROVAL: "waiting for Chef to OK your address",
   AWAITING_CUSTOM_REQUEST: "writing a custom request",
   AWAITING_QUESTION: "asking us a question"
@@ -2019,6 +2206,9 @@ async function repromptStep(from, session, menu) {
     }
     case "AWAITING_CONFIRM":
       return sendOrderSummary(from, session);
+    case "AWAITING_LDS_EXTEND":
+      if (session.ldsSession) return offerLdsExtension(from, session, menu);
+      break;
     case "AWAITING_PICKUP_AGREE":
       return askPickupAgreement(from, session, menu, findCategory(menu, session.itemCategoryId) || { id: session.itemCategoryId });
     case "AWAITING_RANGE_APPROVAL":
@@ -2171,6 +2361,109 @@ function rangeRequests() {
     });
 }
 
+// ---------------------------------------------------------------------
+// LIVE Dose session chosen: show the schedule, offer extra time.
+// ---------------------------------------------------------------------
+function ldsRequestedTime(session, menu, extended) {
+  const { start, end } = session.ldsSession;
+  const ext = ldsExtension(menu);
+  const endMin = minutesOf(end) + (extended ? ext.minutes : 0);
+  const endLabel = formatTimeLabel(`${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`);
+  return `${formatDateLabel(session.selectedDate)}, LIVE Dose serving ${formatTimeLabel(start)} - ${endLabel}${
+    extended ? ` (incl. ${ext.minutes} extra min)` : ""
+  }`;
+}
+
+async function offerLdsExtension(from, session, menu) {
+  const lds = liveDoseConfig(menu) || {};
+  const ext = ldsExtension(menu);
+  const { start, end } = session.ldsSession;
+  const setup = Number(lds.setupMinutes) > 0 ? Number(lds.setupMinutes) : 30;
+  const arrive = minutesOf(start) - setup;
+  const arriveLabel = formatTimeLabel(`${String(Math.floor(arrive / 60)).padStart(2, "0")}:${String(arrive % 60).padStart(2, "0")}`);
+  sessionStore.set(from, { ...session, step: "AWAITING_LDS_EXTEND" });
+  return sendButtons(from, {
+    header: "Your LIVE Dose schedule",
+    body:
+      `${formatDateLabel(session.selectedDate)}\n` +
+      `Crew arrives to set up: about ${arriveLabel}\n` +
+      `Serving on site: ${formatTimeLabel(start)} - ${formatTimeLabel(end)}\n\n` +
+      `${extraDoseText(lds)}\n\n` +
+      `Need longer? Add ${ext.minutes} extra minutes of serving for $${ext.fee}.`,
+    buttons: [
+      { id: "ldsext:no", title: "No, that's fine" },
+      { id: "ldsext:yes", title: `Add ${ext.minutes} min +$${ext.fee}`.slice(0, 20) }
+    ]
+  });
+}
+
+async function handleLdsExtension(from, session, menu, replyId) {
+  if (replyId !== "ldsext:yes" && replyId !== "ldsext:no") return offerLdsExtension(from, session, menu);
+  const extended = replyId === "ldsext:yes";
+  const ext = ldsExtension(menu);
+  const cart = session.cart.map((l) => {
+    if (!l.isLiveDoseStation) return l;
+    const withoutExt = l.price - (Number(l.extensionFee) || 0);
+    return {
+      ...l,
+      extensionMinutes: extended ? ext.minutes : 0,
+      extensionFee: extended ? ext.fee : 0,
+      price: withoutExt + (extended ? ext.fee : 0)
+    };
+  });
+  const updated = { ...session, cart, requestedTime: ldsRequestedTime(session, menu, extended), step: "AWAITING_CONFIRM" };
+  sessionStore.set(from, updated);
+  return sendOrderSummary(from, updated);
+}
+
+/**
+ * Chef's reply when changing an order's time: "12:30 PM", "6:30 PM - 8:30 PM",
+ * optionally with a date first ("11/8 12:30 PM"). Returns { label, date } or null.
+ */
+function parseChefTime(text, order) {
+  const raw = String(text || "").toLowerCase();
+  const timeRe = /(\d{1,2})(?::(\d{2}))?\s*(a\.?\s?m\.?|p\.?\s?m\.?)|\bnoon\b/g;
+  const times = [];
+  let m;
+  while ((m = timeRe.exec(raw))) times.push(parseTypedTime(m[0]));
+  const clean = times.filter(Boolean);
+  if (!clean.length) return null;
+  const dateText = raw.replace(timeRe, " ");
+  const date = /\d{1,2}[\/-]\d{1,2}|[a-z]{3,}\s+\d{1,2}|\d{1,2}\s+[a-z]{3,}/.test(dateText) ? parseTypedDate(dateText) : null;
+  const day = date || order.eventDate || order.selectedDate || null;
+  const dayLabel = day ? `${formatDateLabel(day)}, ` : "";
+  const lds = (order.cart || []).some((l) => l.isLiveDoseStation);
+  let start = clean[0];
+  let end = clean[1] || null;
+  if (lds && !end) {
+    // Keep the same serving length as the session they booked.
+    const r = /(\d{1,2}:\d{2} [AP]M) - (\d{1,2}:\d{2} [AP]M)/.exec(order.requestedTime || "");
+    const len = r ? minutesOf(to24(r[2])) - minutesOf(to24(r[1])) : 120;
+    const e = minutesOf(start) + (len > 0 ? len : 120);
+    end = `${String(Math.floor(e / 60) % 24).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}`;
+  }
+  let label;
+  if (lds) label = `${dayLabel}LIVE Dose serving ${formatTimeLabel(start)} - ${formatTimeLabel(end)}`;
+  else if (order.fulfillment === "pickup") label = `${dayLabel}pickup at ${formatTimeLabel(start)}${end ? ` - ${formatTimeLabel(end)}` : ""}`;
+  else label = `${dayLabel}${formatTimeLabel(start)}${end ? ` - ${formatTimeLabel(end)}` : ""}`;
+  return { label, date };
+}
+
+/** "6:30 PM" -> "18:30" */
+function to24(label) {
+  const m = /(\d{1,2}):(\d{2}) ([AP])M/.exec(label);
+  if (!m) return "00:00";
+  let h = +m[1] % 12;
+  if (m[3] === "P") h += 12;
+  return `${String(h).padStart(2, "0")}:${m[2]}`;
+}
+
+/** Line for the customer when Chef changed their time. */
+function chefTimeNote(order) {
+  if (!order.timeChangedByChef) return "";
+  return `\n\nPlease note: Chef has set your time to ${order.timeChangedByChef.to} (you asked for ${order.timeChangedByChef.from}).`;
+}
+
 /** Typed "11/7 pickup at 11:30 AM" from the main menu: jump straight in. */
 async function typedDateShortcut(from, menu, text) {
   const req = parseOrderRequest(text);
@@ -2202,6 +2495,9 @@ async function handleIncoming(payload) {
     return payments.handleOwnerPaymentReply(ownerNumber, action, id);
   }
 
+  // Chef has a chat open with this customer: their messages go to Chef.
+  if (from !== ownerNumber && (await relayCustomerMessage(from, isText, text, isReply))) return;
+
   // Pictures: Zelle payment screenshots.
   if (payload.message_type === "image" && from !== ownerNumber) {
     return payments.handleCustomerImage(from, payload.image || {});
@@ -2219,6 +2515,10 @@ async function handleIncoming(payload) {
     (replyId.startsWith("approve:") ||
       replyId.startsWith("decline:") ||
       replyId.startsWith("editprice:") ||
+      replyId.startsWith("edp:") ||
+      replyId.startsWith("edt:") ||
+      replyId.startsWith("msg:") ||
+      replyId.startsWith("chatend:") ||
       replyId.startsWith("cquote:") ||
       replyId.startsWith("cdecline:"));
   const isOwnerMidEdit = ownerState.get(ownerNumber) && (isText || isReply);
@@ -2676,6 +2976,10 @@ async function handleIncoming(payload) {
       return handlePickupAgreement(from, session, menu, replyId);
     }
 
+    case "AWAITING_LDS_EXTEND": {
+      return handleLdsExtension(from, session, menu, replyId);
+    }
+
     case "AWAITING_RANGE_APPROVAL": {
       if (replyId === "out:cancel") {
         sessionStore.clear(from);
@@ -2801,22 +3105,7 @@ async function handleIncoming(payload) {
 
         const ldsTotal = liveDoseTotalInCart(session.cart);
         if (ldsTotal) {
-          const sched = liveDoseSchedule(slotStart, ldsTotal, liveDoseConfig(menu));
-          requestedTime = `${formatDateLabel(session.selectedDate)}, crew arrival ${formatTimeLabel(
-            sched.arrival
-          )} - wrap-up ${formatTimeLabel(sched.wrapUp)} (first dose ${formatTimeLabel(
-            sched.firstDose
-          )}, last dose ${formatTimeLabel(sched.lastDose)})`;
-          await sendText(
-            from,
-            `Here's your LIVE Dose Station schedule for ${formatDateLabel(session.selectedDate)}:\n\n` +
-              `Crew arrival: ${formatTimeLabel(sched.arrival)}\n` +
-              `First dose ready: ${formatTimeLabel(sched.firstDose)}\n` +
-              `Last dose ready: ${formatTimeLabel(sched.lastDose)}\n` +
-              `Wrap-up complete: ${formatTimeLabel(sched.wrapUp)}\n\n` +
-              `Our crew is confident all ${ldsTotal} dose will be served within this window. ` +
-              `Please note: delays caused on the client's side (e.g. late access, space not ready) will incur a $${sched.delayFeePerHour}/hr charge.`
-          );
+          return offerLdsExtension(from, { ...session, ldsSession: { start: slotStart, end: slotEnd } }, menu);
         }
 
         const updated = { ...session, requestedTime, step: "AWAITING_CONFIRM" };
@@ -2896,6 +3185,12 @@ module.exports = {
     windowLabel,
     sendApprovalPrompt,
     submitCustomRequest,
-    handleQuoteResponse
+    handleQuoteResponse,
+    // Chef <-> customer chat and LIVE Dose session wording, for app customers.
+    relayCustomerMessage,
+    chatFor,
+    extraDoseText,
+    ldsTimesText,
+    parseChefTime
   }
 };
