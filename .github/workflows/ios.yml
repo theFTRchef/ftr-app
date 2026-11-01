@@ -24,7 +24,8 @@ on:
 jobs:
   check-build:
     if: github.event_name == 'push'
-    runs-on: macos-15
+    # Intel Mac: GitHub's Apple-silicon Macs are often full and cancel queued jobs.
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
       - uses: maxim-lobanov/setup-xcode@v1
