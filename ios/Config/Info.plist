@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The FTR server's app API. Change this if your bot runs at a different address. -->
+	<key>FTRAPIBaseURL</key>
+	<string>$(FTR_API_BASE_URL)</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Fraunces-Bold.ttf</string>
+		<string>Fraunces-SemiBoldItalic.ttf</string>
+		<string>JosefinSans-SemiBold.ttf</string>
+		<string>JosefinSans-Bold.ttf</string>
+		<string>Outfit-Regular.ttf</string>
+		<string>Outfit-Medium.ttf</string>
+		<string>Outfit-SemiBold.ttf</string>
+		<string>Outfit-Bold.ttf</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
+</dict>
+</plist>

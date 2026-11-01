@@ -1,0 +1,86 @@
+# FTR iOS app on a cloud Mac (GitHub Actions) - no Mac of your own needed.
+#
+# 1. "Check build": every push compiles the app for the iPhone simulator.
+#    Needs no Apple account - it just proves the code builds.
+# 2. "Send to TestFlight": run by hand (Actions tab > iOS > Run workflow).
+#    Builds, signs and uploads to App Store Connect / TestFlight.
+#    Needs these repository secrets (Settings > Secrets and variables > Actions):
+#      APPLE_TEAM_ID        10-character Team ID (developer.apple.com > Membership)
+#      ASC_KEY_ID           App Store Connect API key ID
+#      ASC_ISSUER_ID        App Store Connect API issuer ID
+#      ASC_KEY_P8           the whole text of the downloaded AuthKey_XXXXXXXXXX.p8 file
+name: iOS
+
+on:
+  push:
+    paths: ["ios/**", ".github/workflows/ios.yml"]
+  workflow_dispatch:
+    inputs:
+      testflight:
+        description: "Upload to TestFlight"
+        type: boolean
+        default: true
+
+jobs:
+  check-build:
+    if: github.event_name == 'push'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Compile for the iPhone simulator
+        run: |
+          xcodebuild build \
+            -project ios/FTR.xcodeproj -scheme FTR -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO | tee build.log | grep -E "error:|warning: .*deprecated|\*\* BUILD" || true
+          grep -q "\*\* BUILD SUCCEEDED \*\*" build.log
+      - name: Keep the build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+
+  testflight:
+    if: github.event_name == 'workflow_dispatch' && inputs.testflight
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: App Store Connect key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s' "$ASC_KEY_P8" > ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
+      - name: Archive (signed automatically with your team)
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcodebuild archive \
+            -project ios/FTR.xcodeproj -scheme FTR -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/FTR.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${KEY_ID}.p8 \
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
+            DEVELOPMENT_TEAM="$TEAM" CURRENT_PROJECT_VERSION=${{ github.run_number }}
+      - name: Upload to TestFlight
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          /usr/libexec/PlistBuddy -c "Add :teamID string $TEAM" ios/ExportOptions.plist
+          xcodebuild -exportArchive \
+            -archivePath build/FTR.xcarchive -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath build/export -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${KEY_ID}.p8 \
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER"

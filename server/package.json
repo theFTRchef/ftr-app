@@ -1,0 +1,19 @@
+{
+  "name": "dose-in-a-box-whatsapp-bot",
+  "version": "1.0.0",
+  "description": "WhatsApp ordering bot for Franklin Tiffin Room home catering, built on Vonage Messages API",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@vonage/jwt": "^1.10.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "googleapis": "^140.0.1",
+    "@resvg/resvg-js": "2.6.2",
+    "harfbuzzjs": "0.4.7"
+  }
+}

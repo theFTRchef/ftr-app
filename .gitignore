@@ -1,0 +1,7 @@
+node_modules/
+.env
+*.p8
+build/
+DerivedData/
+xcuserdata/
+.DS_Store

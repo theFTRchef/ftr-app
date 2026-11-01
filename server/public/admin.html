@@ -1,0 +1,1766 @@
+<meta charset="utf-8" />
+<title>FTR Chef's Kitchen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Josefin+Sans:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: phone-first app shell - header, one scrolling view, bottom tab bar (side rail on wide screens), sticky save bar when edits are pending. */
+:root {
+  /* FTR brand, from the catering flyers: cream paper, forest green, chili red, marigold gold. */
+  --bg: #fffbf3;
+  --surface: #ffffff;
+  --surface-2: #f6eedd;
+  --line: #e8dcc4;
+  --fg: #1e3a27;
+  --muted: #4a5a4e;
+  --leaf: #1e3a27;         /* forest green - actions */
+  --leaf-ink: #fff6e6;
+  --leaf-soft: #e6ede4;
+  --turmeric: #e3a72f;     /* marigold - waiting on you */
+  --turmeric-soft: #fbefd0;
+  --turmeric-ink: #7a5200;
+  --good: #2e7d3a; --good-soft: #e3efe2;
+  --bad: #b23a2c;  --bad-soft: #f8ddd6;
+  --info: #2d5a8c; --info-soft: #dfe8f4;
+  --chili: #c8463f; --chili-soft: #f8ddd6; --chili-ink: #8e2a1a;   /* FRANKLIN red, booked days */
+  --shadow: 0 1px 2px rgba(30,58,39,.06), 0 6px 18px rgba(30,58,39,.06);
+  --f-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --f-logo: "Josefin Sans", "Futura", "Century Gothic", sans-serif;
+  --f-body: "Outfit", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r: 14px;
+  --tab-h: 64px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111a14; --surface: #18241c; --surface-2: #213027; --line: #2f3f34;
+  --fg: #fff6e6; --muted: #b3bcaf; --leaf: #f2c14e; --leaf-ink: #1e3a27; --leaf-soft: #22362a;
+  --turmeric: #f2c14e; --turmeric-soft: #3a2f14; --turmeric-ink: #f6d38a;
+  --good: #6cc196; --good-soft: #1d3428; --bad: #f08a7c; --bad-soft: #3d2420; --info: #8fb5e3; --info-soft: #1f2c3d;
+  --chili: #e8675e; --chili-soft: #43231d; --chili-ink: #ffb4a6;
+  --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111a14; --surface: #18241c; --surface-2: #213027; --line: #2f3f34;
+  --fg: #fff6e6; --muted: #b3bcaf; --leaf: #f2c14e; --leaf-ink: #1e3a27; --leaf-soft: #22362a;
+  --turmeric: #f2c14e; --turmeric-soft: #3a2f14; --turmeric-ink: #f6d38a;
+  --good: #6cc196; --good-soft: #1d3428; --bad: #f08a7c; --bad-soft: #3d2420; --info: #8fb5e3; --info-soft: #1f2c3d;
+  --chili: #e8675e; --chili-soft: #43231d; --chili-ink: #ffb4a6;
+  --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 15px/1.5 var(--f-body); -webkit-font-smoothing: antialiased;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--leaf); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- shell ---------- */
+.app { min-height: 100%; display: flex; flex-direction: column; }
+header.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+  padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; gap: 12px;
+}
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.mark {
+  width: 34px; height: 34px; border-radius: 24%; flex: none; position: relative;
+  background: #1e3a27; color: #fff6e6; display: grid; place-items: center; padding-top: 6px;
+  font: 700 13px/1 var(--f-logo); letter-spacing: .5px;
+}
+.mark::before { content: "FTR"; }
+.mark::after { content: ""; position: absolute; top: 16%; right: 15%; width: 28%; height: 17%; border-top: 2px solid #e8675e; border-right: 2px solid #e8675e; }
+.brand h1 { font: 700 18px/1.1 var(--f-display); margin: 0; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand small { display: block; color: var(--muted); font-size: 12px; }
+.icon-btn {
+  width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
+  display: grid; place-items: center; flex: none; color: var(--fg); text-decoration: none;
+}
+.top-actions { display: flex; gap: 8px; flex: none; }
+button.icon-btn { font: inherit; cursor: pointer; }
+.icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.icon-btn[aria-current="page"] { background: var(--leaf-soft); border-color: var(--leaf); color: var(--leaf); }
+
+.preview-banner {
+  background: var(--info-soft); color: var(--info); font-size: 13px; font-weight: 600;
+  padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main#view {
+  flex: 1; width: 100%; max-width: 760px; margin: 0 auto;
+  padding-block: 18px calc(var(--tab-h) + 96px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 18px;
+}
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px));
+  display: grid; grid-template-columns: repeat(6, 1fr);
+}
+nav.tabs a {
+  height: var(--tab-h); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  color: var(--muted); text-decoration: none; font-size: 11px; font-weight: 600; position: relative; white-space: nowrap;
+}
+nav.tabs a svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+nav.tabs a[aria-current="page"] { color: var(--leaf); }
+nav.tabs a[aria-current="page"]::before { content: ""; position: absolute; top: 0; left: 28%; right: 28%; height: 3px; border-radius: 0 0 3px 3px; background: var(--leaf); }
+.dot { position: absolute; top: 9px; left: calc(50% + 7px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--turmeric); color: #1c1400; font-size: 11px; line-height: 18px; font-weight: 700; text-align: center; }
+
+@media (min-width: 900px) {
+  .app { padding-left: 92px; }
+  nav.tabs { top: 0; bottom: 0; right: auto; width: 92px; grid-template-columns: 1fr; grid-auto-rows: 76px; align-content: start; border-top: 0; border-right: 1px solid var(--line); padding-top: calc(env(safe-area-inset-top, 0px) + 70px); }
+  nav.tabs a { height: 76px; }
+  nav.tabs a[aria-current="page"]::before { top: 18%; bottom: 18%; left: 0; right: auto; width: 3px; height: auto; border-radius: 0 3px 3px 0; }
+  main#view { padding-bottom: 120px; }
+}
+
+/* ---------- type & blocks ---------- */
+.h-page { font: 700 clamp(24px, 6vw, 30px)/1.1 var(--f-display); margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+.sub { color: var(--muted); margin: 4px 0 0; }
+.h-sec { font: 700 13px/1 var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 6px 0 -6px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.h-sec .btn { text-transform: none; letter-spacing: 0; color: var(--leaf); font-size: 13.5px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); }
+.pad { padding: 16px; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1; min-width: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 620px) { .kpis.four { grid-template-columns: repeat(4, 1fr); } }
+.kpi { padding: 14px 16px; }
+.kpi b { display: block; font: 700 26px/1.1 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.kpi span { font-size: 12.5px; color: var(--muted); }
+.kpi.attn { background: var(--turmeric-soft); border-color: transparent; }
+.kpi.attn b { color: var(--turmeric-ink); }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.p-wait { background: var(--turmeric-soft); color: var(--turmeric-ink); }
+.p-good { background: var(--good-soft); color: var(--good); }
+.p-bad { background: var(--bad-soft); color: var(--bad); }
+.p-info { background: var(--info-soft); color: var(--info); }
+.p-off { background: var(--surface-2); color: var(--muted); }
+.qr-row { display: flex; gap: 14px; align-items: flex-start; }
+.qr-box { width: 112px; height: 112px; flex: none; border: 1px dashed var(--line); border-radius: 14px; display: grid; place-items: center; text-align: center; padding: 6px; background: var(--surface-2); overflow: hidden; }
+.qr-box img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; background: #fff; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 42px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--surface); font-weight: 600; text-decoration: none; color: var(--fg); white-space: nowrap;
+}
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--leaf); border-color: var(--leaf); color: var(--leaf-ink); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.danger { color: var(--bad); border-color: var(--bad-soft); }
+.btn.danger.solid { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.sm { min-height: 34px; padding: 0 12px; font-size: 13px; border-radius: 10px; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chip {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px;
+  font-size: 13.5px; font-weight: 600; white-space: nowrap; color: var(--muted);
+}
+.decide { flex-wrap: wrap; gap: 8px; padding: 10px 0 2px; border-top: 1px dashed var(--line); margin-top: 6px; }
+.decide .small { flex-basis: 100%; }
+.chip[aria-pressed="true"] { background: var(--leaf); border-color: var(--leaf); color: var(--leaf-ink); }
+.chip .c { opacity: .8; margin-left: 4px; }
+
+/* fields */
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field > span { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.field input, .field select, .field textarea, .search {
+  width: 100%; min-height: 44px; padding: 10px 12px; border-radius: 11px;
+  border: 1px solid var(--line); background: var(--surface); font-size: 16px;
+}
+.field textarea { min-height: 88px; resize: vertical; line-height: 1.45; }
+.field .hint { font-size: 12px; color: var(--muted); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 420px) { .grid3 { grid-template-columns: 1fr 1fr; } }
+.prefix { position: relative; }
+.prefix input { padding-left: 26px; }
+.prefix::before { content: "$"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 600; }
+.switch { display: flex; align-items: center; gap: 12px; padding: 10px 0; cursor: pointer; }
+.switch input { appearance: none; width: 46px; height: 28px; border-radius: 14px; background: var(--line); position: relative; flex: none; transition: background .15s; margin: 0; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
+.switch input:checked { background: var(--leaf); }
+.switch input:checked::after { transform: translateX(18px); }
+.switch span b { display: block; font-weight: 600; }
+.switch span small { color: var(--muted); font-size: 12.5px; }
+
+/* lists */
+.list { display: flex; flex-direction: column; }
+.li {
+  display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-top: 1px solid var(--line);
+  background: none; border-left: 0; border-right: 0; border-bottom: 0; text-align: left; width: 100%;
+}
+.li:first-child { border-top: 0; }
+button.li:hover { background: var(--surface-2); }
+.li .t { font-weight: 600; }
+.li .d { font-size: 13px; color: var(--muted); }
+.li .price { font-weight: 700; font-variant-numeric: tabular-nums; }
+.chev { width: 18px; height: 18px; stroke: var(--muted); fill: none; stroke-width: 2; flex: none; }
+
+/* orders */
+.order { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.order.wait { border-left: 4px solid var(--turmeric); }
+.o-top { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.o-name { font-weight: 700; font-size: 16px; }
+.o-meta { font-size: 12.5px; color: var(--muted); }
+.o-items { font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+.o-items .note { color: var(--muted); font-style: italic; }
+.o-facts { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13.5px; }
+.o-facts dt { color: var(--muted); }
+.o-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.o-total { font: 700 18px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.o-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.wa { color: var(--leaf); text-decoration: none; font-weight: 600; font-size: 13px; }
+
+/* chef days */
+.day { overflow: hidden; }
+.day-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; width: 100%; background: none; border: 0; text-align: left; }
+.cal { width: 50px; flex: none; text-align: center; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.cal i { display: block; font-style: normal; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: var(--surface-2); color: var(--muted); padding: 2px 0; }
+.cal b { display: block; font: 700 20px/1.25 var(--f-display); font-variant-numeric: tabular-nums; }
+.day.open .cal i { background: var(--leaf); color: var(--leaf-ink); }
+.day-sum { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
+.day-body { border-top: 1px solid var(--line); padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 14px; }
+.day-sec h4 { margin: 10px 0 6px; font-size: 13px; font-weight: 700; }
+.toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tog {
+  border: 1.5px dashed var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); text-align: left;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.tog b { font-size: 14px; }
+.tog small { color: var(--muted); font-size: 12px; }
+.tog[aria-pressed="true"] { border-style: solid; border-color: var(--leaf); background: var(--leaf-soft); }
+.tog[aria-pressed="true"] b { color: var(--leaf); }
+.win { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.win input[type=time] { min-height: 42px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 15px; }
+.win .to { color: var(--muted); font-size: 13px; }
+
+/* month calendar */
+.cal-nav { display: flex; align-items: center; gap: 8px; }
+.cal-nav h3 { flex: 1; margin: 0; font: 700 20px/1.2 var(--f-display); }
+.month { padding: 10px; }
+.wk { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.wk.head span { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 4px 0 6px; }
+.wk.head span.we { color: var(--fg); }
+.dc {
+  position: relative; min-height: 64px; border-radius: 10px; border: 1px solid transparent;
+  padding: 5px 5px 6px; display: flex; flex-direction: column; justify-content: space-between;
+  background: transparent; text-align: left; color: var(--muted); font: inherit;
+}
+.dc .n { font: 700 15px/1 var(--f-body); font-variant-numeric: tabular-nums; }
+.dc.out { visibility: hidden; }
+.dc.past, .dc.wkday { opacity: .45; cursor: default; }
+.dc.closed { background: var(--surface-2); color: var(--muted); border-color: var(--line); cursor: pointer; }
+.dc.open { background: var(--leaf-soft); border-color: color-mix(in srgb, var(--leaf) 45%, transparent); color: var(--leaf); cursor: pointer; }
+.dc.booked { background: var(--chili-soft); border-color: color-mix(in srgb, var(--chili) 50%, transparent); color: var(--chili-ink); cursor: pointer; }
+.dc.today { box-shadow: inset 0 0 0 2px var(--fg); }
+.dc.sel { outline: 2px solid var(--leaf); outline-offset: 1px; }
+.dc .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 2px; }
+.dc .bot { display: flex; justify-content: space-between; align-items: flex-end; gap: 2px; min-height: 16px; }
+.dc .offer { display: flex; gap: 3px; flex-wrap: wrap; }
+.dc .offer i { width: 7px; height: 7px; border-radius: 50%; display: block; }
+.o-p { background: var(--leaf); } .o-d { background: var(--info); } .o-l { background: var(--turmeric); }
+.dc .cnt {
+  min-width: 16px; height: 16px; border-radius: 8px; padding: 0 4px; flex: none;
+  background: var(--chili); color: #fff; font-size: 10.5px; font-weight: 700; line-height: 16px; text-align: center;
+}
+.dc .pend { width: 9px; height: 9px; border-radius: 50%; background: var(--turmeric); flex: none; margin-top: 2px; }
+@media (min-width: 620px) { .dc { min-height: 84px; padding: 8px; } .dc .n { font-size: 17px; } .dc .offer i { width: 8px; height: 8px; } }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); padding: 2px 4px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 1px solid var(--line); }
+.sw.g { background: var(--leaf-soft); border-color: var(--leaf); } .sw.r { background: var(--chili-soft); border-color: var(--chili); }
+.sw.c { background: var(--surface-2); } .sw.x { background: transparent; opacity: .5; }
+.legend .dt { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.agenda .li { cursor: pointer; }
+.agenda .cal { width: 46px; }
+.day-orders { display: flex; flex-direction: column; gap: 8px; }
+.sheet .day-body { border-top: 0; padding: 0; }
+
+/* sheet (in-page dialog) */
+.scrim { position: fixed; inset: 0; background: rgba(10,16,12,.45); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+.sheet {
+  background: var(--surface); width: 100%; max-width: 620px; max-height: 92%; border-radius: 20px 20px 0 0;
+  display: flex; flex-direction: column; box-shadow: 0 -10px 40px rgba(0,0,0,.2);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (min-width: 700px) { .scrim { align-items: center; } .sheet { border-radius: 20px; max-height: 86%; } }
+.sheet-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px 10px; border-bottom: 1px solid var(--line); }
+.sheet-head h3 { margin: 0; font: 700 19px/1.2 var(--f-display); flex: 1; min-width: 0; }
+.sheet-body { padding: 16px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.sheet-foot { padding: 12px 18px 16px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.sheet-foot .left { margin-right: auto; }
+
+/* save bar & toast */
+.savebar {
+  position: fixed; left: 0; right: 0; bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px)); z-index: 25;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  display: flex; justify-content: center;
+}
+.savebar .in { width: 100%; max-width: 728px; background: var(--fg); color: var(--bg); border-radius: 14px; padding: 10px 10px 10px 16px; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.savebar .in span { flex: 1; font-weight: 600; font-size: 14px; }
+.savebar .btn.ghost { color: var(--bg); }
+@media (min-width: 900px) { .savebar { left: 92px; bottom: 0; } }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tab-h) + 80px + env(safe-area-inset-bottom, 0px)); z-index: 50; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; max-width: calc(100% - 32px); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.toast.err { background: var(--bad); color: #fff; }
+
+/* charts */
+.bars { display: flex; align-items: flex-end; gap: 6px; height: 150px; padding-top: 8px; }
+.bars .b { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; height: 100%; justify-content: flex-end; }
+.bars .col { width: 100%; max-width: 44px; background: var(--leaf); border-radius: 6px 6px 2px 2px; min-height: 2px; }
+.bars .b.zero .col { background: var(--line); }
+.bars .v { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bars .l { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.hbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; font-size: 14px; }
+.hbar .track { grid-column: 1 / -1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+.hbar .track i { display: block; height: 100%; background: var(--leaf); border-radius: 4px; }
+.hbar .track.t i { background: var(--turmeric); }
+
+.empty { text-align: center; color: var(--muted); padding: 28px 16px; }
+.empty b { display: block; color: var(--fg); font-size: 16px; margin-bottom: 4px; }
+.danger-zone { border-color: var(--bad-soft); }
+.danger-zone h3 { color: var(--bad); margin: 0 0 4px; font-size: 16px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"></div>
+      <div style="min-width:0">
+        <h1>FTR Chef's Kitchen</h1>
+        <small>Franklin Tiffin Room admin</small>
+      </div>
+    </div>
+    <div class="top-actions">
+    <a class="icon-btn" id="setupBtn" href="#setup" aria-label="Setup">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </a>
+    <button class="icon-btn" data-act="logout" aria-label="Log out" title="Log out">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+    </button>
+    </div>
+  </header>
+  <div class="preview-banner" id="previewBanner" hidden>Preview with sample data. Nothing you change here is saved or sent to the bot.</div>
+  <main id="view" aria-live="polite"></main>
+  <nav class="tabs" aria-label="Sections">
+    <a href="#today" data-tab="today"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Today</a>
+    <a href="#orders" data-tab="orders"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Orders<span class="dot" id="waitDot" hidden></span></a>
+    <a href="#calendar" data-tab="calendar"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Chef days</a>
+    <a href="#menu" data-tab="menu"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M5 13h14M12 3v3"/></svg>Menu</a>
+    <a href="#customers" data-tab="customers"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg>Customers</a>
+    <a href="#reports" data-tab="reports"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Reports</a>
+  </nav>
+</div>
+<div id="saveBar" class="savebar" hidden>
+  <div class="in"><span id="saveMsg">Unsaved changes</span>
+    <button class="btn ghost sm" id="discardBtn">Discard</button>
+    <button class="btn primary sm" id="saveBtn">Save changes</button>
+  </div>
+</div>
+<div id="sheetRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+(function () {
+"use strict";
+
+// ---------------------------------------------------------------- data
+const DEMO_MENU = {
+  "settings": {
+    "businessName": "Franklin Tiffin Room",
+    "tagline": "your home-style cooking chef",
+    "minOrderSubtotal": 0,
+    "maxOrderQtyPerItem": 4,
+    "phoneDisplay": "1-234-FTR-DOSE (387-3673)"
+  },
+  "availability": {
+    "slotLengthMinutes": 180,
+    "dates": [
+      {
+        "date": "2026-08-15",
+        "catering": null,
+        "liveDose": {
+          "start": "11:00",
+          "end": "14:00"
+        }
+      },
+      {
+        "date": "2026-08-16",
+        "catering": {
+          "start": "10:00",
+          "end": "18:00"
+        },
+        "liveDose": {
+          "start": "11:00",
+          "end": "14:00"
+        }
+      },
+      {
+        "date": "2026-08-22",
+        "catering": null,
+        "liveDose": {
+          "start": "18:00",
+          "end": "21:00"
+        }
+      },
+      {
+        "date": "2026-08-23",
+        "catering": {
+          "start": "10:00",
+          "end": "18:00"
+        },
+        "liveDose": null
+      }
+    ]
+  },
+  "categories": [
+    {
+      "id": "south-indian-catering",
+      "title": "South Indian Catering",
+      "rowTitle": "Catering Menu",
+      "rowDescription": "South Indian - authentic Hoysala Karnataka style vegetarian delicacies catering menu",
+      "items": [
+        {
+          "id": "bisi-bele-bhath",
+          "title": "Bisi Bele Bhath",
+          "description": "Bisi bele bath is a famous, spicy rice dish from Karnataka (originated in Mysore Palace kitchen), India, made by cooking rice, toor dal (pigeon pea lentils), mixed vegetables, and tamarind together with a special aromatic spice blend.",
+          "price": 170,
+          "size": "Large",
+          "servesMin": 40,
+          "servesMax": 45,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "mosaranna",
+          "title": "Mosaranna",
+          "description": "Mosaranna is a traditional South Indian comfort food made of soft-cooked mashed rice mixed with fresh yogurt and a fragrant oil tempering.",
+          "price": 120,
+          "size": "Large",
+          "servesMin": 50,
+          "servesMax": 55,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "vangi-bhath",
+          "title": "Vangi Bhath",
+          "description": "Vangi Bath (or Vangi Bhath) is a popular South Indian spiced rice dish. The name translates to \"brinjal\" (eggplant) and \"rice\". It features cooked rice tossed with tender sauteed eggplants and a special, aromatic blend of roasted lentils, coconut, and spices.",
+          "price": 150,
+          "size": "Large",
+          "servesMin": 40,
+          "servesMax": 45,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "saaru",
+          "title": "Saaru",
+          "description": "Saaru is a traditional, watery South Indian soup-like dish also known as rasam, characterized by a sharp balance of spicy, sour, and tangy flavors. It is made with a liquid base of tamarind, tomatoes, and a spice blend called saaru pudi.",
+          "price": 100,
+          "size": "10 quarts",
+          "servesMin": 50,
+          "servesMax": 60,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "majjige-huli",
+          "title": "Majjige HuLi",
+          "description": "Majjige huli is a traditional Karnataka-style, yogurt-based South Indian vegetarian curry made with buttermilk, coconut, and tender vegetables.",
+          "price": 125,
+          "size": "10 quarts",
+          "servesMin": 50,
+          "servesMax": 60,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "maddur-vade",
+          "title": "Maddur Vade",
+          "description": "Maddur vade is a savory, crunchy deep-fried fritter made with rice flour, semolina (rava), and all-purpose flour (maida). It originates from the town of Maddur in Karnataka, India, and features a textured, cracked outer crust with a soft center.",
+          "price": 100,
+          "size": "50 pcs",
+          "servesMin": 50,
+          "servesMax": 1,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "palya",
+          "title": "Palya",
+          "description": "Palya is a classic South Indian dry vegetable stir-fry, typically featuring chopped vegetables, a spiced oil tempering, and fresh coconut. PRICE DEPENDS ON SEASONALLY AVAILABLE VEGETABLES AND CHOICE OF VEGETABLES",
+          "price": 120,
+          "size": "Large",
+          "servesMin": 50,
+          "servesMax": 60,
+          "minQty": 1,
+          "requiresNote": true,
+          "notePrompt": "Which vegetable would you like for the Palya? (e.g. beans, cabbage, carrot)",
+          "maxQty": null
+        },
+        {
+          "id": "kosambari",
+          "title": "Kosambari",
+          "description": "Kosambari is a traditional South Indian raw salad made from soaked split pulses, fresh vegetables, and a light tempering.",
+          "price": 80,
+          "size": "Large",
+          "servesMin": 60,
+          "servesMax": 70,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "huggi-w-hunse-gojju",
+          "title": "Huggi w/huNse gojju",
+          "description": "Huggi is a traditional comfort food from Karnataka. Khara Huggi (a savory rice and lentil dish similar to pongal or khichdi)",
+          "price": 150,
+          "size": "Large",
+          "servesMin": 40,
+          "servesMax": 50,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "bajji-pakoda",
+          "title": "Bajji / pakoda",
+          "description": "125 - 150 pieces of mix - bell pepper, herekai, alugadde, zucchini, onion.",
+          "price": 100,
+          "size": "Large",
+          "servesMin": 1,
+          "servesMax": 1,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "huli",
+          "title": "Huli",
+          "description": "Huli is a traditional, comforting lentil and vegetable stew from Karnataka characterized by its tangy, spiced flavor profile. It relies on a blend of cooked lentils, fresh vegetables, tamarind for sourness, and a ground coconut spice paste.",
+          "price": 130,
+          "size": "10 Quarts",
+          "servesMin": 50,
+          "servesMax": 55,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "payasa",
+          "title": "Payasa",
+          "description": "Payasa (or Payasam) is a traditional and creamy South Indian sweet pudding or kheer from Karnataka, made with a base of milk or coconut milk, sweetened with sugar or jaggery, and flavored with cardamom, cashews, and grapes.",
+          "price": 100,
+          "size": "Medium",
+          "servesMin": 50,
+          "servesMax": 55,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "sweet-huggi",
+          "title": "Sweet Huggi",
+          "description": "Sweet huggi (also known as sihi huggi or hugge) is a traditional South Indian comfort dessert from Karnataka made with rice or broken wheat, moong dal, jaggery, and ghee.",
+          "price": 100,
+          "size": "Half",
+          "servesMin": 40,
+          "servesMax": 50,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "jamoon",
+          "title": "Jamoon",
+          "description": "DRY or WET - Gulab jamoon (or gulab jamun) is a famous sweet ball made from milk and soaked in sugar syrup. It is soft, very sweet, and has a rich smell of cardamom and rose water.",
+          "price": 100,
+          "size": "50 pcs",
+          "servesMin": 50,
+          "servesMax": 50,
+          "minQty": 1,
+          "maxQty": null
+        },
+        {
+          "id": "ambode",
+          "title": "Ambode",
+          "description": "Ambode is a traditional Karnataka-style crispy lentil fritter made primarily with coarse chana dal, fresh dill leaves, and aromatic spices.",
+          "price": 100,
+          "size": "100 pcs",
+          "servesMin": 50,
+          "servesMax": 100,
+          "minQty": 1,
+          "maxQty": null
+        }
+      ]
+    },
+    {
+      "id": "live-dose-station",
+      "title": "LIVE Dose Station",
+      "rowTitle": "LIVE Dose Station",
+      "rowDescription": "Made-to-order Mysore Masale Dose and Onion Dose, cooked live at your event",
+      "type": "live-dose-station",
+      "items": [],
+      "liveDoseStation": {
+        "setupFee": 250,
+        "pricePerHundred": 1000,
+        "minTotal": 100,
+        "maxTotal": 200,
+        "increment": 50,
+        "mdTitle": "Mysore Masale Dose",
+        "mdDescription": "Crispy Mysore Masale Dose (MD) cooked live, served with red garlic chutney, potato masale, and green chutney.",
+        "odTitle": "Onion Dose",
+        "odDescription": "Crispy Onion Dose (OD) cooked live from the same station.",
+        "setupMinutes": 30,
+        "closeoutMinutes": 30,
+        "delayFeePerHour": 200,
+        "servingMinutesByTotal": {
+          "100": 75,
+          "150": 90,
+          "200": 120
+        }
+      }
+    }
+  ]
+};
+const BOOKING_DAYS = 60;
+const TZ = "America/New_York";
+
+const S = {
+  mode: "loading",     // "live" | "demo"
+  menu: null,          // working copy being edited
+  saved: null,         // last saved copy (JSON string) for discard / dirty check
+  orders: [],
+  view: "today",
+  filters: { status: "all", q: "" },
+  calMonth: null,
+  sheetDay: null,
+  reportRange: "30",
+  busy: false
+};
+
+const $ = (sel, el) => (el || document).querySelector(sel);
+const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = (n, cents) => "$" + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: cents ? 2 : 0 });
+const clone = (o) => JSON.parse(JSON.stringify(o));
+
+function todayISO() { return new Date().toLocaleDateString("en-CA", { timeZone: TZ }); }
+function addDays(iso, n) { const [y, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); }
+function dow(iso) { const [y, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)).getUTCDay(); }
+function dateParts(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return {
+    wd: dt.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }),
+    mon: dt.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }),
+    day: d,
+    long: dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })
+  };
+}
+function t12(t) {
+  if (!t) return "";
+  const [h, m] = t.split(":").map(Number);
+  return (h % 12 || 12) + (m ? ":" + String(m).padStart(2, "0") : "") + (h >= 12 ? " PM" : " AM");
+}
+function winLabel(w) { return t12(w.start) + "–" + t12(w.end); }
+function when(iso) { return iso ? new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: TZ }) : ""; }
+
+function normalizeDate(e) {
+  const list = (v) => (Array.isArray(v) ? v : v ? [v] : []).filter((w) => w && (w.start || w.end));
+  e.pickupAM = !!e.pickupAM; e.pickupPM = !!e.pickupPM;
+  e.catering = list(e.catering); e.liveDose = list(e.liveDose);
+  return e;
+}
+function ensureShape(menu) {
+  menu.settings = menu.settings || {};
+  menu.settings.delivery = menu.settings.delivery || {};
+  menu.settings.halfTrays = menu.settings.halfTrays === true;
+  menu.settings.cateringPickupOnly = menu.settings.cateringPickupOnly !== false;
+  if (!menu.settings.shortName) menu.settings.shortName = "FTR";
+  if (menu.settings.minOrderHalfTray == null) menu.settings.minOrderHalfTray = 0;
+  if (!menu.settings.halfTrayPercent) menu.settings.halfTrayPercent = 65;
+  menu.settings.payment = Object.assign({ zelleTo: "", zelleName: "", depositPercent: 50, deadlineHours: 24, cateringHoursBefore: 48, ldsDaysBefore: 3, ldsTime: "10:00" }, menu.settings.payment || {});
+  menu.settings.payment.enabled = menu.settings.payment.enabled === true;
+  menu.availability = menu.availability || {};
+  menu.availability.dates = (menu.availability.dates || []).map(normalizeDate);
+  menu.availability.pickupTimes = menu.availability.pickupTimes || { am: "11:30", pm: "18:00" };
+  if (!menu.availability.slotLengthMinutes) menu.availability.slotLengthMinutes = 180;
+  menu.categories = menu.categories || [];
+  return menu;
+}
+function isOpen(e) { return e && (e.pickupAM || e.pickupPM || e.catering.length || e.liveDose.length); }
+function ldsCat() { return S.menu.categories.find((c) => c.type === "live-dose-station"); }
+
+// ---------------------------------------------------------------- demo data
+function demoWeekends(from, count, step) {
+  const out = [];
+  for (let i = from; out.length < count && Math.abs(i) < 200; i += step) { const d = addDays(todayISO(), i); if (dow(d) === 0 || dow(d) === 6) out.push(d); }
+  return out;
+}
+function demoMenu() {
+  const m = ensureShape(clone(DEMO_MENU || { settings: {}, categories: [], availability: {} }));
+  const weekends = demoWeekends(1, 6, 1);
+  m.availability.dates = [
+    { date: weekends[0], pickupAM: true, pickupPM: true, catering: [{ start: "12:00", end: "15:00" }], liveDose: [] },
+    { date: weekends[1], pickupAM: false, pickupPM: true, catering: [], liveDose: [{ start: "11:00", end: "14:00" }] },
+    { date: weekends[2], pickupAM: true, pickupPM: false, catering: [{ start: "12:00", end: "15:00" }, { start: "18:00", end: "21:00" }], liveDose: [{ start: "18:00", end: "21:00" }] },
+    { date: weekends[4], pickupAM: true, pickupPM: true, catering: [], liveDose: [] }
+  ].map(normalizeDate);
+  m.settings.delivery = { kitchenAddress: "4 Garden Hills Dr, Somerset, NJ 08873", kitchenLat: 40.4621, kitchenLon: -74.5144, maxMiles: 15, ldsMaxMiles: 40 };
+  const lds = m.categories.find((c) => c.type === "live-dose-station");
+  if (lds && lds.liveDoseStation) Object.assign(lds.liveDoseStation, { travelFreeMiles: 20, travelFeePerBlock: 50, travelBlockMiles: 10 });
+  return m;
+}
+function demoOrders() {
+  const now = Date.now(), H = 3600e3, D = 24 * H;
+  const iso = (ms) => new Date(ms).toISOString();
+  const ahead = demoWeekends(1, 6, 1), back = demoWeekends(-1, 6, -1);
+  const lab = (d) => { const p = dateParts(d); return p.wd + ", " + p.mon + " " + p.day; };
+  return [
+    { orderId: "FTR-DEMO7", customerName: "Ananya Rao", customerPhone: "17325550142", cart: [{ qty: 2, title: "Bisi Bele Bhath", price: 170 }, { qty: 1, title: "Palya", price: 120, note: "Beans palya" }, { qty: 1, title: "Payasa", price: 100 }], subtotal: 560, fulfillment: "delivery", address: "18 Brookside Ln, Bridgewater, NJ 08807", distanceMiles: 6.4, addressVerified: true, eventDate: ahead[0], requestedTime: lab(ahead[0]) + ", 12:00 PM - 3:00 PM", status: "Pending Approval", pending: true, createdAt: iso(now - 2 * H) },
+    { orderId: "CUST-DEMO6", type: "custom", customerName: "Vikram Shetty", customerPhone: "19085550188", request: "Masale dose breakfast for 30 people at our office, Nov 22, 9 AM pickup", cart: [], subtotal: 0, fulfillment: "custom", status: "Custom - Awaiting Quote", pending: true, createdAt: iso(now - 5 * H) },
+    { orderId: "FTR-DEMO5", customerName: "Meera Iyer", customerPhone: "17325550163", cart: [{ isLiveDoseStation: true, title: "LIVE Dose Station", mdQty: 100, odQty: 50, setupFee: 250, travelFee: 50, travelMiles: 27.3, qty: 1, price: 1800 }], subtotal: 1800, fulfillment: "delivery", address: "220 Main St, Metuchen, NJ 08840", distanceMiles: 27.3, addressVerified: true, eventDate: ahead[2], requestedTime: lab(ahead[2]) + ", crew arrival 6:00 PM - wrap-up 8:30 PM", status: "Confirmed", pending: false, payment: { state: "paid", depositDue: 900, balance: 900, confirmationCode: "BAC7Q2LM9X", paidAt: iso(now - 20 * H) }, createdAt: iso(now - 1 * D) },
+    { orderId: "FTR-DEMO9", customerName: "Kiran Bhat", customerPhone: "17325550191", cart: [{ qty: 2, title: "Maddur Vade", price: 100 }, { qty: 1, title: "Bisi Bele Bhath", price: 170 }], subtotal: 370, fulfillment: "pickup", eventDate: ahead[1], requestedTime: lab(ahead[1]) + ", pickup by 6:00 PM (dinner)", status: "Deposit Under Review", pending: false, payment: { state: "review", depositDue: 185, balance: 185, deadline: iso(now + 20 * H), proofs: [{ code: "BAC9K4TR2P", issues: [], notes: ["amount $185.00 matches", "recipient matches"] }] }, createdAt: iso(now - 4 * H) },
+    { orderId: "FTR-DEMO8", customerName: "Sowmya Hegde", customerPhone: "19085550124", cart: [{ qty: 1, title: "Vangi Bhath", price: 150 }, { qty: 1, title: "Payasa", price: 100 }], subtotal: 250, fulfillment: "pickup", eventDate: ahead[0], requestedTime: lab(ahead[0]) + ", pickup by 11:30 AM (lunch)", status: "Awaiting Deposit", pending: false, payment: { state: "awaiting", depositDue: 125, balance: 125, deadline: iso(now + 9 * H), proofs: [] }, createdAt: iso(now - 15 * H) },
+    { orderId: "FTR-DEMO4", customerName: "Ananya Rao", customerPhone: "17325550142", cart: [{ qty: 1, title: "Mosaranna", price: 120 }, { qty: 2, title: "Maddur Vade", price: 100 }], subtotal: 320, fulfillment: "pickup", eventDate: ahead[0], requestedTime: lab(ahead[0]) + ", pickup by 11:30 AM (lunch)", status: "Confirmed", pending: false, createdAt: iso(now - 3 * D) },
+    { orderId: "FTR-DEMO3", customerName: "Rahul Kulkarni", customerPhone: "16095550110", cart: [{ qty: 3, title: "Bisi Bele Bhath", price: 170 }, { qty: 2, title: "Kosambari", price: 80 }], subtotal: 670, fulfillment: "pickup", eventDate: back[1], requestedTime: lab(back[1]) + ", pickup by 6:00 PM (dinner)", status: "Confirmed", pending: false, createdAt: iso(now - 9 * D) },
+    { orderId: "FTR-DEMO2", customerName: "Priya Natarajan", customerPhone: "17325550177", cart: [{ qty: 1, title: "Vangi Bhath", price: 150 }], subtotal: 150, fulfillment: "delivery", address: "1500 Market St, Philadelphia, PA 19102", distanceMiles: 51.9, addressVerified: true, eventDate: back[3], requestedTime: lab(back[3]) + ", 12:00 PM - 3:00 PM", status: "Declined", pending: false, createdAt: iso(now - 16 * D) },
+    { orderId: "FTR-DEMO1", customerName: "Rahul Kulkarni", customerPhone: "16095550110", cart: [{ qty: 2, title: "Huli", price: 130 }, { qty: 2, title: "Jamoon", price: 100 }, { qty: 1, title: "Ambode", price: 100 }], subtotal: 560, fulfillment: "pickup", eventDate: back[5], requestedTime: lab(back[5]) + ", pickup by 11:30 AM (lunch)", status: "Confirmed", pending: false, createdAt: iso(now - 24 * D) }
+  ];
+}
+
+// ---------------------------------------------------------------- server calls
+async function api(method, url, body) {
+  const res = await fetch(url, {
+    method, credentials: "same-origin",
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || ("Request failed (" + res.status + ")"));
+  try { return JSON.parse(text); } catch (e) { throw new Error("Unexpected reply from the server"); }
+}
+
+async function boot() {
+  try {
+    const menu = await api("GET", "/admin/api/menu");
+    if (!menu || !Array.isArray(menu.categories)) throw new Error("no menu");
+    S.mode = "live";
+    S.menu = ensureShape(menu);
+    S.orders = await api("GET", "/admin/api/orders").catch(() => []);
+    S.qr = await api("GET", "/admin/api/zelle-qr").catch(() => null);
+    S.rangeReqs = await api("GET", "/admin/api/range-requests").catch(() => []);
+    S.customers = await api("GET", "/admin/api/customers").catch(() => []);
+  } catch (e) {
+    S.mode = "demo";
+    S.menu = demoMenu();
+    S.orders = demoOrders();
+    S.customers = demoCustomers();
+    S.rangeReqs = [{ phone: "12155550147", name: "Deepa Murthy", address: "1200 Delaware Ave, Wilmington, DE 19806", miles: 54.2, limit: 40, eventDate: demoWeekends(8, 1, 1)[0], plates: 150 }];
+    $("#previewBanner").hidden = false;
+  }
+  S.saved = canon(S.menu);
+  if (location.pathname.replace(/\/$/, "").endsWith("/admin/orders") && !location.hash) S.view = "orders";
+  route();
+  if (S.mode === "live") setInterval(refreshOrders, 60000);
+}
+
+async function refreshOrders() {
+  if (S.mode !== "live") return;
+  try { S.orders = await api("GET", "/admin/api/orders"); S.rangeReqs = await api("GET", "/admin/api/range-requests").catch(() => S.rangeReqs); S.customers = await api("GET", "/admin/api/customers").catch(() => S.customers); if (S.view === "orders" || S.view === "today" || S.view === "customers") render(); else updateDot(); } catch (e) {}
+}
+
+// ---------------------------------------------------------------- dirty / save
+// Compare menus ignoring days that were opened and closed again.
+function canon(menu) { const c = clone(menu); pruneDates(c); return JSON.stringify(c); }
+function isDirty() { return !!S.menu && canon(S.menu) !== S.saved; }
+function markDirty() {
+  const dirty = isDirty();
+  $("#saveBar").hidden = !dirty;
+  $("#saveMsg").textContent = "Unsaved changes";
+}
+function pruneDates(menu) {
+  menu.availability.dates = menu.availability.dates.filter(isOpen).sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+async function save() {
+  if (S.busy) return;
+  const out = clone(S.menu);
+  pruneDates(out);
+  S.busy = true; $("#saveBtn").disabled = true; $("#saveMsg").textContent = "Saving…";
+  try {
+    if (S.mode === "live") {
+      S.menu = ensureShape(await api("PUT", "/admin/api/menu", out));
+    } else {
+      S.menu = ensureShape(out);
+    }
+    S.saved = canon(S.menu);
+    toast(S.mode === "live" ? "Saved. The bot uses it from the next message." : "Saved in this preview only");
+    render();
+  } catch (e) {
+    toast(e.message, true);
+    $("#saveMsg").textContent = "Not saved";
+  } finally {
+    S.busy = false; $("#saveBtn").disabled = false; markDirty();
+  }
+}
+function discard() { S.menu = ensureShape(JSON.parse(S.saved)); render(); toast("Changes discarded"); }
+
+let toastTimer = null;
+function toast(msg, err) {
+  const r = $("#toastRoot");
+  r.innerHTML = '<div class="toast' + (err ? " err" : "") + '" role="status">' + esc(msg) + "</div>";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { r.innerHTML = ""; }, err ? 6000 : 2600);
+}
+
+// ---------------------------------------------------------------- sheet
+let sheetOnClose = null;
+function openSheet({ title, body, foot, onMount, onClose }) {
+  const root = $("#sheetRoot");
+  root.innerHTML =
+    '<div class="scrim" data-scrim>' +
+      '<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">' +
+        '<div class="sheet-head"><h3 id="sheetTitle">' + esc(title) + '</h3>' +
+          '<button class="icon-btn" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+        '<div class="sheet-body">' + body + "</div>" +
+        (foot ? '<div class="sheet-foot">' + foot + "</div>" : "") +
+      "</div></div>";
+  sheetOnClose = onClose || null;
+  const scrim = root.firstChild;
+  scrim.addEventListener("click", (e) => { if (e.target === scrim || e.target.closest("[data-close]")) closeSheet(); });
+  if (onMount) onMount(scrim.querySelector(".sheet"));
+  const first = scrim.querySelector("input, textarea, select");
+  if (first && window.innerWidth > 700) first.focus();
+}
+function closeSheet() { $("#sheetRoot").innerHTML = ""; if (sheetOnClose) { const f = sheetOnClose; sheetOnClose = null; f(); } }
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("#sheetRoot").firstChild) closeSheet(); });
+
+function confirmSheet({ title, text, confirmLabel, danger, typeWord, onConfirm }) {
+  openSheet({
+    title,
+    body: "<p style=\"margin:0\">" + text + "</p>" +
+      (typeWord ? '<label class="field"><span>Type ' + esc(typeWord) + ' to confirm</span><input id="confirmWord" autocomplete="off" autocapitalize="characters" /></label>' : ""),
+    foot: '<button class="btn" data-close>Cancel</button><button class="btn ' + (danger ? "danger solid" : "primary") + '" id="confirmGo"' + (typeWord ? " disabled" : "") + ">" + esc(confirmLabel) + "</button>",
+    onMount: (el) => {
+      const go = el.querySelector("#confirmGo");
+      if (typeWord) el.querySelector("#confirmWord").addEventListener("input", (e) => { go.disabled = e.target.value.trim() !== typeWord; });
+      go.addEventListener("click", async () => { go.disabled = true; await onConfirm(); closeSheet(); });
+    }
+  });
+}
+
+// ---------------------------------------------------------------- routing
+const VIEWS = { today: viewToday, orders: viewOrders, calendar: viewCalendar, menu: viewMenu, customers: viewCustomers, reports: viewReports, setup: viewSetup };
+function route() {
+  const h = location.hash.replace("#", "");
+  if (VIEWS[h]) S.view = h;
+  render();
+}
+window.addEventListener("hashchange", () => { route(); window.scrollTo(0, 0); });
+
+function updateDot() {
+  const n = S.orders.filter((o) => o.pending).length;
+  const dot = $("#waitDot");
+  dot.hidden = !n; dot.textContent = n;
+}
+function render() {
+  document.querySelectorAll("nav.tabs a").forEach((a) => a.setAttribute("aria-current", a.dataset.tab === S.view ? "page" : "false"));
+  $("#setupBtn").setAttribute("aria-current", S.view === "setup" ? "page" : "false");
+  updateDot();
+  $("#view").innerHTML = VIEWS[S.view]();
+  markDirty();
+}
+
+// ---------------------------------------------------------------- shared bits
+function statusPill(o) {
+  const st = o.status || "Pending";
+  let cls = "p-wait";
+  if (st === "Confirmed") cls = "p-good";
+  else if (/declined/i.test(st)) cls = "p-bad";
+  else if (/^released/i.test(st)) cls = "p-off";
+  else if (/under review/i.test(st)) return '<span class="pill p-info">Check deposit</span>';
+  else if (/awaiting deposit/i.test(st)) return '<span class="pill p-wait">Deposit due</span>';
+  else if (/quote sent/i.test(st)) cls = "p-info";
+  return '<span class="pill ' + cls + '">' + esc(o.pending && !/quote sent/i.test(st) ? "Waiting on you" : st) + "</span>";
+}
+function lineHTML(l) {
+  const note = l.note ? ' <span class="note">– ' + esc(l.note) + "</span>" : "";
+  if (l.isLiveDoseStation) {
+    const parts = [];
+    if (l.mdQty) parts.push(l.mdQty + " Mysore Masale Dose");
+    if (l.odQty) parts.push(l.odQty + " Onion Dose");
+    return "<div>LIVE Dose Station: " + esc(parts.join(" + ")) + (l.travelFee ? ' <span class="muted">(incl. ' + money(l.travelFee) + " travel)</span>" : "") + note + "</div>";
+  }
+  const q = Number(l.qty), qs = Number.isInteger(q) ? String(q) : (Math.floor(q) || "") + "½";
+  return "<div>" + esc(qs) + " × " + esc(l.title) + (Number.isInteger(q) ? "" : ' <span class="muted">(half tray)</span>') + ' <span class="muted num">' + money(l.qty * l.price) + "</span>" + note + "</div>";
+}
+function depositHTML(p) {
+  const code = p.confirmationCode || ((p.proofs || []).map((x) => x.code).filter(Boolean).slice(-1)[0]);
+  const amt = '<span class="num">' + money(p.depositDue, true) + "</span>";
+  if (p.state === "paid") return amt + " paid" + (code ? ' <span class="muted num">Zelle ' + esc(code) + "</span>" : "") + (p.balance > 0 ? ' · <span class="muted">balance <span class="num">' + money(p.balance, true) + "</span></span>" : "");
+  if (p.state === "review") {
+    const last = (p.proofs || []).slice(-1)[0] || {};
+    return amt + " – screenshot in, tap <b>Payment received</b> on WhatsApp once it's in your bank" + (code ? ' <span class="muted num">(' + esc(code) + ")</span>" : "") +
+      ((last.issues || []).length ? '<div class="note">Check: ' + esc(last.issues.join("; ")) + "</div>" : "");
+  }
+  if (p.state === "released") return amt + ' <span class="muted">not paid – released</span>';
+  return amt + " due by " + esc(new Date(p.deadline).toLocaleString("en-US", { timeZone: TZ, weekday: "short", hour: "numeric", minute: "2-digit" }));
+}
+function orderCard(o, compact) {
+  const items = o.type === "custom"
+    ? "<div>“" + esc(o.request) + "”</div>" + (o.quoteComment ? '<div class="note">Your note: ' + esc(o.quoteComment) + "</div>" : "")
+    : (o.cart || []).map(lineHTML).join("");
+  const kind = o.type === "custom" ? "Custom request" : (o.cart || []).some((l) => l.isLiveDoseStation) ? "LIVE Dose Station" : o.fulfillment === "delivery" ? "Catering delivery" : "Catering pickup";
+  const total = o.type === "custom" && !o.quoted ? '<span class="muted small">Not quoted yet</span>' : '<span class="o-total">' + money(o.subtotal, true) + "</span>";
+  const facts =
+    "<dt>Type</dt><dd>" + kind + "</dd>" +
+    (o.requestedTime ? "<dt>When</dt><dd>" + esc(o.requestedTime) + "</dd>" : "") +
+    (o.address ? "<dt>Address</dt><dd>" + esc(o.address) +
+      (o.distanceMiles != null ? ' <span class="muted num">~' + esc(o.distanceMiles) + " mi</span>" : "") +
+      (o.addressVerified === false ? ' <span class="pill p-wait">not verified</span>' : "") + "</dd>" : "") +
+    (o.payment ? "<dt>Deposit</dt><dd>" + depositHTML(o.payment) + "</dd>" : "");
+  return '<article class="card order' + (o.pending ? " wait" : "") + '">' +
+    '<div class="o-top"><div class="grow"><div class="o-name">' + esc(o.customerName || "Unknown name") + "</div>" +
+      '<div class="o-meta num">' + esc(o.orderId) + " · " + esc(when(o.createdAt)) + "</div></div>" + statusPill(o) + "</div>" +
+    '<div class="o-items">' + items + "</div>" +
+    (compact ? "" : '<dl class="o-facts">' + facts + "</dl>") +
+    decisionRow(o) +
+    '<div class="row" style="justify-content:space-between">' + total +
+      '<div class="o-actions">' +
+        (o.customerPhone ? '<a class="btn sm" href="https://wa.me/' + esc(o.customerPhone) + '" target="_blank" rel="noopener">WhatsApp</a>' : "") +
+        (compact ? "" : '<button class="btn sm danger" data-act="del-order" data-id="' + esc(o.orderId) + '">Delete</button>') +
+      "</div></div>" +
+  "</article>";
+}
+/** What Chef can decide on this order right now (same as the WhatsApp buttons). */
+function decisionRow(o) {
+  const b = (act, label, cls) => '<button class="btn sm ' + (cls || "") + '" data-act="decide" data-do="' + act + '" data-id="' + esc(o.orderId) + '">' + label + "</button>";
+  const p = o.payment;
+  if (o.pending && o.type !== "custom" && /pending approval/i.test(o.status || "")) {
+    return '<div class="row decide">' + b("approve", "Approve", "primary") + b("decline", "Decline", "danger") +
+      '<span class="small muted">Need to change the price? Use Edit price on the WhatsApp card.</span></div>';
+  }
+  if (o.pending && o.type === "custom" && !o.quoted) return '<div class="row decide">' + b("quote", "Send quote", "primary") + b("cdecline", "Decline", "danger") + "</div>";
+  if (p && (p.state === "awaiting" || p.state === "review")) {
+    return '<div class="row decide">' + b("paid", "Payment received", "primary") + b("unpaid", "Not received") +
+      '<span class="small muted">' + (p.state === "review" ? "Check your bank app first." : "No screenshot yet - only mark it if you see the money.") + "</span></div>";
+  }
+  return "";
+}
+
+function upcomingOpenDays(limit) {
+  const t = todayISO();
+  return S.menu.availability.dates.filter((d) => d.date >= t && isOpen(d)).sort((a, b) => (a.date < b.date ? -1 : 1)).slice(0, limit || 99);
+}
+function daySummary(d) {
+  const pt = S.menu.availability.pickupTimes, out = [];
+  if (d.pickupAM) out.push('<span class="pill p-good">Lunch pickup ' + t12(pt.am) + "</span>");
+  if (d.pickupPM) out.push('<span class="pill p-good">Dinner pickup ' + t12(pt.pm) + "</span>");
+  d.catering.forEach((w) => out.push('<span class="pill p-info">Delivery ' + winLabel(w) + "</span>"));
+  d.liveDose.forEach((w) => out.push('<span class="pill p-wait">LIVE Dose ' + winLabel(w) + "</span>"));
+  return out.length ? out.join("") : '<span class="pill p-off">Closed</span>';
+}
+
+// ---------------------------------------------------------------- TODAY
+function rangeSection() {
+  const list = S.rangeReqs || [];
+  if (!list.length) return "";
+  return '<div class="h-sec">LIVE Dose outside your range</div><div class="stack">' + list.map((r) =>
+    '<article class="card order wait"><div class="o-top"><div class="grow"><div class="o-name">' + esc(r.name || r.phone) + '</div>' +
+      '<div class="o-meta num">' + esc(r.phone) + (r.eventDate ? " · " + esc(dateParts(r.eventDate).wd + ", " + dateParts(r.eventDate).mon + " " + dateParts(r.eventDate).day) : "") + (r.plates ? " · " + r.plates + " plates" : "") + '</div></div><span class="pill p-wait">Needs your OK</span></div>' +
+      '<div class="o-items"><div>' + esc(r.address) + '</div><div class="muted small num">About ' + esc(r.miles) + " miles away · your limit is " + esc(r.limit) + "</div></div>" +
+      '<div class="row" style="justify-content:flex-end;gap:8px">' +
+        '<a class="btn sm" href="https://wa.me/' + esc(r.phone) + '" target="_blank" rel="noopener">WhatsApp</a>' +
+        '<button class="btn sm danger" data-act="range" data-phone="' + esc(r.phone) + '" data-allow="0">Decline</button>' +
+        '<button class="btn sm primary" data-act="range" data-phone="' + esc(r.phone) + '" data-allow="1">Allow</button>' +
+      "</div></article>").join("") +
+    '<p class="small muted" style="margin:0">Allow lets them carry on with this address (the travel fee still applies). You can also answer from the WhatsApp message the bot sent you.</p></div>';
+}
+function viewToday() {
+  const waiting = S.orders.filter((o) => o.pending || (o.payment && o.payment.state === "review"));
+  const rangeCount = (S.rangeReqs || []).length;
+  const t = todayISO(), ym = t.slice(0, 7);
+  const confirmed = S.orders.filter((o) => o.status === "Confirmed");
+  const month = confirmed.filter((o) => (o.createdAt || "").slice(0, 7) === ym);
+  const next = upcomingOpenDays(3);
+  const hour = Number(new Date().toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: TZ }));
+  const hello = hour < 12 ? "Good morning, Chef" : hour < 17 ? "Good afternoon, Chef" : "Good evening, Chef";
+  return '<div><h2 class="h-page">' + hello + '</h2><p class="sub">' + esc(dateParts(t).long) + "</p></div>" +
+    '<div class="kpis four">' +
+      '<div class="card kpi' + (waiting.length + rangeCount ? " attn" : "") + '"><b>' + (waiting.length + rangeCount) + "</b><span>Waiting on you</span></div>" +
+      '<div class="card kpi"><b>' + money(month.reduce((s, o) => s + Number(o.subtotal || 0), 0)) + "</b><span>Confirmed this month</span></div>" +
+      '<div class="card kpi"><b>' + month.length + "</b><span>Orders this month</span></div>" +
+      '<div class="card kpi"><b>' + upcomingOpenDays().length + "</b><span>Open days ahead</span></div>" +
+    "</div>" +
+    '<div class="h-sec">Waiting on you' + (waiting.length ? '<a class="btn ghost sm" href="#orders">All orders</a>' : "") + "</div>" +
+    (waiting.length
+      ? '<div class="stack">' + waiting.slice(0, 4).map((o) => orderCard(o, true)).join("") + '<p class="small muted" style="margin:0">Approve or decline here, or from the WhatsApp card the bot sent you. Edit the price from WhatsApp.</p></div>'
+      : '<div class="card empty"><b>All caught up</b>New orders that need your approval show up here.</div>') +
+    rangeSection() +
+    '<div class="h-sec">Next chef days<a class="btn ghost sm" href="#calendar">Edit days</a></div>' +
+    (next.length
+      ? '<div class="card list">' + next.map((d) => {
+          const p = dateParts(d.date);
+          return '<a class="li" href="#calendar" data-act="goto-day" data-date="' + d.date + '" style="text-decoration:none;color:inherit">' +
+            '<div class="cal"><i>' + p.wd + "</i><b>" + p.day + "</b></div>" +
+            '<div class="grow"><div class="t">' + p.mon + " " + p.day + '</div><div class="day-sum">' + daySummary(d) + "</div></div>" +
+            '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></a>';
+        }).join("") + "</div>"
+      : '<div class="card empty"><b>No days open yet</b>Customers can\'t order until you open a weekend. <div style="margin-top:12px"><a class="btn primary" href="#calendar">Open a weekend</a></div></div>');
+}
+
+// ---------------------------------------------------------------- ORDERS
+const FILTERS = [
+  ["all", "All", () => true],
+  ["wait", "Waiting", (o) => o.pending],
+  ["dep", "Deposits", (o) => o.payment && (o.payment.state === "awaiting" || o.payment.state === "review")],
+  ["ok", "Confirmed", (o) => o.status === "Confirmed"],
+  ["no", "Declined", (o) => /declined/i.test(o.status || "")],
+  ["custom", "Custom", (o) => o.type === "custom"],
+  ["lds", "LIVE Dose", (o) => (o.cart || []).some((l) => l.isLiveDoseStation)]
+];
+function filteredOrders() {
+  const f = FILTERS.find((x) => x[0] === S.filters.status) || FILTERS[0];
+  const q = S.filters.q.trim().toLowerCase();
+  return S.orders.filter(f[2]).filter((o) => !q || [o.orderId, o.customerName, o.customerPhone, o.address, o.requestedTime, o.status, o.request, (o.cart || []).map((l) => l.title + " " + (l.note || "")).join(" ")].join(" ").toLowerCase().includes(q));
+}
+function viewOrders() {
+  const list = filteredOrders();
+  return '<div><h2 class="h-page">Orders</h2><p class="sub">Newest first. Saved on the server and copied to your Google Sheet.</p></div>' +
+    '<input class="search" id="orderSearch" type="search" placeholder="Search name, phone, dish, address, order ID" value="' + esc(S.filters.q) + '" />' +
+    '<div class="chips" role="group" aria-label="Filter orders">' + FILTERS.map((f) =>
+      '<button class="chip" data-act="filter" data-f="' + f[0] + '" aria-pressed="' + (S.filters.status === f[0]) + '">' + f[1] + '<span class="c num">' + S.orders.filter(f[2]).length + "</span></button>").join("") + "</div>" +
+    '<div class="stack" id="orderList">' + (list.length ? list.map((o) => orderCard(o)).join("") :
+      '<div class="card empty"><b>' + (S.orders.length ? "No orders match" : "No orders yet") + "</b>" + (S.orders.length ? "Try another filter or search." : "Orders placed on WhatsApp appear here.") + "</div>") + "</div>";
+}
+function renderOrderListOnly() {
+  const list = filteredOrders();
+  const el = $("#orderList");
+  if (el) el.innerHTML = list.length ? list.map((o) => orderCard(o)).join("") : '<div class="card empty"><b>No orders match</b>Try another filter or search.</div>';
+}
+
+// ---------------------------------------------------------------- CHEF DAYS
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+// Which calendar day an order is for: the saved event date, or (older
+// orders) the "Sat, Oct 31" at the start of its requested time.
+function orderDay(o) {
+  if (o.eventDate) return o.eventDate;
+  const m = /([A-Z][a-z]{2}) (\d{1,2})/.exec(o.requestedTime || "");
+  if (!m || MON.indexOf(m[1]) < 0) return null;
+  const base = new Date(o.createdAt || Date.now());
+  let best = null;
+  [-1, 0, 1].forEach((dy) => {
+    const y = base.getFullYear() + dy;
+    const iso = y + "-" + String(MON.indexOf(m[1]) + 1).padStart(2, "0") + "-" + String(m[2]).padStart(2, "0");
+    const diff = Math.abs(new Date(iso + "T12:00:00Z") - base);
+    if (!best || diff < best.diff) best = { iso, diff };
+  });
+  return best.iso;
+}
+function ordersByDay() {
+  const map = {};
+  S.orders.forEach((o) => {
+    if (/declined|released/i.test(o.status || "")) return;
+    const d = orderDay(o);
+    if (!d) return;
+    (map[d] = map[d] || []).push(o);
+  });
+  return map;
+}
+function entryFor(date, create) {
+  let e = S.menu.availability.dates.find((x) => x.date === date);
+  if (!e && create) { e = normalizeDate({ date }); S.menu.availability.dates.push(e); }
+  return e;
+}
+function monthKey(iso) { return iso.slice(0, 7); }
+function shiftMonth(key, n) { const [y, m] = key.split("-").map(Number); const d = new Date(Date.UTC(y, m - 1 + n, 1)); return d.toISOString().slice(0, 7); }
+function viewCalendar() {
+  const t = todayISO(), end = addDays(t, BOOKING_DAYS);
+  if (!S.calMonth) S.calMonth = monthKey(t);
+  const [y, m] = S.calMonth.split("-").map(Number);
+  const first = S.calMonth + "-01";
+  const daysIn = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const lead = dow(first);
+  const byDay = ordersByDay();
+  const minKey = monthKey(t), maxKey = shiftMonth(minKey, 3);
+  const cells = [];
+  for (let i = 0; i < lead; i++) cells.push('<div class="dc out" aria-hidden="true"></div>');
+  for (let d = 1; d <= daysIn; d++) {
+    const iso = S.calMonth + "-" + String(d).padStart(2, "0");
+    const weekend = dow(iso) === 0 || dow(iso) === 6;
+    const e = entryFor(iso);
+    const list = byDay[iso] || [];
+    const confirmed = list.filter((o) => o.status === "Confirmed").length;
+    const pending = list.filter((o) => o.pending).length;
+    let cls = "dc", state = "";
+    if (iso < t) { cls += " past"; state = "past"; }
+    else if (!weekend) { cls += " wkday"; state = "weekday, not bookable"; }
+    else if (confirmed) { cls += " booked"; state = "booked, " + confirmed + " confirmed"; }
+    else if (isOpen(e)) { cls += " open"; state = "open"; }
+    else { cls += " closed"; state = "closed"; }
+    if (iso === t) cls += " today";
+    const offers = e ? (e.pickupAM || e.pickupPM ? '<i class="o-p"></i>' : "") + (e.catering.length ? '<i class="o-d"></i>' : "") + (e.liveDose.length ? '<i class="o-l"></i>' : "") : "";
+    const clickable = weekend && iso >= t;
+    cells.push((clickable ? '<button' : "<div") + ' class="' + cls + '"' + (clickable ? ' data-act="open-day" data-date="' + iso + '"' : "") +
+      ' aria-label="' + esc(dateParts(iso).long + ": " + state + (pending ? ", " + pending + " waiting" : "")) + '">' +
+      '<span class="top"><span class="n">' + d + "</span>" + (pending ? '<span class="pend"></span>' : "") + "</span>" +
+      '<span class="bot"><span class="offer">' + offers + "</span>" + (confirmed ? '<span class="cnt">' + confirmed + "</span>" : "") + "</span>" +
+      (clickable ? "</button>" : "</div>"));
+  }
+  // agenda for this month's open or booked weekends
+  const agenda = [];
+  for (let d = 1; d <= daysIn; d++) {
+    const iso = S.calMonth + "-" + String(d).padStart(2, "0");
+    if (iso < t) continue;
+    const e = entryFor(iso), list = byDay[iso] || [];
+    if (!isOpen(e) && !list.length) continue;
+    agenda.push({ iso, e: e || normalizeDate({ date: iso }), list });
+  }
+  const label = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+  return '<div><h2 class="h-page">Chef days</h2><p class="sub">Tap a weekend to open it for orders or see what\'s booked. Customers see the next ' + BOOKING_DAYS + " days.</p></div>" +
+    '<div class="card month">' +
+      '<div class="cal-nav" style="padding:4px 4px 10px">' +
+        '<button class="icon-btn" data-act="month" data-n="-1" aria-label="Previous month"' + (S.calMonth <= minKey ? " disabled" : "") + '><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>' +
+        "<h3>" + label + "</h3>" +
+        (S.calMonth !== minKey ? '<button class="btn sm" data-act="month-today">Today</button>' : "") +
+        '<button class="icon-btn" data-act="month" data-n="1" aria-label="Next month"' + (S.calMonth >= maxKey ? " disabled" : "") + '><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>' +
+      "</div>" +
+      '<div class="wk head">' + ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((w, i) => '<span class="' + (i === 0 || i === 6 ? "we" : "") + '">' + w + "</span>").join("") + "</div>" +
+      '<div class="wk">' + cells.join("") + "</div>" +
+    "</div>" +
+    '<div class="legend">' +
+      '<span><i class="sw g"></i>Open for orders</span><span><i class="sw r"></i>Booked</span><span><i class="sw c"></i>Not open</span><span><i class="sw x"></i>Weekday / past</span>' +
+      '<span><i class="dt" style="background:var(--turmeric)"></i>Waiting on you</span>' +
+      '<span><i class="dt o-p"></i>Pickup</span><span><i class="dt o-d"></i>Delivery</span><span><i class="dt o-l"></i>LIVE Dose</span>' +
+    "</div>" +
+    '<div class="h-sec">' + esc(label.split(" ")[0]) + " at a glance</div>" +
+    (agenda.length
+      ? '<div class="card list agenda">' + agenda.map(({ iso, e, list }) => {
+          const p = dateParts(iso);
+          const conf = list.filter((o) => o.status === "Confirmed");
+          const sum = conf.reduce((s2, o) => s2 + Number(o.subtotal || 0), 0);
+          return '<button class="li" data-act="open-day" data-date="' + iso + '">' +
+            '<div class="cal' + (conf.length ? "" : "") + '"><i style="background:' + (conf.length ? "var(--chili)" : isOpen(e) ? "var(--leaf)" : "var(--surface-2)") + ';color:' + (conf.length || isOpen(e) ? "#fff" : "var(--muted)") + '">' + p.wd + "</i><b>" + p.day + "</b></div>" +
+            '<div class="grow"><div class="day-sum">' + daySummary(e) + "</div>" +
+            '<div class="d" style="margin-top:4px">' + (list.length ? conf.length + " confirmed" + (conf.length ? " · " + money(sum) : "") + (list.length - conf.length ? " · " + (list.length - conf.length) + " waiting" : "") : "No orders yet") + "</div></div>" +
+            '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>';
+        }).join("") + "</div>"
+      : '<div class="card empty"><b>Nothing open this month</b>Tap a grey weekend in the calendar to open it.</div>') +
+    '<p class="small muted" style="margin:0">Weekdays are never bookable. Pickup times and the delivery slot length are in Setup.</p>';
+}
+function daySheetBody(date) {
+  const e = entryFor(date) || normalizeDate({ date });
+  const list = (ordersByDay()[date] || []);
+  return dayEditor(e, S.menu.availability.pickupTimes) +
+    '<div class="h-sec" style="margin:4px 0 0">Orders for this day</div>' +
+    (list.length ? '<div class="day-orders">' + list.map((o) => orderCard(o, true)).join("") + "</div>"
+      : '<p class="small muted" style="margin:0">No orders for this day yet.</p>');
+}
+function openDaySheet(date) {
+  S.sheetDay = date;
+  openSheet({
+    title: dateParts(date).long,
+    body: daySheetBody(date),
+    foot: '<button class="btn primary" data-close>Done</button>',
+    onClose: () => { S.sheetDay = null; render(); }
+  });
+}
+function refreshDaySheet() {
+  if (!S.sheetDay) return;
+  const body = $("#sheetRoot .sheet-body"), title = $("#sheetTitle");
+  if (body) body.innerHTML = daySheetBody(S.sheetDay);
+  if (title) title.textContent = dateParts(S.sheetDay).long;
+  markDirty();
+}
+function dayEditor(e, pt) {
+  const wins = (key, label, hint) =>
+    '<div class="day-sec"><h4>' + label + '</h4>' +
+      (e[key].length ? e[key].map((w, i) =>
+        '<div class="win"><input type="time" id="w-' + key + "-" + e.date + "-" + i + '-s" value="' + esc(w.start) + '" data-act="win-time" data-date="' + e.date + '" data-key="' + key + '" data-i="' + i + '" data-part="start" aria-label="' + label + ' start" />' +
+        '<span class="to">to</span><input type="time" id="w-' + key + "-" + e.date + "-" + i + '-e" value="' + esc(w.end) + '" data-act="win-time" data-date="' + e.date + '" data-key="' + key + '" data-i="' + i + '" data-part="end" aria-label="' + label + ' end" />' +
+        '<button class="btn sm ghost danger" data-act="win-del" data-date="' + e.date + '" data-key="' + key + '" data-i="' + i + '">Remove</button></div>').join("")
+        : '<p class="small muted" style="margin:0 0 8px">' + hint + "</p>") +
+      '<button class="btn sm" data-act="win-add" data-date="' + e.date + '" data-key="' + key + '">+ Add window</button></div>';
+  return '<div class="day-body">' +
+    '<div class="day-sec"><h4>Catering pickup</h4><div class="toggles">' +
+      '<button class="tog" data-act="pickup" data-date="' + e.date + '" data-k="pickupAM" aria-pressed="' + e.pickupAM + '"><b>Lunch</b><small>Pickup by ' + t12(pt.am) + "</small></button>" +
+      '<button class="tog" data-act="pickup" data-date="' + e.date + '" data-k="pickupPM" aria-pressed="' + e.pickupPM + '"><b>Dinner</b><small>Pickup by ' + t12(pt.pm) + "</small></button>" +
+    "</div></div>" +
+    wins("catering", "Catering delivery windows", "No delivery this day.") +
+    wins("liveDose", "LIVE Dose Station windows", "No LIVE Dose events this day.") +
+    '<div class="row"><button class="btn sm" data-act="copy-day" data-date="' + e.date + '">Copy to next ' + dateParts(e.date).wd + '</button>' +
+    (isOpen(e) ? '<button class="btn sm danger" data-act="close-day" data-date="' + e.date + '">Close this day</button>' : "") + "</div>" +
+  "</div>";
+}
+
+// ---------------------------------------------------------------- MENU
+function viewMenu() {
+  const s = S.menu.settings;
+  return '<div><h2 class="h-page">Menu</h2><p class="sub">Tap a dish to change its price, servings or order limits.</p></div>' +
+    S.menu.categories.map((c, ci) => {
+      if (c.type === "live-dose-station") {
+        const l = c.liveDoseStation || {};
+        return '<div class="h-sec">' + esc(c.title) + "</div>" +
+          '<button class="card pad" data-act="edit-lds" data-ci="' + ci + '" style="text-align:left;width:100%;display:flex;gap:12px;align-items:center">' +
+            '<div class="grow"><div style="font-weight:700">' + esc(l.mdTitle || "Mysore Masale Dose") + " + " + esc(l.odTitle || "Onion Dose") + "</div>" +
+            '<div class="small muted num">' + money(l.pricePerHundred) + " per 100 dose · " + money(l.setupFee) + " setup · " + esc(l.minTotal) + "–" + esc(l.maxTotal) + " dose in steps of " + esc(l.increment) + "</div>" +
+            '<div class="small muted num">Travel: first ' + esc(l.travelFreeMiles ?? 20) + " mi free, then " + money(l.travelFeePerBlock ?? 50) + " per " + esc(l.travelBlockMiles ?? 10) + " mi</div></div>" +
+            '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>';
+      }
+      return '<div class="h-sec">' + esc(c.title) + '<button class="btn ghost sm" data-act="edit-cat" data-ci="' + ci + '">Rename</button></div>' +
+        '<div class="card list">' + (c.items.length ? c.items.map((it, ii) =>
+          '<button class="li" data-act="edit-item" data-ci="' + ci + '" data-ii="' + ii + '">' +
+            '<div class="grow"><div class="t">' + esc(it.title || "Untitled dish") + (it.requiresNote ? ' <span class="pill p-info">asks a question</span>' : "") + "</div>" +
+            '<div class="d num">' + [it.size, servesText(it), "max " + (it.maxQty || s.maxOrderQtyPerItem || 4) + " per order"].filter(Boolean).map(esc).join(" · ") + "</div></div>" +
+            '<span class="price">' + money(it.price) + "</span>" +
+            '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>').join("")
+          : '<div class="empty">No dishes yet.</div>') +
+        '<div style="padding:12px 16px;border-top:1px solid var(--line)"><button class="btn sm" data-act="add-item" data-ci="' + ci + '">+ Add dish</button></div></div>';
+    }).join("") +
+    '<button class="btn" data-act="add-cat">+ Add a menu section</button>';
+}
+function servesText(it) {
+  if (!it.servesMin) return "";
+  return Number(it.servesMax) > Number(it.servesMin) ? "serves " + it.servesMin + "–" + it.servesMax : "serves " + it.servesMin;
+}
+function itemSheet(ci, ii) {
+  const cat = S.menu.categories[ci];
+  const isNew = ii == null;
+  const it = isNew ? { title: "", description: "", price: 0, size: "", servesMin: "", servesMax: "", minQty: 1, maxQty: null } : clone(cat.items[ii]);
+  const defMax = S.menu.settings.maxOrderQtyPerItem || 4;
+  openSheet({
+    title: isNew ? "New dish" : it.title || "Dish",
+    body:
+      '<label class="field"><span>Dish name</span><input id="f-title" value="' + esc(it.title) + '" placeholder="e.g. Bisi Bele Bhath" /></label>' +
+      '<div class="grid2"><label class="field"><span>Price per tray</span><div class="prefix"><input id="f-price" type="number" inputmode="decimal" min="0" step="1" value="' + esc(it.price) + '" /></div></label>' +
+      '<label class="field"><span>Tray size</span><input id="f-size" value="' + esc(it.size || "") + '" placeholder="e.g. Large" /></label></div>' +
+      '<div class="grid2"><label class="field"><span>Serves from</span><input id="f-smin" type="number" inputmode="numeric" min="1" value="' + esc(it.servesMin || "") + '" /></label>' +
+      '<label class="field"><span>Serves up to</span><input id="f-smax" type="number" inputmode="numeric" min="1" value="' + esc(it.servesMax || "") + '" /></label></div>' +
+      '<div class="grid2"><label class="field"><span>Min trays per order</span><input id="f-minq" type="number" inputmode="numeric" min="1" value="' + esc(it.minQty || 1) + '" />' + (S.menu.settings.halfTrays ? '<span class="hint">Not used while half-tray orders are on (Setup).</span>' : "") + '</label>' +
+      '<label class="field"><span>Max trays per order</span><input id="f-maxq" type="number" inputmode="numeric" min="1" value="' + esc(it.maxQty || "") + '" placeholder="' + defMax + ' (default)" /><span class="hint">Bigger orders are asked to call you.</span></label></div>' +
+      '<label class="field"><span>Description</span><textarea id="f-desc" placeholder="Shown when a customer types &quot;describe&quot;">' + esc(it.description || "") + "</textarea></label>" +
+      '<label class="switch"><input type="checkbox" id="f-req"' + (it.requiresNote ? " checked" : "") + ' /><span><b>Ask the customer a question</b><small>For dishes where price depends on their choice, like Palya</small></span></label>' +
+      '<label class="field" id="f-promptWrap"' + (it.requiresNote ? "" : " hidden") + '><span>Question to ask</span><input id="f-prompt" value="' + esc(it.notePrompt || "") + '" placeholder="Which vegetable would you like?" /></label>' +
+      '<p class="small" id="f-err" style="color:var(--bad);margin:0" hidden></p>',
+    foot: (isNew ? "" : '<button class="btn danger left" id="f-del">Delete dish</button>') + '<button class="btn" data-close>Cancel</button><button class="btn primary" id="f-ok">' + (isNew ? "Add dish" : "Done") + "</button>",
+    onMount: (el) => {
+      el.querySelector("#f-req").addEventListener("change", (e) => { el.querySelector("#f-promptWrap").hidden = !e.target.checked; });
+      el.querySelector("#f-ok").addEventListener("click", () => {
+        const v = (id) => el.querySelector(id).value.trim();
+        const err = el.querySelector("#f-err");
+        if (!v("#f-title")) { err.textContent = "Give the dish a name."; err.hidden = false; return; }
+        const price = parseFloat(v("#f-price"));
+        if (!(price >= 0)) { err.textContent = "Enter a price (0 or more)."; err.hidden = false; return; }
+        const smin = parseInt(v("#f-smin")) || null, smax = parseInt(v("#f-smax")) || smin;
+        if (smin && smax && smax < smin) { err.textContent = "\"Serves up to\" can't be less than \"Serves from\"."; err.hidden = false; return; }
+        const target = isNew ? {} : cat.items[ii];
+        Object.assign(target, {
+          title: v("#f-title"), price, size: v("#f-size"), servesMin: smin, servesMax: smax,
+          minQty: parseInt(v("#f-minq")) || 1, maxQty: parseInt(v("#f-maxq")) || null,
+          description: v("#f-desc"), requiresNote: el.querySelector("#f-req").checked, notePrompt: v("#f-prompt")
+        });
+        if (isNew) cat.items.push(target);
+        closeSheet(); render();
+      });
+      const del = el.querySelector("#f-del");
+      if (del) del.addEventListener("click", () => {
+        closeSheet();
+        confirmSheet({ title: "Delete " + (it.title || "this dish") + "?", text: "Customers won't see it on the menu after you save.", confirmLabel: "Delete dish", danger: true,
+          onConfirm: () => { cat.items.splice(ii, 1); render(); } });
+      });
+    }
+  });
+}
+function catSheet(ci) {
+  const isNew = ci == null;
+  const c = isNew ? { title: "", rowTitle: "", rowDescription: "", items: [] } : S.menu.categories[ci];
+  openSheet({
+    title: isNew ? "New menu section" : "Menu section",
+    body: '<label class="field"><span>Section name</span><input id="c-title" value="' + esc(c.title) + '" placeholder="e.g. Sweets" /></label>' +
+      '<label class="field"><span>WhatsApp list label</span><input id="c-row" maxlength="24" value="' + esc(c.rowTitle || "") + '" /><span class="hint">What customers tap in the WhatsApp menu. Up to 24 characters.</span></label>' +
+      '<label class="field"><span>WhatsApp list description</span><input id="c-desc" maxlength="72" value="' + esc(c.rowDescription || "") + '" /></label>',
+    foot: (!isNew && c.items.length === 0 ? '<button class="btn danger left" id="c-del">Delete section</button>' : "") + '<button class="btn" data-close>Cancel</button><button class="btn primary" id="c-ok">' + (isNew ? "Add section" : "Done") + "</button>",
+    onMount: (el) => {
+      el.querySelector("#c-ok").addEventListener("click", () => {
+        const title = el.querySelector("#c-title").value.trim();
+        if (!title) return;
+        Object.assign(c, { title, rowTitle: el.querySelector("#c-row").value.trim() || title.slice(0, 24), rowDescription: el.querySelector("#c-desc").value.trim() });
+        if (isNew) S.menu.categories.splice(Math.max(0, S.menu.categories.findIndex((x) => x.type === "live-dose-station")), 0, c);
+        closeSheet(); render();
+      });
+      const del = el.querySelector("#c-del");
+      if (del) del.addEventListener("click", () => { S.menu.categories.splice(ci, 1); closeSheet(); render(); });
+    }
+  });
+}
+function ldsSheet(ci) {
+  const l = S.menu.categories[ci].liveDoseStation;
+  const smt = l.servingMinutesByTotal || {};
+  const num = (id, label, val, hint, pre) => '<label class="field"><span>' + label + "</span>" + (pre ? '<div class="prefix">' : "") + '<input id="' + id + '" type="number" inputmode="decimal" min="0" value="' + esc(val ?? "") + '" />' + (pre ? "</div>" : "") + (hint ? '<span class="hint">' + hint + "</span>" : "") + "</label>";
+  openSheet({
+    title: "LIVE Dose Station",
+    body:
+      '<div class="h-sec" style="margin:0">Pricing</div>' +
+      '<div class="grid2">' + num("l-pph", "Price per 100 dose", l.pricePerHundred, "", true) + num("l-setup", "Setup fee", l.setupFee, "Once per event", true) + "</div>" +
+      '<div class="grid3">' + num("l-min", "Fewest dose", l.minTotal) + num("l-max", "Most dose", l.maxTotal) + num("l-inc", "In steps of", l.increment) + "</div>" +
+      '<div class="h-sec" style="margin:0">Travel fee</div>' +
+      '<div class="grid3">' + num("l-tfree", "Free miles", l.travelFreeMiles ?? 20) + num("l-tfee", "Fee per block", l.travelFeePerBlock ?? 50, "", true) + num("l-tblock", "Block (miles)", l.travelBlockMiles ?? 10) + "</div>" +
+      '<p class="small muted" style="margin:-4px 0 0">Example: an event 34 miles away pays for 2 started blocks past the free miles.</p>' +
+      '<div class="h-sec" style="margin:0">Dishes</div>' +
+      '<label class="field"><span>Dish 1 name</span><input id="l-md" value="' + esc(l.mdTitle || "") + '" /></label>' +
+      '<label class="field"><span>Dish 1 description</span><textarea id="l-mdd">' + esc(l.mdDescription || "") + "</textarea></label>" +
+      '<label class="field"><span>Dish 2 name</span><input id="l-od" value="' + esc(l.odTitle || "") + '" /></label>' +
+      '<label class="field"><span>Dish 2 description</span><textarea id="l-odd">' + esc(l.odDescription || "") + "</textarea></label>" +
+      '<div class="h-sec" style="margin:0">Crew timing (minutes)</div>' +
+      '<div class="grid3">' + num("l-su", "Setup", l.setupMinutes ?? 30) + num("l-co", "Close-out", l.closeoutMinutes ?? 30) + num("l-delay", "Delay fee / hr", l.delayFeePerHour ?? 200, "", true) + "</div>" +
+      '<div class="grid3">' + Object.keys(smt).sort((a, b) => a - b).map((k) => num("l-s" + k, "Serving " + k + " dose", smt[k])).join("") + "</div>",
+    foot: '<button class="btn" data-close>Cancel</button><button class="btn primary" id="l-ok">Done</button>',
+    onMount: (el) => {
+      el.querySelector("#l-ok").addEventListener("click", () => {
+        const n = (id, d) => { const v = parseFloat(el.querySelector(id).value); return isNaN(v) ? d : v; };
+        Object.assign(l, {
+          pricePerHundred: n("#l-pph", l.pricePerHundred), setupFee: n("#l-setup", l.setupFee),
+          minTotal: n("#l-min", l.minTotal), maxTotal: n("#l-max", l.maxTotal), increment: n("#l-inc", l.increment),
+          travelFreeMiles: n("#l-tfree", 20), travelFeePerBlock: n("#l-tfee", 50), travelBlockMiles: n("#l-tblock", 10) || 10,
+          mdTitle: el.querySelector("#l-md").value.trim(), mdDescription: el.querySelector("#l-mdd").value.trim(),
+          odTitle: el.querySelector("#l-od").value.trim(), odDescription: el.querySelector("#l-odd").value.trim(),
+          setupMinutes: n("#l-su", 30), closeoutMinutes: n("#l-co", 30), delayFeePerHour: n("#l-delay", 200)
+        });
+        Object.keys(smt).forEach((k) => { smt[k] = n("#l-s" + k, smt[k]); });
+        closeSheet(); render();
+      });
+    }
+  });
+}
+
+// ---------------------------------------------------------------- REPORTS
+function weekStart(iso) {
+  const d = new Date(iso);
+  const local = d.toLocaleDateString("en-CA", { timeZone: TZ });
+  return addDays(local, -dow(local));
+}
+function viewReports() {
+  const days = S.reportRange === "all" ? null : Number(S.reportRange);
+  const since = days ? Date.now() - days * 864e5 : 0;
+  const inRange = S.orders.filter((o) => new Date(o.createdAt || 0).getTime() >= since);
+  const ok = inRange.filter((o) => o.status === "Confirmed");
+  const revenue = ok.reduce((s, o) => s + Number(o.subtotal || 0), 0);
+  const avg = ok.length ? revenue / ok.length : 0;
+  const decided = inRange.filter((o) => o.status === "Confirmed" || /declined/i.test(o.status || ""));
+  const rate = decided.length ? Math.round((ok.length / decided.length) * 100) : null;
+
+  // weekly revenue - last 8 weeks (or range)
+  const weeks = [];
+  let ws = weekStart(new Date().toISOString());
+  const nWeeks = days && days <= 30 ? 5 : 8;
+  for (let i = nWeeks - 1; i >= 0; i--) weeks.push(addDays(ws, -7 * i));
+  const byWeek = weeks.map((w) => ok.filter((o) => weekStart(o.createdAt) === w).reduce((s, o) => s + Number(o.subtotal || 0), 0));
+  const maxW = Math.max(...byWeek, 1);
+
+  // dishes
+  const dish = {};
+  ok.forEach((o) => (o.cart || []).forEach((l) => {
+    const k = l.isLiveDoseStation ? "LIVE Dose Station (events)" : l.title;
+    dish[k] = (dish[k] || 0) + (l.isLiveDoseStation ? 1 : Number(l.qty || 0));
+  }));
+  const top = Object.entries(dish).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const maxD = Math.max(1, ...top.map((x) => x[1]));
+
+  // mix
+  const kind = (o) => o.type === "custom" ? "Custom requests" : (o.cart || []).some((l) => l.isLiveDoseStation) ? "LIVE Dose Station" : o.fulfillment === "delivery" ? "Catering delivery" : "Catering pickup";
+  const mix = {};
+  ok.forEach((o) => { const k = kind(o); mix[k] = mix[k] || { n: 0, v: 0 }; mix[k].n++; mix[k].v += Number(o.subtotal || 0); });
+  const mixRows = Object.entries(mix).sort((a, b) => b[1].v - a[1].v);
+  const maxM = Math.max(1, ...mixRows.map((x) => x[1].v));
+
+  const custs = {};
+  ok.forEach((o) => { custs[o.customerPhone] = (custs[o.customerPhone] || 0) + 1; });
+  const repeat = Object.values(custs).filter((n) => n > 1).length;
+
+  const ranges = [["30", "Last 30 days"], ["90", "Last 90 days"], ["all", "All time"]];
+  return '<div><h2 class="h-page">Reports</h2><p class="sub">Confirmed orders only, by the day they were placed.</p></div>' +
+    '<div class="chips" role="group" aria-label="Report range">' + ranges.map((r) => '<button class="chip" data-act="range" data-r="' + r[0] + '" aria-pressed="' + (S.reportRange === r[0]) + '">' + r[1] + "</button>").join("") + "</div>" +
+    '<div class="kpis four">' +
+      '<div class="card kpi"><b>' + money(revenue) + "</b><span>Confirmed sales</span></div>" +
+      '<div class="card kpi"><b>' + ok.length + "</b><span>Confirmed orders</span></div>" +
+      '<div class="card kpi"><b>' + money(avg) + "</b><span>Average order</span></div>" +
+      '<div class="card kpi"><b>' + (rate == null ? "–" : rate + "%") + "</b><span>Accepted vs declined</span></div>" +
+    "</div>" +
+    '<div class="card pad"><div class="row" style="justify-content:space-between"><b>Sales by week</b><span class="small muted">week starting Sunday</span></div>' +
+      '<div class="bars" role="img" aria-label="Confirmed sales by week">' + byWeek.map((v, i) => {
+        const p = dateParts(weeks[i]);
+        return '<div class="b' + (v ? "" : " zero") + '"><span class="v">' + (v ? money(v) : "") + '</span><div class="col" style="height:' + Math.round((v / maxW) * 100) + '%"></div><span class="l">' + p.mon + " " + p.day + "</span></div>";
+      }).join("") + "</div></div>" +
+    '<div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">' +
+      '<div class="card pad"><b>Top dishes</b><p class="small muted" style="margin:2px 0 12px">Trays sold</p>' +
+        (top.length ? '<div class="hbar">' + top.map(([k, n]) => '<span>' + esc(k) + '</span><span class="num muted">' + n + '</span><div class="track"><i style="width:' + Math.round((n / maxD) * 100) + '%"></i></div>').join("") + "</div>" : '<p class="muted small">No confirmed orders in this range.</p>') + "</div>" +
+      '<div class="card pad"><b>Where sales come from</b><p class="small muted" style="margin:2px 0 12px">Confirmed sales by order type</p>' +
+        (mixRows.length ? '<div class="hbar">' + mixRows.map(([k, m]) => '<span>' + esc(k) + ' <span class="muted small">(' + m.n + ')</span></span><span class="num">' + money(m.v) + '</span><div class="track t"><i style="width:' + Math.round((m.v / maxM) * 100) + '%"></i></div>').join("") + "</div>" : '<p class="muted small">No confirmed orders in this range.</p>') + "</div>" +
+    "</div>" +
+    '<div class="card pad row" style="justify-content:space-between"><div><b>' + Object.keys(custs).length + " customers</b><div class=\"small muted\">" + repeat + " ordered more than once</div></div>" +
+      (S.mode === "live"
+        ? '<div class="row"><a class="btn sm" href="/admin/api/orders.csv">Orders for Excel</a><a class="btn sm" href="/admin/api/customers.csv">Customers for Excel</a></div>'
+        : '<span class="small muted">Excel downloads work on the live admin page.</span>') + "</div>";
+}
+
+// ---------------------------------------------------------------- CUSTOMERS
+function demoCustomers() {
+  const map = {};
+  S.orders.forEach((o) => {
+    if (!o.customerPhone) return;
+    const [first, ...rest] = String(o.customerName || "").split(" ");
+    const c = map[o.customerPhone] || (map[o.customerPhone] = { phone: o.customerPhone, firstName: first || "", lastName: rest.join(" "), address: "", addressVerified: false, orders: 0, confirmedOrders: 0, confirmedTotal: 0, lastOrder: null, createdAt: o.createdAt });
+    c.orders++;
+    if (o.address && !c.address) { c.address = o.address; c.addressVerified = o.addressVerified !== false; }
+    if (o.status === "Confirmed") { c.confirmedOrders++; c.confirmedTotal += Number(o.subtotal || 0); }
+    if (!c.lastOrder || o.createdAt > c.lastOrder) c.lastOrder = o.createdAt;
+    if (o.createdAt < c.createdAt) c.createdAt = o.createdAt;
+  });
+  return Object.values(map).sort((a, b) => String(b.lastOrder).localeCompare(String(a.lastOrder)));
+}
+function viewCustomers() {
+  const list = S.customers || [];
+  const q = (S.custQ || "").trim().toLowerCase();
+  const shown = list.filter((c) => !q || [c.firstName, c.lastName, c.phone, c.address].join(" ").toLowerCase().includes(q));
+  const total = list.reduce((n, c) => n + Number(c.confirmedTotal || 0), 0);
+  const repeat = list.filter((c) => c.confirmedOrders > 1).length;
+  const when = (iso) => iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: TZ }) : "–";
+  return '<div><h2 class="h-page">Customers</h2><p class="sub">Everyone who has messaged the bot. Also copied to the “Customers” tab of your Google Sheet. Resetting orders never removes customers.</p></div>' +
+    '<div class="kpis four">' +
+      '<div class="card kpi"><b>' + list.length + "</b><span>Customers</span></div>" +
+      '<div class="card kpi"><b>' + repeat + "</b><span>Ordered more than once</span></div>" +
+      '<div class="card kpi"><b>' + money(total) + "</b><span>Confirmed sales, all time</span></div>" +
+      '<div class="card kpi"><b>' + list.filter((c) => c.address).length + "</b><span>With a saved address</span></div>" +
+    "</div>" +
+    '<div class="row" style="gap:8px"><input class="search grow" id="custSearch" placeholder="Search name, phone or address" value="' + esc(S.custQ || "") + '" />' +
+      (S.mode === "live" ? '<a class="btn sm" href="/admin/api/customers.csv">Excel</a>' : "") + "</div>" +
+    (shown.length
+      ? '<div class="stack" id="custList">' + shown.map((c) =>
+          '<article class="card order"><div class="o-top"><div class="grow"><div class="o-name">' + esc([c.firstName, c.lastName].filter(Boolean).join(" ") || "No name yet") + "</div>" +
+            '<div class="o-meta num">' + esc(c.phone) + " · since " + esc(when(c.createdAt)) + "</div></div>" +
+            (c.confirmedOrders > 1 ? '<span class="pill p-good">Repeat</span>' : "") + "</div>" +
+          '<dl class="o-facts">' +
+            "<dt>Orders</dt><dd>" + c.orders + " (" + c.confirmedOrders + " confirmed · " + money(c.confirmedTotal, true) + ")</dd>" +
+            "<dt>Last order</dt><dd>" + esc(when(c.lastOrder)) + "</dd>" +
+            "<dt>Address</dt><dd>" + (c.address ? esc(c.address) + (c.addressVerified ? "" : ' <span class="pill p-wait">not verified</span>') : '<span class="muted">None saved</span>') + "</dd>" +
+          "</dl>" +
+          '<div class="row" style="justify-content:flex-end;gap:8px">' +
+            '<a class="btn sm" href="https://wa.me/' + esc(c.phone) + '" target="_blank" rel="noopener">WhatsApp</a>' +
+            '<button class="btn sm danger" data-act="del-cust" data-phone="' + esc(c.phone) + '">Delete</button>' +
+          "</div></article>").join("") + "</div>"
+      : '<div class="card empty"><b>' + (list.length ? "No matches" : "No customers yet") + "</b>" + (list.length ? "Try a different search." : "Customers appear here after they message the bot.") + "</div>");
+}
+
+// ---------------------------------------------------------------- SETUP
+function depositExample(kind) {
+  const p = S.menu.settings.payment;
+  const WD = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  if (kind === "cat") {
+    const h = Number(p.cateringHoursBefore) || 0;
+    if (h % 24 === 0) return "Saturday order → due by 11:59 PM " + WD[(6 - h / 24 - 1 + 70) % 7] + ".";
+    return "Saturday order → due " + h + " hours before Saturday 12:00 AM.";
+  }
+  const d = Number(p.ldsDaysBefore) || 0;
+  return "Saturday event → due " + WD[(6 - d + 70) % 7] + " by " + t12(p.ldsTime || "10:00") + ". Sunday event → " + WD[(7 - d + 70) % 7] + ".";
+}
+function viewSetup() {
+  const s = S.menu.settings, a = S.menu.availability, d = s.delivery;
+  const f = (id, label, val, attrs, hint) => '<label class="field"><span>' + label + '</span><input id="' + id + '" data-bind="' + id + '" value="' + esc(val ?? "") + '" ' + (attrs || "") + " />" + (hint ? '<span class="hint">' + hint + "</span>" : "") + "</label>";
+  return '<div><h2 class="h-page">Setup</h2><p class="sub">Business details, order rules, pickup times and delivery area.</p></div>' +
+    '<div class="h-sec">Business</div><div class="card pad stack">' +
+      f("s-name", "Business name", s.businessName) +
+      f("s-short", "Short name", s.shortName || "FTR", 'maxlength="20"', "Used in WhatsApp messages after the first greeting, e.g. “FTR”.") +
+      f("s-tag", "Tagline", s.tagline, 'maxlength="300"', "Shown above “How can we help you today?” in the WhatsApp welcome menu.") +
+      f("s-phone", "Phone shown to customers", s.phoneDisplay) + "</div>" +
+    '<div class="h-sec">Order rules</div><div class="card pad stack">' +
+      '<label class="switch" style="padding-top:0"><input type="checkbox" data-bind="s-pickonly"' + (s.cateringPickupOnly !== false ? " checked" : "") + ' /><span><b>Catering: pickup only</b><small>' +
+        (s.cateringPickupOnly !== false ? "On – customers must agree “ALL CATERING ORDERS ARE FOR PICKUP ONLY” before choosing dishes. Delivery windows on your days are ignored." : "Off – customers can choose delivery on days with delivery windows.") + "</small></span></label>" +
+      '<label class="switch" style="padding-top:0"><input type="checkbox" data-bind="s-half"' + (s.halfTrays ? " checked" : "") + ' /><span><b>Half-tray orders</b><small>' +
+        (s.halfTrays ? "On – customers can order ½ tray of any dish at " + (s.halfTrayPercent || 65) + "% of the full-tray price. Each dish's own minimum is ignored." : "Off – full trays only, and each dish's minimum applies.") + "</small></span></label>" +
+      '<div class="grid2">' +
+      (s.halfTrays
+        ? f("s-minh", "Minimum order with half trays ($)", s.minOrderHalfTray || 0, 'type="number" inputmode="decimal" min="0"', "Used while half trays are on. 0 = no minimum")
+        : f("s-min", "Minimum order ($)", s.minOrderSubtotal || 0, 'type="number" inputmode="decimal" min="0"', "Catering only (not LIVE Dose). 0 = no minimum")) +
+      f("s-maxq", "Max trays per dish", s.maxOrderQtyPerItem || 4, 'type="number" inputmode="numeric" min="1"', "Bigger orders are asked to call") + "</div>" +
+      (s.halfTrays ? f("s-hpct", "Half-tray price (% of a full tray)", s.halfTrayPercent || 65, 'type="number" inputmode="numeric" min="1" max="100"', "e.g. 65 → a $170 tray is $110.50 as a half tray") : "") +
+      (s.halfTrays ? '<p class="small muted" style="margin:0">Full-tray minimum (' + money(s.minOrderSubtotal || 0, true) + ") comes back when you switch half trays off.</p>" : "") +
+    "</div>" +
+    '<div class="h-sec">Pickup and delivery times</div><div class="card pad stack"><div class="grid2">' +
+      f("s-am", "Lunch pickup by", a.pickupTimes.am, 'type="time"') +
+      f("s-pm", "Dinner pickup by", a.pickupTimes.pm, 'type="time"') + "</div>" +
+      f("s-slot", "Delivery slot length (minutes)", a.slotLengthMinutes, 'type="number" inputmode="numeric" min="15" step="15"', "Delivery windows are split into slots this long for customers to pick.") + "</div>" +
+    '<div class="h-sec">Delivery area</div><div class="card pad stack">' +
+      f("s-kitchen", "Kitchen address", d.kitchenAddress, 'autocomplete="street-address"', typeof d.kitchenLat === "number" ? "Found on the map. Never shown to customers." : "Looked up on the map when you save. Never shown to customers.") +
+      '<div class="grid2">' +
+        f("s-maxmi", "Catering delivery: max miles", d.maxMiles || "", 'type="number" inputmode="numeric" min="1" placeholder="No limit"') +
+        f("s-ldsmi", "LIVE Dose: max miles", d.ldsMaxMiles || "", 'type="number" inputmode="numeric" min="1" placeholder="No limit"') +
+      '</div><p class="small muted" style="margin:0">Straight-line miles. Driving distance is usually 20–30% more, so about 40 here matches a 50-mile drive.</p></div>' +
+    '<div class="h-sec">Zelle deposits</div><div class="card pad stack">' +
+      '<label class="switch" style="padding-top:0"><input type="checkbox" data-bind="s-zon"' + (s.payment.enabled ? " checked" : "") + ' /><span><b>Ask for a Zelle deposit</b><small>' +
+        (s.payment.enabled ? "On – customers pay a deposit after you approve. You confirm it on WhatsApp." : "Off – payment is collected in person, as before.") + "</small></span></label>" +
+      (!s.payment.enabled ? "" :
+      f("s-zto", "Zelle email or phone", s.payment.zelleTo, 'autocomplete="off" placeholder="e.g. pay@franklintiffinroom.com"', "The email or US mobile number your Zelle is enrolled with.") +
+      f("s-zname", "Name customers will see in Zelle", s.payment.zelleName, 'placeholder="e.g. Franklin Tiffin Room LLC"', "Exactly as your bank shows it. The bot uses it to check screenshots.") +
+      f("s-zpct", "Deposit (% of order)", s.payment.depositPercent, 'type="number" inputmode="numeric" min="1" max="100"') +
+      '<div class="small" style="margin:4px 0 -4px"><b>When the deposit is due</b></div>' +
+      f("s-zcat", "Catering: hours before the order day starts (12:00 AM)", s.payment.cateringHoursBefore, 'type="number" inputmode="numeric" min="0"', depositExample("cat")) +
+      '<div class="grid2">' +
+        f("s-zldsd", "LIVE Dose: days before event", s.payment.ldsDaysBefore, 'type="number" inputmode="numeric" min="0"') +
+        f("s-zldst", "LIVE Dose: by time", s.payment.ldsTime, 'type="time"') +
+      "</div>" + '<p class="small muted" style="margin:-6px 0 0">' + depositExample("lds") + "</p>" +
+      f("s-zhrs", "Custom orders: hours to pay after they accept", s.payment.deadlineHours, 'type="number" inputmode="numeric" min="1"', "Late bookings (deadline already passed) get 2 hours. Unpaid orders are released at the deadline.") +
+      '<div class="qr-row"><div class="qr-box" id="qrBox">' + (S.qr ? '<img src="' + esc(S.qr.url) + '" alt="Your Zelle QR code" />' : '<span class="muted small">No QR code yet</span>') + "</div>" +
+        '<div class="stack" style="gap:8px"><b>Zelle QR code</b><span class="small muted">In your Bank of America app, open Zelle and find your QR code, then save or screenshot it and upload that picture here.</span>' +
+        '<div class="row"><label class="btn sm">' + (S.qr ? "Replace" : "Upload QR code") + '<input type="file" id="qrFile" accept="image/png,image/jpeg" hidden /></label>' +
+        (S.qr ? '<button class="btn sm ghost" data-act="qr-del">Remove</button>' : "") + "</div></div></div>") +
+    "</div>" +
+    '<div class="h-sec">Test data</div><div class="card pad danger-zone"><h3>Reset all orders</h3>' +
+      '<p class="small muted" style="margin:0 0 12px">For clearing test orders before you go live. Removes every order here and in the Google Sheet. A backup copy is kept on the server.</p>' +
+      '<p class="small" style="margin:0 0 12px"><b>Saved customers are always kept.</b> To remove a customer, delete them one at a time on the Customers page.</p>' +
+      '<button class="btn danger" data-act="reset">Reset all orders…</button></div>';
+}
+const BIND = {
+  "s-name": (v) => { S.menu.settings.businessName = v; },
+  "s-short": (v) => { S.menu.settings.shortName = v || "FTR"; },
+  "s-tag": (v) => { S.menu.settings.tagline = v; },
+  "s-phone": (v) => { S.menu.settings.phoneDisplay = v; },
+  "s-min": (v) => { S.menu.settings.minOrderSubtotal = parseFloat(v) || 0; },
+  "s-minh": (v) => { S.menu.settings.minOrderHalfTray = parseFloat(v) || 0; },
+  "s-half": (v) => { S.menu.settings.halfTrays = !!v; render(); },
+  "s-hpct": (v) => { S.menu.settings.halfTrayPercent = Math.min(100, Math.max(1, parseFloat(v) || 65)); },
+  "s-pickonly": (v) => { S.menu.settings.cateringPickupOnly = !!v; render(); },
+  "s-maxq": (v) => { S.menu.settings.maxOrderQtyPerItem = parseInt(v) || 4; },
+  "s-am": (v) => { S.menu.availability.pickupTimes.am = v || "11:30"; },
+  "s-pm": (v) => { S.menu.availability.pickupTimes.pm = v || "18:00"; },
+  "s-slot": (v) => { S.menu.availability.slotLengthMinutes = parseInt(v) || 120; },
+  "s-kitchen": (v) => { S.menu.settings.delivery.kitchenAddress = v; },
+  "s-maxmi": (v) => { S.menu.settings.delivery.maxMiles = parseFloat(v) || null; },
+  "s-ldsmi": (v) => { S.menu.settings.delivery.ldsMaxMiles = parseFloat(v) || null; },
+  "s-zto": (v) => { S.menu.settings.payment.zelleTo = v; },
+  "s-zname": (v) => { S.menu.settings.payment.zelleName = v; },
+  "s-zpct": (v) => { S.menu.settings.payment.depositPercent = Math.min(100, parseInt(v) || 50); },
+  "s-zhrs": (v) => { S.menu.settings.payment.deadlineHours = parseInt(v) || 24; },
+  "s-zon": (v) => { S.menu.settings.payment.enabled = !!v; render(); },
+  "s-zcat": (v) => { S.menu.settings.payment.cateringHoursBefore = v === "" ? 48 : Math.max(0, parseInt(v) || 0); },
+  "s-zldsd": (v) => { S.menu.settings.payment.ldsDaysBefore = v === "" ? 3 : Math.max(0, parseInt(v) || 0); },
+  "s-zldst": (v) => { S.menu.settings.payment.ldsTime = v || "10:00"; }
+};
+
+// ---------------------------------------------------------------- events
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.id === "orderSearch") { S.filters.q = t.value; renderOrderListOnly(); return; }
+  if (t.id === "custSearch") {
+    S.custQ = t.value;
+    const pos = t.selectionStart; render();
+    const el = $("#custSearch"); if (el) { el.focus(); el.setSelectionRange(pos, pos); }
+    return;
+  }
+  if (t.dataset.bind && BIND[t.dataset.bind]) { BIND[t.dataset.bind](t.type === "checkbox" ? t.checked : t.value.trim()); markDirty(); return; }
+  if (t.dataset.act === "win-time") {
+    const e2 = entryFor(t.dataset.date, true);
+    e2[t.dataset.key][+t.dataset.i][t.dataset.part] = t.value;
+    markDirty();
+  }
+});
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-act]");
+  if (!el || el.tagName === "INPUT") return;
+  const a = el.dataset.act, date = el.dataset.date;
+  switch (a) {
+    case "filter": S.filters.status = el.dataset.f; render(); break;
+    case "range": S.reportRange = el.dataset.r; render(); break;
+    case "goto-day": S.calMonth = monthKey(date); setTimeout(() => openDaySheet(date), 0); break;
+    case "open-day": openDaySheet(date); break;
+    case "month": S.calMonth = shiftMonth(S.calMonth, +el.dataset.n); render(); break;
+    case "month-today": S.calMonth = monthKey(todayISO()); render(); break;
+    case "pickup": { const en = entryFor(date, true); en[el.dataset.k] = !en[el.dataset.k]; refreshDaySheet(); break; }
+    case "win-add": {
+      const en = entryFor(date, true), list = en[el.dataset.key];
+      list.push(list.length ? { start: "18:00", end: "21:00" } : { start: "12:00", end: "15:00" });
+      refreshDaySheet(); break;
+    }
+    case "win-del": { const en = entryFor(date, true); en[el.dataset.key].splice(+el.dataset.i, 1); refreshDaySheet(); break; }
+    case "close-day": { const en = entryFor(date, true); Object.assign(en, { pickupAM: false, pickupPM: false, catering: [], liveDose: [] }); refreshDaySheet(); break; }
+    case "copy-day": {
+      const src = entryFor(date, true), to = addDays(date, 7), dst = entryFor(to, true);
+      Object.assign(dst, clone({ pickupAM: src.pickupAM, pickupPM: src.pickupPM, catering: src.catering, liveDose: src.liveDose }));
+      S.sheetDay = to; refreshDaySheet(); toast("Copied to " + dateParts(to).wd + ", " + dateParts(to).mon + " " + dateParts(to).day + ". Showing that day now."); break;
+    }
+    case "logout": {
+      const go = () => {
+        if (S.mode !== "live") { toast("Preview only - on the real admin page this signs you out."); return; }
+        S.leaving = true;
+        const f = document.createElement("form");
+        f.method = "post"; f.action = "/admin/logout";
+        document.body.appendChild(f); f.submit();
+      };
+      if (isDirty()) confirmSheet({ title: "Log out without saving?", text: "You have unsaved changes. They'll be lost if you log out now.", confirmLabel: "Log out", danger: true, onConfirm: go });
+      else go();
+      break;
+    }
+    case "range": {
+      const allow = el.dataset.allow === "1", phone = el.dataset.phone;
+      const r = (S.rangeReqs || []).find((x) => x.phone === phone);
+      confirmSheet({
+        title: (allow ? "Allow " : "Decline ") + (r && r.name ? r.name : phone) + "?",
+        text: allow ? "They'll be told you can come to " + esc(r ? r.address : "their address") + " and can finish their order." : "They'll be told you can't travel that far, and can try a different address or call you.",
+        confirmLabel: allow ? "Allow" : "Decline", danger: !allow,
+        onConfirm: async () => {
+          try {
+            let st = { status: allow ? "Allowed." : "Declined." };
+            if (S.mode === "live") st = await api("POST", "/admin/api/range-requests/" + encodeURIComponent(phone), { allow });
+            S.rangeReqs = (S.rangeReqs || []).filter((x) => x.phone !== phone);
+            toast(st.status); render();
+          } catch (err) { toast(err.message, true); }
+        }
+      });
+      break;
+    }
+    case "del-cust": {
+      const phone = el.dataset.phone;
+      const c = (S.customers || []).find((x) => x.phone === phone) || {};
+      const name = [c.firstName, c.lastName].filter(Boolean).join(" ") || phone;
+      confirmSheet({
+        title: "Delete " + name + "?",
+        text: "This permanently removes " + esc(name) + " (" + esc(phone) + ") and their saved address from the customer list and the Google Sheet Customers tab. Their past orders stay. A backup copy is kept on the server. If they message again they'll be asked for their name.",
+        confirmLabel: "Delete customer", danger: true, typeWord: "DELETE",
+        onConfirm: async () => {
+          try {
+            if (S.mode === "live") await api("DELETE", "/admin/api/customers/" + encodeURIComponent(phone), { confirmPhone: phone });
+            S.customers = (S.customers || []).filter((x) => x.phone !== phone);
+            toast(name + " deleted"); render();
+          } catch (err) { toast(err.message, true); }
+        }
+      });
+      break;
+    }
+    case "qr-del": {
+      confirmSheet({
+        title: "Remove the Zelle QR code?",
+        text: "Customers will still get your Zelle email/phone, just no QR picture.",
+        confirmLabel: "Remove", danger: true,
+        onConfirm: async () => {
+          try { if (S.mode === "live") await api("DELETE", "/admin/api/zelle-qr"); S.qr = null; toast("QR code removed"); render(); }
+          catch (err) { toast(err.message, true); }
+        }
+      });
+      break;
+    }
+    case "edit-item": itemSheet(+el.dataset.ci, +el.dataset.ii); break;
+    case "add-item": itemSheet(+el.dataset.ci, null); break;
+    case "edit-cat": catSheet(+el.dataset.ci); break;
+    case "add-cat": catSheet(null); break;
+    case "edit-lds": ldsSheet(+el.dataset.ci); break;
+    case "decide": {
+      const id = el.dataset.id, act = el.dataset.do;
+      const o = S.orders.find((x) => x.orderId === id) || {};
+      const who = esc(o.customerName || "the customer");
+      const send = async (extra) => {
+        try {
+          if (S.mode === "live") {
+            const updated = await api("POST", "/admin/api/orders/" + encodeURIComponent(id) + "/decision", Object.assign({ action: act }, extra || {}));
+            S.orders = S.orders.map((x) => (x.orderId === id ? updated : x));
+          } else {
+            const st = { approve: "Awaiting Deposit", decline: "Declined", paid: "Confirmed", unpaid: "Awaiting Deposit", quote: "Quote Sent", cdecline: "Declined" }[act];
+            S.orders = S.orders.map((x) => (x.orderId === id ? Object.assign({}, x, { status: st, pending: act === "quote", quoted: act === "quote" }) : x));
+          }
+          toast({ approve: "Approved - " + (o.customerName || "customer") + " has been told", decline: "Declined - customer told", paid: "Deposit marked paid - order confirmed", unpaid: "Customer asked to check their payment", quote: "Quote sent", cdecline: "Request declined - customer told" }[act]);
+          render();
+        } catch (err) { toast(err.message, true); }
+      };
+      if (act === "quote" || act === "cdecline") {
+        openSheet({
+          title: act === "quote" ? "Send a quote" : "Decline this request",
+          body: (o.request ? '<p style="margin:0">“' + esc(o.request) + "”</p>" : "") +
+            (act === "quote" ? '<label class="field"><span>Price ($)</span><input id="qPrice" type="number" inputmode="decimal" min="1" /></label>' : "") +
+            '<label class="field"><span>' + (act === "quote" ? "Note for the customer (optional)" : "Reason for the customer (optional)") + '</span><textarea id="qNote" rows="3"></textarea></label>',
+          foot: '<button class="btn" data-close>Cancel</button><button class="btn ' + (act === "quote" ? "primary" : "danger solid") + '" id="qGo">' + (act === "quote" ? "Send quote" : "Decline") + "</button>",
+          onMount: (sh) => sh.querySelector("#qGo").addEventListener("click", async () => {
+            const price = act === "quote" ? parseFloat(sh.querySelector("#qPrice").value) : null;
+            if (act === "quote" && !(price > 0)) { toast("Enter the price", true); return; }
+            sh.querySelector("#qGo").disabled = true;
+            await send({ price, note: sh.querySelector("#qNote").value.trim() });
+            closeSheet();
+          })
+        });
+        break;
+      }
+      const copy = {
+        approve: ["Approve " + id + "?", who + " will be told it's approved" + (S.menu && S.menu.settings.payment && S.menu.settings.payment.enabled ? " and get the Zelle deposit details." : "."), "Approve", false],
+        decline: ["Decline " + id + "?", who + " will be told you can't take this order.", "Decline", true],
+        paid: ["Mark the deposit paid?", "Only if you can see the money in your bank app. " + who + " gets a payment confirmation and the order is confirmed.", "Payment received", false],
+        unpaid: ["Payment not received?", who + " will be asked to check their Zelle payment and send a new screenshot.", "Not received", true]
+      }[act];
+      confirmSheet({ title: copy[0], text: copy[1], confirmLabel: copy[2], danger: copy[3], onConfirm: () => send() });
+      break;
+    }
+    case "del-order": {
+      const o = S.orders.find((x) => x.orderId === el.dataset.id);
+      confirmSheet({
+        title: "Delete order " + el.dataset.id + "?",
+        text: "This removes " + esc((o && o.customerName) || "this order") + "'s order here and from the Google Sheet. It can't be undone.",
+        confirmLabel: "Delete order", danger: true,
+        onConfirm: async () => {
+          try {
+            if (S.mode === "live") await api("DELETE", "/admin/api/orders/" + encodeURIComponent(el.dataset.id));
+            S.orders = S.orders.filter((x) => x.orderId !== el.dataset.id);
+            toast("Order deleted"); render();
+          } catch (err) { toast(err.message, true); }
+        }
+      });
+      break;
+    }
+    case "reset": {
+      confirmSheet({
+        title: "Reset all orders?",
+        text: "This deletes all " + S.orders.length + " orders. Saved customers are kept. A backup copy stays on the server.",
+        confirmLabel: "Reset everything", danger: true, typeWord: "RESET",
+        onConfirm: async () => {
+          try {
+            let r = { count: S.orders.length, sheet: "not connected" };
+            if (S.mode === "live") r = await api("POST", "/admin/api/orders/reset", { confirm: "RESET" });
+            S.orders = [];
+            toast("Reset: " + r.count + " order(s) removed" + (String(r.sheet).startsWith("failed") ? ". Google Sheet not cleared." : "."), String(r.sheet).startsWith("failed"));
+            render();
+          } catch (err) { toast(err.message, true); }
+        }
+      });
+      break;
+    }
+  }
+});
+document.addEventListener("change", async (e) => {
+  if (e.target.id !== "qrFile" || !e.target.files[0]) return;
+  const file = e.target.files[0];
+  if (!/^image\/(png|jpeg)$/.test(file.type)) return toast("Please choose a PNG or JPG picture.", true);
+  if (file.size > 5 * 1024 * 1024) return toast("That picture is over 5 MB.", true);
+  try {
+    if (S.mode === "live") {
+      const res = await fetch("/admin/api/zelle-qr", { method: "PUT", credentials: "same-origin", headers: { "Content-Type": file.type }, body: file });
+      const text = await res.text();
+      if (!res.ok) throw new Error(text || "Upload failed");
+      S.qr = JSON.parse(text);
+    } else {
+      S.qr = { url: URL.createObjectURL(file) };
+    }
+    toast("Zelle QR code saved"); render();
+  } catch (err) { toast(err.message, true); }
+});
+$("#saveBtn").addEventListener("click", save);
+$("#discardBtn").addEventListener("click", discard);
+window.addEventListener("beforeunload", (e) => { if (isDirty() && !S.leaving) { e.preventDefault(); e.returnValue = ""; } });
+
+boot();
+})();
+</script>
