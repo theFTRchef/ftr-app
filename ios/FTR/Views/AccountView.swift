@@ -62,7 +62,7 @@ struct AccountView: View {
                     if let dial = model.config?.phoneDial, let url = URL(string: "tel:\(dial)") {
                         Link(destination: url) { Label("Call \(model.config?.phoneDisplay ?? "Chef")", systemImage: "phone") }
                     }
-                    let email = model.config?.supportEmail ?? "franklintiffinroom@gmail.com"
+                    let email = model.config?.supportEmail ?? "thechef@franklintiffinroom.com"
                     if let url = URL(string: "mailto:\(email)") {
                         Link(destination: url) { Label(email, systemImage: "envelope") }
                     }

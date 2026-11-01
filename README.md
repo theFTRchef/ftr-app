@@ -48,7 +48,7 @@ APP_DEMO_PHONE=2015550123      # pick any number that is not a real customer
 APP_DEMO_CODE=482913
 
 # Optional
-APP_SUPPORT_EMAIL=franklintiffinroom@gmail.com
+APP_SUPPORT_EMAIL=thechef@franklintiffinroom.com
 APP_INSTAGRAM=ftr.doseadda
 APP_MIN_VERSION=1.0            # raise later to force old app versions to update
 
