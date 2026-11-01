@@ -91,7 +91,7 @@ struct LiveDoseInfo: Decodable, Hashable {
     struct Session: Decodable, Hashable { let start: String; let end: String; let label: String; let title: String }
     struct Extension: Decodable, Hashable { let minutes: Int; let fee: Double }
     let sessions: [Session]?
-    let extension: Extension?
+    let extraTime: Extension?
     let extraDoseNote: String?
     let setupMinutes: Int?
 }
@@ -177,7 +177,7 @@ struct OrderPreview: Decodable {
         let servingEnd: String
         let sessionEnd: String?
         let extraMinutes: Int
-        let extension: LiveDoseInfo.Extension?
+        let extraTime: LiveDoseInfo.Extension?
         let extraDoseNote: String?
         let delayFeePerHour: Double?
     }

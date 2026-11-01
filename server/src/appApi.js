@@ -162,7 +162,7 @@ function ldsTimes(menu) {
       label: w.label,
       title: `${formatTimeLabel(w.start)} - ${formatTimeLabel(w.end)}`
     })),
-    extension: { minutes: ext.minutes, fee: ext.fee },
+    extraTime: { minutes: ext.minutes, fee: ext.fee },
     extraDoseNote: f.extraDoseText(lds),
     setupMinutes: Number(lds.setupMinutes) > 0 ? Number(lds.setupMinutes) : 30
   };
@@ -573,7 +573,7 @@ async function buildOrder(phone, body) {
         servingEnd: endLabel,
         sessionEnd: formatTimeLabel(slotEnd),
         extraMinutes: extMin,
-        extension: t.extension,
+        extraTime: t.extraTime,
         extraDoseNote: t.extraDoseNote,
         delayFeePerHour: Number((f.liveDoseConfig(menu) || {}).delayFeePerHour) || 0
       };

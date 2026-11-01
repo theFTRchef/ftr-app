@@ -81,7 +81,7 @@ struct LiveDoseView: View {
                                 }
                                 .font(Typeface.body(15))
                             }
-                            if let ext = lds.extension {
+                            if let ext = lds.extraTime {
                                 Text("Need longer? Add \(ext.minutes) extra minutes for \(Money.text(ext.fee)) when you book.")
                                     .font(Typeface.body(14)).foregroundStyle(Palette.muted)
                             }

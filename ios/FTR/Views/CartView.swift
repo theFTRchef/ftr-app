@@ -431,7 +431,7 @@ struct CheckoutView: View {
                     Text(note).font(Typeface.body(14)).foregroundStyle(Palette.muted)
                 }
             }
-            if let ext = ldsInfo?.extension {
+            if let ext = ldsInfo?.extraTime {
                 Text("Need longer? Add \(ext.minutes) extra minutes of serving for \(Money.text(ext.fee)).")
                     .font(Typeface.body(15))
                 HStack(spacing: 10) {
