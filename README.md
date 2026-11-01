@@ -127,6 +127,8 @@ the WhatsApp buttons do). Edit price stays on WhatsApp.
 - **Saved cart:** the cart is kept with the customer's account, so they can leave and pick it up later on any phone; there's also a Save for later button.
 - **Select several dishes** from the menu at once and set their quantities on one screen.
 - **Your admin switches** (pickup only, half trays, Zelle deposit, each date's Lunch/Dinner/Delivery/LIVE Dose, a dish's required question) show in the app; it re-reads them whenever it's opened.
+- **LIVE Dose sessions:** customers pick one of your standard on-site sessions (Setup › Standard times), see when the crew arrives, the extra-doses rate, and can add extra time (30 min for $100 by default).
+- **Chef changes the time / messages the customer** (WhatsApp: Edit / message, or Chef's Kitchen: Change time, Message customer): app customers get Chef's message in Notifications and reply from the order page; the reply reaches your WhatsApp with Approve / Edit / Decline. A changed time shows on the order once you approve.
 - **Account:** name, custom quote request, ask a question, call Chef, sign out, delete account.
 
 ## Testing locally without texts or WhatsApp
