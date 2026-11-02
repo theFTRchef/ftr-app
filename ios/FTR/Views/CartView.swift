@@ -205,6 +205,7 @@ struct CheckoutView: View {
     @State private var placeError: String?
     @State private var requestId = UUID().uuidString
     @State private var extendTime = false
+    @State private var orderNote = ""
 
     private var isLDS: Bool { model.cart.isLiveDose }
     private var ldsInfo: LiveDoseInfo? { model.categories.first(where: { $0.kind == .lds })?.liveDose }
@@ -519,6 +520,11 @@ struct CheckoutView: View {
                     }
                     Label(p.payment.text, systemImage: "dollarsign.circle").font(Typeface.body(15))
                 }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Note for Chef (optional)").font(Typeface.body(16, weight: .semibold))
+                    TextField(isLDS ? "Gate code, parking, setup space…" : "Allergies, pickup person, anything else…", text: $orderNote, axis: .vertical)
+                        .lineLimit(2...4).font(Typeface.body(16)).fieldStyle()
+                }
                 Text("Nothing is charged now. Chef reviews every order and you'll get the answer here in the app.")
                     .font(Typeface.body(14)).foregroundStyle(Palette.muted)
                 if let placeError { Notice(tone: .bad, icon: "exclamationmark.circle", text: placeError) }
@@ -554,6 +560,7 @@ struct CheckoutView: View {
             useUnverifiedAddress: useUnverified,
             askChefOutOfRange: askChef,
             pickupAgreed: pickupAgreed,
+            orderNote: orderNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : orderNote,
             clientRequestId: requestId
         )
     }

@@ -242,6 +242,8 @@ struct Order: Decodable, Identifiable, Hashable {
     let quote: Quote?
     let payment: Payment?
     let canUploadProof: Bool
+    /// The customer's note for the whole order.
+    let orderNote: String?
     /// Chef changed the time before approving.
     struct TimeChange: Decodable, Hashable { let from: String; let to: String; let at: String? }
     let timeChange: TimeChange?

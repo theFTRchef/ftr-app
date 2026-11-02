@@ -928,6 +928,7 @@ function orderCard(o, compact) {
   const total = o.type === "custom" && !o.quoted ? '<span class="muted small">Not quoted yet</span>' : '<span class="o-total">' + money(o.subtotal, true) + "</span>";
   const facts =
     "<dt>Type</dt><dd>" + kind + "</dd>" +
+    (o.orderNote ? "<dt>Note</dt><dd>" + esc(o.orderNote) + "</dd>" : "") +
     (o.requestedTime ? "<dt>When</dt><dd>" + esc(o.requestedTime) +
       (o.timeChangedByChef ? '<div class="note">Changed by you – customer asked for ' + esc(o.timeChangedByChef.from) + "</div>" : "") + "</dd>" : "") +
     (o.address ? "<dt>Address</dt><dd>" + esc(o.address) +

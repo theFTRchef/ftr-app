@@ -85,6 +85,10 @@ const PUSH_TITLES = {
 function classify(entry) {
   if (/quote is ready/i.test(entry.header || "")) return { tag: "quote", tagLabel: "Quote ready" };
   const text = String(entry.text || "");
+  // Approval and the Zelle details now arrive as one message (update-23).
+  if (/Chef approved your order/i.test(text) && /deposit by Zelle|Scan with your bank app/i.test(text)) {
+    return { tag: "approved", tagLabel: "Approved · deposit due" };
+  }
   for (const [tag, tagLabel, re] of TAGS) if (re.test(text)) return { tag, tagLabel };
   return { tag: "update", tagLabel: "Update" };
 }

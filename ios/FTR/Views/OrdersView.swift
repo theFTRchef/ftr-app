@@ -392,6 +392,9 @@ struct OrderDetailView: View {
             if o.isCustom, let r = o.request {
                 Text(r).font(Typeface.body(16))
             }
+            if let note = o.orderNote, !note.isEmpty {
+                Label("“\(note)”", systemImage: "note.text").font(Typeface.body(15)).foregroundStyle(Palette.muted)
+            }
             ForEach(Array(o.lines.enumerated()), id: \.offset) { _, l in
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 2) {

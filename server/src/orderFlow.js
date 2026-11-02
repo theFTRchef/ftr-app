@@ -251,20 +251,18 @@ function lineLabel(l) {
  */
 async function sendWelcome(to, greet = true) {
   const menu = botMenu();
+  let hello = "";
   if (greet) {
     const profile = customerStore.get(to);
-    await sendText(
-      to,
-      profile?.firstName
-        ? `Welcome back to ${menu.settings.businessName}, ${profile.firstName}!`
-        : `Welcome to ${menu.settings.businessName}!`
-    );
+    hello = profile?.firstName
+      ? `Welcome back to ${menu.settings.businessName}, ${profile.firstName}!\n\n`
+      : `Welcome to ${menu.settings.businessName}!\n\n`;
   }
   await sendList(to, {
     header: shortName(menu),
-    body: menu.settings.tagline
-      ? `${menu.settings.tagline}\n\nHow can we help you today?`
-      : "How can we help you today?",
+    body:
+      hello +
+      (menu.settings.tagline ? `${menu.settings.tagline}\n\nHow can we help you today?` : "How can we help you today?"),
     buttonLabel: "Choose an option",
     sections: [
       {
@@ -383,7 +381,7 @@ function categoriesAllowedForCart(menu, cart, onlyDate) {
 const NO_DATES_MESSAGE = (menu) =>
   `The chef doesn't have any dates open in the next ${BOOKING_WINDOW_DAYS} days. Please check back soon, or call us at ${menu.settings.phoneDisplay} to ask about your event.`;
 
-async function sendMainMenu(to, greet = true) {
+async function sendMainMenu(to, greet = true, intro = "") {
   const menu = botMenu();
   const sess = sessionStore.getOrCreate(to);
   const cart = sess.cart || [];
@@ -421,7 +419,7 @@ async function sendMainMenu(to, greet = true) {
   }));
   await sendList(to, {
     header: shortName(menu),
-    body: "What would you like to order?",
+    body: (intro ? `${intro}\n\n` : "") + "What would you like to order?",
     buttonLabel: "View Menu",
     sections
   });
@@ -446,7 +444,7 @@ function chunk(arr, size) {
  * so the customer can tap an item from whichever message they're looking
  * at.
  */
-async function sendCategoryItems(to, category) {
+async function sendCategoryItems(to, category, intro = "", page = 0) {
   const rowFor = (i) => {
     const size = i.size ? `${i.size} - ` : "";
     const serves = servingsLabel(i);
@@ -456,22 +454,47 @@ async function sendCategoryItems(to, category) {
       description: `$${i.price.toFixed(2)} - ${size}${serves}`.slice(0, 72)
     };
   };
-
-  const pages = chunk(category.items, MAX_ROWS_PER_LIST);
-
-  for (let p = 0; p < pages.length; p += 1) {
-    const rows = pages[p].map(rowFor);
-    const pageSuffix = pages.length > 1 ? ` (${p + 1}/${pages.length})` : "";
-    await sendList(to, {
-      header: `${category.title}${pageSuffix}`,
-      body:
-        p === 0
-          ? "Pick an item to add to your order:"
-          : "More items in this category:",
-      buttonLabel: "View Items",
-      sections: [{ title: category.title, rows }]
+  // One list at a time (WhatsApp lists hold 10 rows): 9 dishes plus a
+  // "More dishes" row that opens the next page only if they want it.
+  const items = category.items || [];
+  const per = items.length > MAX_ROWS_PER_LIST ? MAX_ROWS_PER_LIST - 1 : MAX_ROWS_PER_LIST;
+  const pages = Math.max(1, Math.ceil(items.length / per));
+  const p = Math.min(Math.max(0, page), pages - 1);
+  const rows = items.slice(p * per, p * per + per).map(rowFor);
+  if (pages > 1) {
+    const next = (p + 1) % pages;
+    rows.push({
+      id: `more:${category.id}:${next}`,
+      title: next === 0 ? "Back to first dishes" : "More dishes",
+      description: next === 0 ? "Show the first page again" : `See dishes ${next * per + 1}-${Math.min(items.length, (next + 1) * per)}`
     });
   }
+  await sendList(to, {
+    header: `${category.title}${pages > 1 ? ` (${p + 1}/${pages})` : ""}`,
+    body: (intro ? `${intro}\n\n` : "") + (p === 0 ? "Pick an item to add to your order:" : "More dishes - pick one to add:"),
+    buttonLabel: "View Items",
+    sections: [{ title: category.title.slice(0, 24), rows }]
+  });
+}
+
+/** Put a dish in the cart and show the order so far. */
+async function addLineToCart(from, session, menu, item, qty, note) {
+  const line = { ...item, qty, note };
+  if (!Number.isInteger(qty)) {
+    // Half trays aren't half price: keep qty x price = the real total.
+    const total = trayTotal(menu, item.price, qty);
+    line.fullTrayPrice = item.price;
+    line.price = total / qty;
+  }
+  const cart = [...session.cart, line];
+  sessionStore.set(from, {
+    ...session,
+    cart,
+    pendingItem: null,
+    pendingQty: null,
+    step: "AWAITING_ADD_MORE"
+  });
+  return sendAddMorePrompt(from, cart, line);
 }
 
 /** Half-tray orders switched on in admin Setup? */
@@ -858,11 +881,12 @@ async function sendOrderSummary(to, session) {
     payments.enabled()
       ? `${payments.settings().depositPercent}% Zelle deposit after Chef approves, balance ${balanceWhen}`
       : `collected ${balanceWhen}`
-  }\n\nShall I send this in for approval?`;
+  }${session.orderNote ? `\nYour note: ${session.orderNote}` : ""}\n\nShall I send this in for approval?`;
   await sendButtons(to, {
-    body: summary,
+    body: summary.slice(0, 1024),
     buttons: [
       { id: "confirm:yes", title: "Submit order" },
+      { id: "confirm:note", title: session.orderNote ? "Change note" : "Add a note" },
       { id: "confirm:no", title: "Cancel" }
     ]
   });
@@ -888,7 +912,8 @@ async function requestApproval(to, session) {
     addressVerified: !!session.addressVerified,
     distanceMiles: session.distanceMiles ?? null,
     requestedTime: session.requestedTime,
-    eventDate: session.selectedDate || null
+    eventDate: session.selectedDate || null,
+    orderNote: session.orderNote || null
   };
 
   pendingOrderStore.create(id, order);
@@ -939,7 +964,7 @@ async function sendApprovalPrompt(ownerNumber, id, order) {
     header: order.channel === "app" ? "New app order needs approval" : "New order needs approval",
     body: `Order ${id} from ${order.customerName || "customer"} (${order.customerPhone})${order.channel === "app" ? " via the FTR app" : ""}\n${itemsSummary}\nSubtotal: $${order.subtotal.toFixed(
       2
-    )}\n${fulfillmentLine}\nRequested time: ${order.requestedTime}${rangeLine}`,
+    )}\n${fulfillmentLine}\nRequested time: ${order.requestedTime}${rangeLine}${order.orderNote ? `\nCustomer note: ${order.orderNote}` : ""}`.slice(0, 1024),
     buttons: [
       { id: `approve:${id}`, title: "Approve" },
       { id: `editprice:${id}`, title: "Edit / message" },
@@ -1046,12 +1071,11 @@ async function approveOrder(id, order, ownerNumber) {
   endChat(ownerNumber, id, order.customerPhone);
   pendingOrderStore.remove(id);
   if (payments.enabled()) {
-    await sendText(
-      order.customerPhone,
-      `Good news - Chef approved your order ${id}! Total: $${order.subtotal.toFixed(2)}.\nTime: ${order.requestedTime}` + chefTimeNote(order)
-    ).catch((err) => console.error(`Failed to send approval for ${id}:`, err.message));
     try {
-      const pay = await payments.requestDeposit(order);
+      const pay = await payments.requestDeposit(
+        order,
+        `Good news - Chef approved your order ${id}! Total: $${order.subtotal.toFixed(2)}.\nTime: ${order.requestedTime}` + chefTimeNote(order)
+      );
       if (ownerNumber && pay) {
         await sendText(
           ownerNumber,
@@ -1494,9 +1518,8 @@ async function handleQuoteResponse(from, replyId) {
   const price = `$${order.subtotal.toFixed(2)}`;
 
   if (action === "caccept" && payments.enabled()) {
-    await sendText(from, `Great - you accepted the quote for custom order ${id} (${price}).`);
     try {
-      await payments.requestDeposit(order);
+      await payments.requestDeposit(order, `Great - you accepted the quote for custom order ${id} (${price}).`);
     } catch (err) {
       console.error(`Failed to request deposit for ${id}:`, err.message);
     }
@@ -2021,11 +2044,11 @@ async function chooseEventDate(from, menu, date, req = null) {
       prefer,
       step: "AWAITING_CATEGORY"
     });
-    await sendText(
+    return sendMainMenu(
       from,
+      false,
       `${label} it is! Here's what Chef offers that day:\n${offeringsText(menu, entry)}` + (note ? `\n\n${note}` : "")
     );
-    return sendMainMenu(from, false);
   }
 
   let why;
@@ -2125,6 +2148,7 @@ const STEP_DOING = {
   AWAITING_CONFIRM: "reviewing your order",
   AWAITING_PICKUP_AGREE: "confirming pickup",
   AWAITING_LDS_EXTEND: "choosing your LIVE Dose time",
+  AWAITING_ORDER_NOTE: "adding a note to your order",
   AWAITING_RANGE_APPROVAL: "waiting for Chef to OK your address",
   AWAITING_CUSTOM_REQUEST: "writing a custom request",
   AWAITING_QUESTION: "asking us a question"
@@ -2206,6 +2230,8 @@ async function repromptStep(from, session, menu) {
     }
     case "AWAITING_CONFIRM":
       return sendOrderSummary(from, session);
+    case "AWAITING_ORDER_NOTE":
+      return sendOrderSummary(from, { ...session, step: "AWAITING_CONFIRM" });
     case "AWAITING_LDS_EXTEND":
       if (session.ldsSession) return offerLdsExtension(from, session, menu);
       break;
@@ -2255,8 +2281,7 @@ async function handlePickupAgreement(from, session, menu, replyId) {
     const category = findCategory(menu, session.itemCategoryId);
     const updated = { ...session, pickupAgreed: true, fulfillment: "pickup", step: "AWAITING_ITEM" };
     sessionStore.set(from, updated);
-    await sendText(from, "Thank you! Pickup it is. Here are the dishes:");
-    if (category) return sendCategoryItems(from, category);
+    if (category) return sendCategoryItems(from, category, "Thank you! Pickup it is.");
     sessionStore.set(from, { ...updated, step: "AWAITING_CATEGORY" });
     return sendMainMenu(from, false);
   }
@@ -2705,6 +2730,11 @@ async function handleIncoming(payload) {
     }
 
     case "AWAITING_ITEM": {
+      if (replyId && replyId.startsWith("more:")) {
+        const [, catId, pg] = replyId.split(":");
+        const cat = findCategory(menu, catId);
+        if (cat) return sendCategoryItems(from, cat, "", Number(pg) || 0);
+      }
       if (replyId && replyId.startsWith("item:")) {
         const item = findItem(menu, replyId.slice(5));
         if (item) {
@@ -2759,13 +2789,18 @@ async function handleIncoming(payload) {
         return sendQtyPrompt(from, item, menu);
       }
       if (qty && qty >= min) {
-        sessionStore.set(from, {
-          ...session,
-          pendingItem: item,
-          pendingQty: qty,
-          step: "AWAITING_ITEM_NOTE"
-        });
-        return sendItemNotePrompt(from, item);
+        if (item.requiresNote) {
+          sessionStore.set(from, {
+            ...session,
+            pendingItem: item,
+            pendingQty: qty,
+            step: "AWAITING_ITEM_NOTE"
+          });
+          return sendItemNotePrompt(from, item);
+        }
+        // No per-dish note question - customers can add one note for the
+        // whole order at the summary (fewer messages).
+        return addLineToCart(from, session, menu, item, qty, null);
       }
       return sendText(
         from,
@@ -2790,23 +2825,7 @@ async function handleIncoming(payload) {
         return sendItemNotePrompt(from, item);
       }
       const note = SKIP_WORDS.test(text) ? null : text;
-      const qty = session.pendingQty;
-      const line = { ...item, qty, note };
-      if (!Number.isInteger(qty)) {
-        // Half trays aren't half price: keep qty x price = the real total.
-        const total = trayTotal(menu, item.price, qty);
-        line.fullTrayPrice = item.price;
-        line.price = total / qty;
-      }
-      const cart = [...session.cart, line];
-      sessionStore.set(from, {
-        ...session,
-        cart,
-        pendingItem: null,
-        pendingQty: null,
-        step: "AWAITING_ADD_MORE"
-      });
-      return sendAddMorePrompt(from, cart, line);
+      return addLineToCart(from, session, menu, item, session.pendingQty, note);
     }
 
     case "AWAITING_LDS_TOTAL": {
@@ -2885,6 +2904,14 @@ async function handleIncoming(payload) {
 
     case "AWAITING_ADD_MORE": {
       if (replyId === "addmore:yes") {
+        // Only one menu they can add from? Go straight to its dishes.
+        const allowed = categoriesAllowedForCart(menu, session.cart, session.eventDate).filter(
+          (c) => c.type !== "live-dose-station"
+        );
+        if (allowed.length === 1 && (allowed[0].items || []).length) {
+          sessionStore.set(from, { ...session, step: "AWAITING_ITEM", itemCategoryId: allowed[0].id });
+          return sendCategoryItems(from, allowed[0]);
+        }
         sessionStore.set(from, { ...session, step: "AWAITING_CATEGORY" });
         return sendMainMenu(from, false);
       }
@@ -2974,6 +3001,13 @@ async function handleIncoming(payload) {
 
     case "AWAITING_PICKUP_AGREE": {
       return handlePickupAgreement(from, session, menu, replyId);
+    }
+
+    case "AWAITING_ORDER_NOTE": {
+      if (!isText) return sendText(from, `Please type your note, or "skip".`);
+      const updated = { ...session, orderNote: SKIP_WORDS.test(text) ? null : text.slice(0, 500), step: "AWAITING_CONFIRM" };
+      sessionStore.set(from, updated);
+      return sendOrderSummary(from, updated);
     }
 
     case "AWAITING_LDS_EXTEND": {
@@ -3130,6 +3164,10 @@ async function handleIncoming(payload) {
         const finalSession = session;
         sessionStore.clear(from);
         return requestApproval(from, finalSession);
+      }
+      if (replyId === "confirm:note") {
+        sessionStore.set(from, { ...session, step: "AWAITING_ORDER_NOTE" });
+        return sendText(from, `Type your note for Chef (spice level, allergies, anything about the dishes), or "skip".`);
       }
       if (replyId === "confirm:no") {
         sessionStore.clear(from);

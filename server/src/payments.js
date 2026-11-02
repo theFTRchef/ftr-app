@@ -203,7 +203,7 @@ function payInstructions(order) {
  * Put an order into "Awaiting Deposit" and send the customer the Zelle
  * details. Returns false (and does nothing) if deposits aren't set up.
  */
-async function requestDeposit(order) {
+async function requestDeposit(order, intro = "") {
   const menu = menuStore.getMenu();
   if (!enabled(menu)) return false;
   const s = settings(menu);
@@ -228,13 +228,19 @@ async function requestDeposit(order) {
   await updateOrderStatus(order.orderId, STATUS.awaiting).catch(() => {});
   await syncPaymentCell(updated);
 
-  await sendText(order.customerPhone, payInstructions(updated));
+  // One message: approval note + Zelle details, on the QR picture if there is one.
+  const message = (intro ? `${intro}\n\n` : "") + payInstructions(updated);
   const qr = qrInfo();
-  if (qr) {
-    await sendImage(order.customerPhone, baseUrl() + qr.url, `Scan with your bank app to pay ${s.zelleName || s.zelleTo} by Zelle. Then PLEASE UPLOAD THE SCREENSHOT CONFIRMATION HERE.`).catch(
-      (err) => console.error(`Zelle QR not sent for ${order.orderId}:`, err.message)
-    );
+  let sent = false;
+  if (qr && message.length <= 1024) {
+    try {
+      await sendImage(order.customerPhone, baseUrl() + qr.url, message);
+      sent = true;
+    } catch (err) {
+      console.error(`Zelle QR not sent for ${order.orderId}:`, err.message);
+    }
   }
+  if (!sent) await sendText(order.customerPhone, message);
   return payment;
 }
 
@@ -453,13 +459,8 @@ async function handleCustomerImage(from, image) {
     : check.issues.length
     ? "CHECK: " + check.issues.join("; ")
     : "Looks right: " + check.notes.join(", ");
-  try {
-    await sendImage(ownerNumber, `${baseUrl()}/payment-proof/${token}.jpg`, `Zelle screenshot for ${order.orderId}`);
-  } catch (err) {
-    console.error(`Couldn't forward screenshot for ${order.orderId}:`, err.message);
-  }
-  await sendButtons(ownerNumber, {
-    header: "Deposit screenshot",
+  const proofUrl = `${baseUrl()}/payment-proof/${token}.jpg`;
+  const card = {
     body: (
       `${order.customerName || "Customer"} (${order.customerPhone}) sent a Zelle screenshot for ${order.orderId}.\n` +
       `Deposit due: ${money(order.payment.depositDue)} (order total ${money(order.subtotal)})\n` +
@@ -470,7 +471,15 @@ async function handleCustomerImage(from, image) {
       { id: `paid:${order.orderId}`, title: "Payment received" },
       { id: `unpaid:${order.orderId}`, title: "Not received" }
     ]
-  }).catch((err) => console.error(`Couldn't send deposit buttons for ${order.orderId}:`, err.message));
+  };
+  // Screenshot on top of the buttons, in one message.
+  await sendButtons(ownerNumber, { ...card, headerImage: proofUrl }).catch(async (err) => {
+    console.error(`Picture+buttons failed for ${order.orderId}, sending separately:`, err.message);
+    await sendImage(ownerNumber, proofUrl, `Zelle screenshot for ${order.orderId}`).catch(() => {});
+    await sendButtons(ownerNumber, { header: "Deposit screenshot", ...card }).catch((e) =>
+      console.error(`Couldn't send deposit buttons for ${order.orderId}:`, e.message)
+    );
+  });
   return true;
 }
 

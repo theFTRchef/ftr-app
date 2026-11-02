@@ -593,6 +593,8 @@ async function buildOrder(phone, body) {
     requestedTime,
     eventDate: date,
     channel: "app",
+    // Note for the whole order (same as WhatsApp's "Add a note").
+    orderNote: String(body.orderNote || "").trim().slice(0, 500) || null,
     ...(outOfRange ? { outOfRange } : {})
   };
 
@@ -612,6 +614,7 @@ async function buildOrder(phone, body) {
     outOfRange,
     requestedTime,
     schedule,
+    orderNote: String(body.orderNote || "").trim().slice(0, 500) || null,
     payment: payments.enabled(menu)
       ? {
           deposit: true,
@@ -716,6 +719,7 @@ function orderPayload(o) {
         }
       : null,
     canUploadProof: !!p && (p.state === "awaiting" || p.state === "review"),
+    orderNote: o.orderNote || null,
     // Chef changed the time before approving (WhatsApp: Edit / message > Change time).
     timeChange: o.timeChangedByChef && !o.pending ? { from: o.timeChangedByChef.from, to: o.timeChangedByChef.to, at: o.timeChangedByChef.at || null } : null,
     // Chef's chat about this order, and whether the customer can reply right now.

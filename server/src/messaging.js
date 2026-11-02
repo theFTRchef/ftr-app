@@ -67,6 +67,11 @@ async function handleStatus(body) {
   );
   if (!entry || !entry.options || entry.fallbackSent) return;
   entry.fallbackSent = true;
+  if (entry.headerImage) {
+    await sendMessage({
+      from: FROM(), to: entry.to, channel: "whatsapp", message_type: "image", image: { url: entry.headerImage }
+    }).catch((err) => console.error("Image fallback failed:", err.message));
+  }
   const lines = entry.options.map((o, i) => `${i + 1}. ${o.label || o.title}`).join("\n");
   await sendMessage({
     from: FROM(),
@@ -120,7 +125,7 @@ async function sendText(to, text) {
   );
 }
 
-async function sendButtons(to, { header, body, footer, buttons }) {
+async function sendButtons(to, { header, headerImage, body, footer, buttons }) {
   if (buttons.length > 3) {
     throw new Error("WhatsApp reply buttons support a max of 3 options");
   }
@@ -138,7 +143,11 @@ async function sendButtons(to, { header, body, footer, buttons }) {
       type: "interactive",
       interactive: {
         type: "button",
-        ...(h ? { header: { type: "text", text: h } } : {}),
+        ...(headerImage
+          ? { header: { type: "image", image: { link: headerImage } } }
+          : h
+          ? { header: { type: "text", text: h } }
+          : {}),
         body: { text: bodyText },
         ...(f ? { footer: { text: f } } : {}),
         action: {
@@ -147,9 +156,9 @@ async function sendButtons(to, { header, body, footer, buttons }) {
       }
     }
   };
-  const route = appRoute(to, { header: header || null, text: String(body ?? ""), buttons });
+  const route = appRoute(to, { header: header || null, text: String(body ?? ""), buttons, ...(headerImage ? { imageUrl: headerImage } : {}) });
   const res = await viaWhatsApp(route, () => sendMessage(payload));
-  remember(res?.message_uuid, { to, body: bodyText, options, payload });
+  remember(res?.message_uuid, { to, body: bodyText, options, payload, headerImage });
   return res;
 }
 

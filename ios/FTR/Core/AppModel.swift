@@ -65,6 +65,7 @@ struct OrderRequest: Encodable {
     var useUnverifiedAddress: Bool
     var askChefOutOfRange: Bool
     var pickupAgreed: Bool
+    var orderNote: String? = nil
     var clientRequestId: String
 }
 

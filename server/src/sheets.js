@@ -93,6 +93,10 @@ async function request(method, suffix, body, attempt = 1) {
 
 function itemsText(order) {
   if (order.type === "custom") return `CUSTOM REQUEST: ${order.request || ""}`;
+  return itemLines(order) + (order.orderNote ? ` | NOTE: ${order.orderNote}` : "");
+}
+
+function itemLines(order) {
   return (order.cart || [])
     .map((l) => {
       const note = l.note ? ` (note: ${l.note})` : "";
