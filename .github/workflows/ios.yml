@@ -60,30 +60,37 @@ jobs:
         run: |
           mkdir -p ~/private_keys
           printf '%s' "$ASC_KEY_P8" > ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
-      - name: Archive (signed automatically with your team)
+      - name: Archive (signed later, at export)
         env:
           TEAM: ${{ secrets.APPLE_TEAM_ID }}
-          KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           xcodebuild archive \
             -project ios/FTR.xcodeproj -scheme FTR -configuration Release \
             -destination 'generic/platform=iOS' -archivePath build/FTR.xcarchive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_${KEY_ID}.p8 \
-            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
             DEVELOPMENT_TEAM="$TEAM" CURRENT_PROJECT_VERSION=${{ github.run_number }} \
-            CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Distribution"
-          # Signs straight for the App Store, so no test iPhone has to be registered.
-      - name: Upload to TestFlight
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+      - name: Sign for the App Store
         env:
           TEAM: ${{ secrets.APPLE_TEAM_ID }}
           KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ISSUER: ${{ secrets.ASC_ISSUER_ID }}
         run: |
+          # Apple signs it for the App Store with your team's distribution certificate
+          # (no test iPhone needs to be registered).
           /usr/libexec/PlistBuddy -c "Add :teamID string $TEAM" ios/ExportOptions.plist
+          /usr/libexec/PlistBuddy -c "Set :destination export" ios/ExportOptions.plist
           xcodebuild -exportArchive \
             -archivePath build/FTR.xcarchive -exportOptionsPlist ios/ExportOptions.plist \
             -exportPath build/export -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey_${KEY_ID}.p8 \
             -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER"
+          ls -la build/export
+          unzip -q -o build/export/*.ipa -d build/ipa
+          codesign -d --entitlements - build/ipa/Payload/*.app 2>&1 | head -40
+      - name: Upload to TestFlight
+        env:
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcrun altool --upload-app -f build/export/*.ipa -t ios \
+            --apiKey "$KEY_ID" --apiIssuer "$ISSUER"
