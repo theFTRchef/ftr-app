@@ -72,7 +72,9 @@ jobs:
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey_${KEY_ID}.p8 \
             -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
-            DEVELOPMENT_TEAM="$TEAM" CURRENT_PROJECT_VERSION=${{ github.run_number }}
+            DEVELOPMENT_TEAM="$TEAM" CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Distribution"
+          # Signs straight for the App Store, so no test iPhone has to be registered.
       - name: Upload to TestFlight
         env:
           TEAM: ${{ secrets.APPLE_TEAM_ID }}
