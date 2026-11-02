@@ -47,7 +47,7 @@ jobs:
 
   testflight:
     if: github.event_name == 'workflow_dispatch' && inputs.testflight
-    runs-on: macos-15
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
       - uses: maxim-lobanov/setup-xcode@v1
