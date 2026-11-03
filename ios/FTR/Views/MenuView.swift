@@ -1,124 +1,321 @@
 import SwiftUI
 
-struct MenuView: View {
+// MARK: - Welcome
+
+/// The first screen: logo, slogan and one button into FTR.
+struct WelcomeView: View {
     @Environment(AppModel.self) private var model
-    @State private var openDates: [OpenDate] = []
-    @State private var selectedDish: Dish?
+    let enter: () -> Void
+
+    var body: some View {
+        VStack(spacing: 22) {
+            Spacer()
+            FTRLogo(size: 46)
+            Text("Bringing back the OG flavor of Masala Dose")
+                .font(Typeface.tagline(20))
+                .foregroundStyle(Palette.red)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 28)
+            Spacer()
+            if let err = model.loadError, model.config == nil {
+                Text(err)
+                    .font(Typeface.body(15))
+                    .foregroundStyle(Palette.muted)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+                Button("Try again") { Task { await model.loadMenu() } }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .padding(.horizontal, 40)
+            } else {
+                Button(action: enter) {
+                    if model.config == nil { ProgressView().tint(Palette.leafInk) } else { Text("Enter FTR") }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(model.config == nil)
+                .padding(.horizontal, 40)
+            }
+            Spacer().frame(height: 40)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .screenBackground()
+    }
+}
+
+// MARK: - Home
+
+/// The home screen: one tile for each thing a customer can do.
+struct HomeView: View {
+    @Environment(AppModel.self) private var model
     @State private var showLiveDose = false
-    @State private var showCart = false
     @State private var showCustom = false
-    @State private var search = ""
-    /// Choosing several dishes at once.
-    @State private var selecting = false
-    @State private var picked: [String] = []
-    @State private var showMultiAdd = false
+    @State private var showCart = false
+    @State private var comingSoon: String?
+
+    enum Route: Hashable { case catering, availability, section(String) }
+
+    private var lds: MenuCategory? { model.categories.first { $0.kind == .lds } }
+    private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    header
-                    if !openDates.isEmpty && search.isEmpty { datesStrip }
-                    // The flagship - Live on-site Masala Dose - always leads, as on every flyer.
-                    if search.isEmpty {
-                        ForEach(model.categories.filter { $0.kind == .lds }) { liveDoseSection($0) }
+                VStack(spacing: 18) {
+                    VStack(spacing: 6) {
+                        FTRLogo(size: 30)
+                        Text("Multi Cuisine Personal Chef in Somerset, NJ")
+                            .font(Typeface.tagline(15)).foregroundStyle(Palette.ink)
+                        VegMark().foregroundStyle(Palette.ink)
                     }
-                    ForEach(model.categories.filter { $0.kind == .catering }) { cateringSection($0) }
-                    if search.isEmpty { customFooter }
+                    .padding(.top, 6)
+
+                    // Flagship first, full width - as on every flyer.
+                    Button { showLiveDose = true } label: {
+                        HStack(spacing: 14) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Our flagship").font(Typeface.body(13, weight: .bold)).kerning(1.2).foregroundStyle(Palette.red)
+                                Text("Live Dose").font(Typeface.display(26, relativeTo: .title2))
+                                Text(lds?.open == false ? "No LIVE Dose dates open right now" : "Live on-site Masala Dose at your event")
+                                    .font(Typeface.body(14))
+                            }
+                            Spacer(minLength: 0)
+                            DoseGlyph().frame(width: 58, height: 58)
+                        }
+                        .foregroundStyle(Color(UIColor(hex: 0x1E3A27)))
+                        .padding(18)
+                        .background(Palette.turmeric, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Palette.goldLine, lineWidth: 2))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(lds == nil)
+
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        NavigationLink(value: Route.catering) {
+                            HomeTile(title: "Catering Items", subtitle: "Trays for your gathering", icon: "takeoutbag.and.cup.and.straw.fill")
+                        }
+                        NavigationLink(value: Route.availability) {
+                            HomeTile(title: "Chef's Availability", subtitle: "Open dates and times", icon: "calendar")
+                        }
+                        Button { model.selectedTab = .account } label: {
+                            HomeTile(title: "My Account", subtitle: model.isSignedIn ? (model.profile?.firstName ?? "Signed in") : "Sign in with your phone", icon: "person.crop.circle")
+                        }
+                        Button { showCustom = true } label: {
+                            HomeTile(title: "Custom Quote", subtitle: "Tell Chef what you need", icon: "square.and.pencil")
+                        }
+                        Button { comingSoon = "At-Home Chef!" } label: {
+                            HomeTile(title: "At-Home Chef!", subtitle: "Coming soon", icon: "house.fill", soon: true)
+                        }
+                        Button { comingSoon = "Supper Club" } label: {
+                            HomeTile(title: "Supper Club", subtitle: "Coming soon", icon: "wineglass.fill", soon: true)
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
-                .padding(.bottom, model.cart.isEmpty && !selecting ? 24 : 96)
+                .padding(16)
+                .padding(.bottom, model.cart.isEmpty ? 8 : 80)
             }
             .screenBackground()
-            .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search dishes")
-            .refreshable { await reload() }
-            .task { await loadDates() }
+            .refreshable { await model.loadMenu() }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(selecting ? "Cancel" : "Select dishes") {
-                        withAnimation(.snappy) {
-                            selecting.toggle()
-                            picked = []
-                        }
-                    }
-                    .font(Typeface.body(16, weight: .semibold))
-                }
                 if let dial = model.config?.phoneDial, let url = URL(string: "tel:\(dial)") {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Link(destination: url) { Image(systemName: "phone") }
-                            .accessibilityLabel("Call Chef")
+                        Link(destination: url) { Image(systemName: "phone") }.accessibilityLabel("Call Chef")
                     }
                 }
             }
-            .safeAreaInset(edge: .bottom) {
-                if selecting { selectBar } else if !model.cart.isEmpty { cartBar }
-            }
-            .sheet(isPresented: $showMultiAdd) {
-                MultiAddSheet(dishes: picked.compactMap { model.dish($0) }) {
-                    selecting = false
-                    picked = []
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .catering: CateringSectionsView()
+                case .availability: AvailabilityView()
+                case .section(let id): CategoryDishesView(categoryId: id)
                 }
             }
-            .sheet(item: $selectedDish) { DishSheet(dish: $0, category: category(of: $0)) }
-            .sheet(isPresented: $showLiveDose) {
-                if let cat = model.categories.first(where: { $0.kind == .lds }) { LiveDoseView(category: cat) }
-            }
-            .sheet(isPresented: $showCart) { CartView() }
+            .safeAreaInset(edge: .bottom) { if !model.cart.isEmpty { CartBar { showCart = true } } }
+            .sheet(isPresented: $showLiveDose) { if let cat = lds { LiveDoseView(category: cat) } }
             .sheet(isPresented: $showCustom) { CustomRequestView() }
-        }
-    }
-
-    // MARK: sections
-
-    private var header: some View {
-        VStack(alignment: .center, spacing: 6) {
-            FTRLogo(size: 34)
-                .padding(.bottom, 4)
-            Text("Bringing back the OG flavor of Masala Dose")
-                .font(Typeface.tagline(17))
-                .foregroundStyle(Palette.red)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Text("Multi Cuisine Personal Chef in Somerset, NJ")
-                .font(Typeface.tagline(16))
-                .foregroundStyle(Palette.ink)
-            VegMark()
-                .foregroundStyle(Palette.ink)
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
-        .padding(.bottom, 20)
-    }
-
-    private var datesStrip: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Chef's open dates")
-                .font(Typeface.body(15, weight: .semibold))
-                .foregroundStyle(Palette.muted)
-                .padding(.horizontal, 20)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(openDates) { d in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(d.label).font(Typeface.body(16, weight: .bold)).foregroundStyle(Palette.ink)
-                            Text(d.summary)
-                                .font(Typeface.body(13))
-                                .foregroundStyle(Palette.muted)
-                                .lineLimit(3)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .frame(width: 172, alignment: .topLeading)
-                        .padding(12)
-                        .background(Palette.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Palette.line))
-                    }
-                }
-                .padding(.horizontal, 20)
+            .sheet(isPresented: $showCart) { CartView() }
+            .alert(comingSoon ?? "", isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Coming soon. Ask Chef about it with a custom quote, or call \(model.config?.phoneDisplay ?? "us").")
             }
         }
-        .padding(.bottom, 26)
+    }
+}
+
+struct HomeTile: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    var soon = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(soon ? Palette.muted : Palette.red)
+            Spacer(minLength: 0)
+            Text(title)
+                .font(Typeface.display(18, relativeTo: .headline))
+                .foregroundStyle(soon ? Palette.muted : Palette.ink)
+                .multilineTextAlignment(.leading)
+            Text(subtitle)
+                .font(Typeface.body(13, weight: soon ? .semibold : .regular))
+                .foregroundStyle(soon ? Palette.turmericInk : Palette.muted)
+                .multilineTextAlignment(.leading)
+        }
+        .frame(maxWidth: .infinity, minHeight: 128, alignment: .topLeading)
+        .padding(14)
+        .background(soon ? Palette.surface2 : Palette.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Palette.line))
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct CartBar: View {
+    @Environment(AppModel.self) private var model
+    let open: () -> Void
+    var body: some View {
+        Button(action: open) {
+            HStack {
+                Text(model.cart.isLiveDose ? "LIVE Dose Station" : "\(model.cart.count) dish\(model.cart.count == 1 ? "" : "es")")
+                Spacer()
+                Text("View order · \(Money.text(model.cart.subtotal))").monospacedDigit()
+            }
+        }
+        .buttonStyle(PrimaryButtonStyle())
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(.bar)
+    }
+}
+
+// MARK: - Catering sections
+
+/// South Indian, Asian Fusion, Chaats & Snacks... - the menu sections from /admin.
+struct CateringSectionsView: View {
+    @Environment(AppModel.self) private var model
+    @State private var showCart = false
+
+    private var sections: [MenuCategory] { model.categories.filter { $0.kind == .catering && !$0.items.isEmpty } }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Catering Items").font(Typeface.display(30)).foregroundStyle(Palette.red)
+                if model.config?.cateringPickupOnly == true {
+                    Text("Trays for pickup from our kitchen · \(model.config?.halfTrays == true ? "full or half trays" : "full trays")")
+                        .font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                }
+                if sections.first?.open == false {
+                    Notice(tone: .warn, icon: "calendar.badge.exclamationmark", text: "Chef has no catering dates open right now. You can still browse, or ask for a custom quote.")
+                }
+                ForEach(sections) { c in
+                    NavigationLink(value: HomeView.Route.section(c.id)) {
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(c.title).font(Typeface.display(21, relativeTo: .title3)).foregroundStyle(Palette.ink)
+                                Text(c.subtitle.isEmpty ? "\(c.items.count) dish\(c.items.count == 1 ? "" : "es")" : c.subtitle)
+                                    .font(Typeface.body(14)).foregroundStyle(Palette.muted).lineLimit(2).multilineTextAlignment(.leading)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(Palette.muted)
+                        }
+                        .padding(16)
+                        .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.line))
+                    }
+                    .buttonStyle(.plain)
+                }
+                if sections.isEmpty {
+                    Text("Chef is updating the menu. Please check back soon.").font(Typeface.body(15)).foregroundStyle(Palette.muted)
+                }
+            }
+            .padding(16)
+            .padding(.bottom, model.cart.isEmpty ? 8 : 80)
+        }
+        .screenBackground()
+        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) { if !model.cart.isEmpty { CartBar { showCart = true } } }
+        .sheet(isPresented: $showCart) { CartView() }
+    }
+}
+
+/// One section's dishes, to add to the order (one at a time or several at once).
+struct CategoryDishesView: View {
+    @Environment(AppModel.self) private var model
+    let categoryId: String
+    @State private var selectedDish: Dish?
+    @State private var showCart = false
+    @State private var search = ""
+    @State private var selecting = false
+    @State private var picked: [String] = []
+    @State private var showMultiAdd = false
+
+    private var cat: MenuCategory? { model.categories.first { $0.id == categoryId } }
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                if let cat {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(cat.title).font(Typeface.display(28, relativeTo: .title)).foregroundStyle(Palette.red)
+                        if !cat.subtitle.isEmpty {
+                            Text(cat.subtitle).font(Typeface.body(15)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 12)
+                    if !cat.open {
+                        Notice(tone: .warn, icon: "calendar.badge.exclamationmark", text: "Chef has no catering dates open right now. You can still browse, or ask for a custom quote.")
+                            .padding(.horizontal, 20).padding(.bottom, 8)
+                    }
+                    ForEach(filtered(cat)) { dish in
+                        Button {
+                            if selecting { toggle(dish) } else { selectedDish = dish }
+                        } label: {
+                            HStack(spacing: 0) {
+                                if selecting {
+                                    Image(systemName: picked.contains(dish.id) ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 22))
+                                        .foregroundStyle(picked.contains(dish.id) ? Palette.leaf : Palette.muted)
+                                        .padding(.leading, 18)
+                                        .transition(.move(edge: .leading).combined(with: .opacity))
+                                }
+                                DishRow(dish: dish, inCart: inCart(dish))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(selecting && !cat.open)
+                        .accessibilityAddTraits(selecting && picked.contains(dish.id) ? .isSelected : [])
+                        Divider().overlay(Palette.line).padding(.leading, 20)
+                    }
+                } else {
+                    Text("This section isn't on the menu any more.").font(Typeface.body(15)).foregroundStyle(Palette.muted).padding(20)
+                }
+            }
+            .padding(.bottom, model.cart.isEmpty && !selecting ? 24 : 96)
+        }
+        .screenBackground()
+        .searchable(text: $search, prompt: "Search \(cat?.title ?? "dishes")")
+        .refreshable { await model.loadMenu() }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(selecting ? "Cancel" : "Select dishes") {
+                    withAnimation(.snappy) { selecting.toggle(); picked = [] }
+                }
+                .font(Typeface.body(16, weight: .semibold))
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if selecting { selectBar } else if !model.cart.isEmpty { CartBar { showCart = true } }
+        }
+        .sheet(isPresented: $showMultiAdd) {
+            MultiAddSheet(dishes: picked.compactMap { model.dish($0) }) { selecting = false; picked = [] }
+        }
+        .sheet(item: $selectedDish) { DishSheet(dish: $0, category: cat) }
+        .sheet(isPresented: $showCart) { CartView() }
     }
 
     private func filtered(_ cat: MenuCategory) -> [Dish] {
@@ -127,111 +324,12 @@ struct MenuView: View {
         return cat.items.filter { $0.title.localizedCaseInsensitiveContains(q) || $0.description.localizedCaseInsensitiveContains(q) }
     }
 
-    @ViewBuilder private func cateringSection(_ cat: MenuCategory) -> some View {
-        let dishes = filtered(cat)
-        if !dishes.isEmpty {
-            VStack(alignment: .leading, spacing: 0) {
-                sectionTitle(cat.title, cat.subtitle)
-                if !cat.open {
-                    Notice(tone: .warn, icon: "calendar.badge.exclamationmark", text: "Chef has no catering dates open right now. You can still browse, or ask for a custom quote.")
-                        .padding(.horizontal, 20).padding(.bottom, 8)
-                } else if model.config?.cateringPickupOnly == true {
-                    Text("Trays for pickup from our kitchen · \(model.config?.halfTrays == true ? "full or half trays" : "full trays")")
-                        .font(Typeface.body(14))
-                        .foregroundStyle(Palette.muted)
-                        .padding(.horizontal, 20).padding(.bottom, 6)
-                }
-                ForEach(dishes) { dish in
-                    Button {
-                        if selecting { toggle(dish) } else { selectedDish = dish }
-                    } label: {
-                        HStack(spacing: 0) {
-                            if selecting {
-                                Image(systemName: picked.contains(dish.id) ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 22))
-                                    .foregroundStyle(picked.contains(dish.id) ? Palette.leaf : Palette.muted)
-                                    .padding(.leading, 18)
-                                    .transition(.move(edge: .leading).combined(with: .opacity))
-                            }
-                            DishRow(dish: dish, inCart: inCart(dish))
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(selecting && !cat.open)
-                    .accessibilityAddTraits(selecting && picked.contains(dish.id) ? .isSelected : [])
-                    Divider().overlay(Palette.line).padding(.leading, 20)
-                }
-            }
-            .padding(.bottom, 28)
-        }
-    }
-
-    /// The flyers' gold "Our flagship" band, as a card.
-    private func liveDoseSection(_ cat: MenuCategory) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if let l = cat.liveDose {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "star.fill").foregroundStyle(Palette.red)
-                        Text("Our flagship").font(Typeface.body(14, weight: .bold)).kerning(1.5).foregroundStyle(Palette.red)
-                    }
-                    HStack(alignment: .top, spacing: 14) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Live on-site Masala Dose")
-                                .font(Typeface.display(25, relativeTo: .title2))
-                            Text("\(l.mdTitle) and \(l.odTitle), made fresh on the griddle at your event. \(ListFormatter.localizedString(byJoining: l.options.map { String($0.total) }).replacingOccurrences(of: ", and", with: " or").replacingOccurrences(of: " and ", with: " or ")) dose.")
-                                .font(Typeface.body(15))
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        Spacer(minLength: 0)
-                        DoseGlyph().frame(width: 60, height: 60)
-                    }
-                    .foregroundStyle(Color(UIColor(hex: 0x1E3A27)))
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("From \(Money.text(l.options.first?.price ?? 0))")
-                            .font(Typeface.body(18, weight: .bold)).monospacedDigit()
-                        Text("incl. \(Money.text(l.setupFee)) setup").font(Typeface.body(14))
-                    }
-                    .foregroundStyle(Color(UIColor(hex: 0x1E3A27)))
-                    Button(model.cart.isLiveDose ? "Change your station" : "Plan your station") { showLiveDose = true }
-                        .buttonStyle(PrimaryButtonStyle(tint: Palette.forest, ink: Palette.cream))
-                        .disabled(!cat.open)
-                    if !cat.open {
-                        Text("No LIVE Dose dates open right now.").font(Typeface.body(14)).foregroundStyle(Color(UIColor(hex: 0x1E3A27)))
-                    }
-                }
-                .padding(18)
-                .background(Palette.turmeric, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Palette.goldLine, lineWidth: 2))
-                .padding(.horizontal, 16)
-            }
-        }
-        .padding(.bottom, 28)
-    }
-
-    private var customFooter: some View {
-        Panel {
-            Text("Something else in mind?").font(Typeface.display(20, relativeTo: .title3))
-            Text("North Indian, Asian fusion, Italian or Mexican vegetarian - tell Chef what you need and get a price.")
-                .font(Typeface.body(15)).foregroundStyle(Palette.muted)
-            Button("Ask for a custom quote") { showCustom = true }.buttonStyle(SecondaryButtonStyle())
-        }
-        .padding(.horizontal, 16)
-    }
-
-    private func sectionTitle(_ title: String, _ subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(Typeface.display(26, relativeTo: .title2)).foregroundStyle(Palette.red)
-            if !subtitle.isEmpty {
-                Text(subtitle).font(Typeface.body(15)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 10)
-    }
-
     private func toggle(_ dish: Dish) {
         if let i = picked.firstIndex(of: dish.id) { picked.remove(at: i) } else { picked.append(dish.id) }
+    }
+
+    private func inCart(_ dish: Dish) -> Double {
+        model.cart.lines.filter { $0.itemId == dish.id }.reduce(0) { $0 + $1.qty }
     }
 
     private var selectBar: some View {
@@ -248,39 +346,70 @@ struct MenuView: View {
         .padding(.vertical, 8)
         .background(.bar)
     }
+}
 
-    private var cartBar: some View {
-        Button { showCart = true } label: {
-            HStack {
-                Text(model.cart.isLiveDose ? "LIVE Dose Station" : "\(model.cart.count) dish\(model.cart.count == 1 ? "" : "es")")
-                Spacer()
-                Text("View order · \(Money.text(model.cart.subtotal))").monospacedDigit()
+// MARK: - Chef's availability
+
+/// Chef's open dates from the admin calendar, with what each day offers.
+struct AvailabilityView: View {
+    @State private var dates: [OpenDate] = []
+    @State private var loading = true
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Chef's Availability").font(Typeface.display(30)).foregroundStyle(Palette.red)
+                Text("Open dates for catering pickup and the LIVE Dose Station. Pick your date and time when you check out.")
+                    .font(Typeface.body(15)).foregroundStyle(Palette.muted)
+                if loading {
+                    ProgressView().tint(Palette.leaf).padding(.top, 20)
+                } else if dates.isEmpty {
+                    Notice(tone: .warn, icon: "calendar", text: "No open dates right now. Ask for a custom quote or call Chef about your event.")
+                }
+                ForEach(dates) { d in
+                    HStack(alignment: .top, spacing: 14) {
+                        DateBadge(iso: d.date)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(d.label).font(Typeface.body(17, weight: .bold)).foregroundStyle(Palette.ink)
+                            ForEach(d.summary.components(separatedBy: " · "), id: \.self) { part in
+                                Label(part, systemImage: part.contains("LIVE") ? "flame.fill" : "takeoutbag.and.cup.and.straw")
+                                    .font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(14)
+                    .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.line))
+                }
             }
+            .padding(16)
         }
-        .buttonStyle(PrimaryButtonStyle())
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(.bar)
+        .screenBackground()
+        .navigationBarTitleDisplayMode(.inline)
+        .refreshable { await load() }
+        .task { await load() }
     }
 
-    // MARK: data
-
-    private func inCart(_ dish: Dish) -> Double {
-        model.cart.lines.filter { $0.itemId == dish.id }.reduce(0) { $0 + $1.qty }
+    private func load() async {
+        defer { loading = false }
+        if let r = try? await (APIClient.shared.get("availability") as AvailabilityResponse) { dates = r.dates }
     }
+}
 
-    private func category(of dish: Dish) -> MenuCategory? {
-        model.categories.first { $0.items.contains(dish) }
-    }
-
-    private func reload() async {
-        await model.loadMenu()
-        await loadDates()
-    }
-
-    private func loadDates() async {
-        let r = try? await (APIClient.shared.get("availability") as AvailabilityResponse)
-        if let r { openDates = r.dates }
+/// Day-of-month tile for a "YYYY-MM-DD" date.
+struct DateBadge: View {
+    let iso: String
+    var body: some View {
+        let parts = iso.split(separator: "-")
+        let month = parts.count == 3 ? (DateFormatter().shortMonthSymbols[(Int(parts[1]) ?? 1) - 1]).uppercased() : ""
+        VStack(spacing: 0) {
+            Text(month).font(Typeface.body(12, weight: .bold)).foregroundStyle(Palette.red)
+            Text(parts.count == 3 ? String(Int(parts[2]) ?? 0) : "").font(Typeface.display(24)).foregroundStyle(Palette.ink)
+        }
+        .frame(width: 54, height: 58)
+        .background(Palette.surface2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityHidden(true)
     }
 }
 

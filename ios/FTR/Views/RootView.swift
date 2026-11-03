@@ -3,16 +3,18 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
+    /// The welcome screen shows until the customer taps Enter FTR.
+    @State private var entered = false
 
     var body: some View {
         @Bindable var model = model
         Group {
-            if model.config == nil && model.categories.isEmpty {
-                LaunchView()
+            if !entered {
+                WelcomeView { withAnimation(.easeOut(duration: 0.25)) { entered = true } }
             } else {
                 TabView(selection: $model.selectedTab) {
-                    MenuView()
-                        .tabItem { Label("Menu", systemImage: "fork.knife") }
+                    HomeView()
+                        .tabItem { Label("Home", systemImage: "house") }
                         .tag(AppModel.Tab.menu)
                     OrdersView()
                         .tabItem { Label("Orders", systemImage: "takeoutbag.and.cup.and.straw") }
@@ -28,6 +30,9 @@ struct RootView: View {
                 }
             }
         }
+        // Tapping a notification goes straight to it.
+        .onChange(of: model.openOrderId) { _, id in if id != nil { entered = true } }
+        .onChange(of: model.selectedTab) { _, tab in if tab != .menu { entered = true } }
         .fullScreenCover(isPresented: .constant(model.needsAppUpdate)) { UpdateRequiredView() }
         // Signed in but never gave a name (e.g. closed the app mid sign-up): ask once, here.
         .sheet(isPresented: Binding(get: { model.profile?.needsName == true && !model.signInOpen }, set: { _ in })) {
