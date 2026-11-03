@@ -15,7 +15,8 @@ const COLUMNS = [
   "Confirmed Orders",
   "Confirmed Total",
   "Last Order",
-  "First Contact"
+  "First Contact",
+  "Comments"
 ];
 
 function localStamp(iso) {
@@ -25,6 +26,8 @@ function localStamp(iso) {
 
 function customers() {
   const orders = orderDb.all();
+  let feedback = [];
+  try { feedback = require("./feedbackStore").all(); } catch (e) { /* optional */ }
   return Object.entries(customerStore.all())
     .map(([phone, c]) => {
       const theirs = orders.filter((o) => o.customerPhone === phone);
@@ -40,6 +43,7 @@ function customers() {
         confirmedOrders: confirmed.length,
         confirmedTotal: Math.round(confirmed.reduce((sum, o) => sum + Number(o.subtotal || 0), 0) * 100) / 100,
         lastOrder,
+        comments: feedback.filter((f) => f.phone === phone).length,
         createdAt: c.createdAt || null
       };
     })
@@ -56,7 +60,8 @@ function rows() {
     c.confirmedOrders,
     c.confirmedTotal.toFixed(2),
     localStamp(c.lastOrder),
-    localStamp(c.createdAt)
+    localStamp(c.createdAt),
+    c.comments
   ]);
 }
 

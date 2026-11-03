@@ -177,6 +177,79 @@ app.delete("/admin/api/orders/:id", requireAdminAuth, async (req, res) => {
   res.json(result);
 });
 
+// Chef cancels an order (only before the 50% deposit is paid).
+app.post("/admin/api/orders/:id/cancel", requireAdminAuth, async (req, res) => {
+  try {
+    const r = await require("./orderFlow").cancelOrder(req.params.id, "chef");
+    if (!r.ok) return res.status(400).send(r.reason);
+    res.json(require("./orderDb").get(req.params.id));
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// Add an order from before the WhatsApp bot, tied to a phone number.
+function normalizePhone(raw) {
+  const d = String(raw || "").replace(/\D/g, "");
+  if (d.length === 10) return "1" + d;
+  if (d.length === 11 && d.startsWith("1")) return d;
+  return d.length >= 11 && d.length <= 15 ? d : null;
+}
+app.post("/admin/api/orders/past", requireAdminAuth, async (req, res) => {
+  const b = req.body || {};
+  const phone = normalizePhone(b.phone);
+  if (!phone) return res.status(400).send("Please enter a valid phone number (10 digits for a US number).");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(b.date || "")) return res.status(400).send("Please pick the order date.");
+  const total = Number(b.total);
+  if (!(total >= 0)) return res.status(400).send("Please enter the order total.");
+  if (!String(b.items || "").trim()) return res.status(400).send("Please describe what was ordered.");
+  const existing = customerStore.get(phone);
+  const firstName = String(b.firstName || "").trim();
+  const lastName = String(b.lastName || "").trim();
+  if (!existing && !firstName) return res.status(400).send("This is a new customer - please enter their first name.");
+  // Fill in the customer's name only where it's missing (never overwrite).
+  const patch = {};
+  if (firstName && !(existing && existing.firstName)) patch.firstName = firstName;
+  if (lastName && !(existing && existing.lastName)) patch.lastName = lastName;
+  if (!existing || Object.keys(patch).length) customerStore.save(phone, patch);
+  const profile = customerStore.get(phone);
+  const [y, m, d] = b.date.split("-").map(Number);
+  const label = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const order = {
+    orderId: "PAST-" + Date.now().toString(36).toUpperCase(),
+    source: "past",
+    customerPhone: phone,
+    customerName: customerStore.fullName(profile),
+    cart: [],
+    itemsManual: String(b.items).trim().slice(0, 1000),
+    orderNote: String(b.notes || "").trim().slice(0, 500) || null,
+    subtotal: Math.round(total * 100) / 100,
+    fulfillment: String(b.kind || "pickup"),
+    eventDate: b.date,
+    requestedTime: label,
+    status: "Confirmed",
+    pending: false,
+    createdAt: new Date(Date.UTC(y, m - 1, d, 17)).toISOString(),
+    addedByAdminAt: new Date().toISOString()
+  };
+  await records.appendOrder(order);
+  res.json(order);
+});
+
+// --- Comments & suggestions ---
+app.get("/admin/api/feedback", requireAdminAuth, (req, res) => {
+  res.json(require("./feedbackStore").all().slice().reverse());
+});
+app.post("/admin/api/feedback/read", requireAdminAuth, (req, res) => {
+  require("./feedbackStore").markRead(Array.isArray((req.body || {}).ids) ? req.body.ids : []);
+  res.json({ ok: true });
+});
+app.delete("/admin/api/feedback/:id", requireAdminAuth, (req, res) => {
+  const removed = require("./feedbackStore").remove(req.params.id);
+  if (!removed) return res.status(404).send("Comment not found");
+  res.json({ deleted: req.params.id });
+});
+
 // Approve / Decline / Payment received / Not received / Send quote from the
 // admin page (on the web or inside the FTR app). Each one replays exactly the
 // WhatsApp button the bot sends the owner, so customers, the Google Sheet and
@@ -356,7 +429,8 @@ app.get("/payment-proof/:token.jpg", (req, res) => {
 // Public: the menu picture sent when a customer taps "See our menu".
 app.get("/menu.png", async (req, res) => {
   try {
-    const { png } = await require("./menuImage").renderPng(menuStore.getMenu());
+    const cat = typeof req.query.cat === "string" ? req.query.cat : null;
+    const { png } = await require("./menuImage").renderPng(require("./availability").customerView(menuStore.getMenu()), cat);
     res.set("Content-Type", "image/png");
     res.set("Cache-Control", "public, max-age=300");
     res.send(png);

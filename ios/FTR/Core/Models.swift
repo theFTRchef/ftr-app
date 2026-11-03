@@ -244,6 +244,10 @@ struct Order: Decodable, Identifiable, Hashable {
     let canUploadProof: Bool
     /// The customer's note for the whole order.
     let orderNote: String?
+    /// What was ordered, for an order from before the app (added by Chef in admin).
+    let pastItems: String?
+    /// Can still be cancelled (before the 50% deposit is paid).
+    let canCancel: Bool?
     /// Chef changed the time before approving.
     struct TimeChange: Decodable, Hashable { let from: String; let to: String; let at: String? }
     let timeChange: TimeChange?
@@ -255,10 +259,12 @@ struct Order: Decodable, Identifiable, Hashable {
 
     var id: String { orderId }
     var isCustom: Bool { type == "custom" }
+    var isPast: Bool { type == "past" }
     var isLiveDose: Bool { type == "lds" }
 
     var title: String {
         if isCustom { return "Custom request" }
+        if isPast { return "Past order" }
         if isLiveDose { return "LIVE Dose Station" }
         let names = lines.map(\.title)
         if names.count <= 2 { return names.joined(separator: " & ") }

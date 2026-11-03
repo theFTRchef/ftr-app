@@ -667,7 +667,8 @@ function linePayload(l) {
 /** Where an order is, for the app's progress tracker. */
 function stageFor(o) {
   const s = String(o.status || "");
-  if (/declined|released/i.test(s)) return "closed";
+  if (o.source === "past") return "confirmed";
+  if (/declined|released|cancelled/i.test(s)) return "closed";
   if (/confirmed/i.test(s)) return "confirmed";
   if (/deposit under review/i.test(s)) return "deposit_review";
   if (/awaiting deposit/i.test(s)) return "deposit_due";
@@ -683,7 +684,7 @@ function orderPayload(o) {
   const isCustom = o.type === "custom";
   return {
     orderId: o.orderId,
-    type: isCustom ? "custom" : (o.cart || []).some((l) => l.isLiveDoseStation) ? "lds" : "catering",
+    type: o.source === "past" ? "past" : isCustom ? "custom" : (o.cart || []).some((l) => l.isLiveDoseStation) ? "lds" : "catering",
     status: o.status || "Pending Approval",
     stage: stageFor(o),
     createdAt: o.createdAt || null,
@@ -720,6 +721,10 @@ function orderPayload(o) {
       : null,
     canUploadProof: !!p && (p.state === "awaiting" || p.state === "review"),
     orderNote: o.orderNote || null,
+    // An order from before the app, added by Chef on the admin page.
+    pastItems: o.source === "past" ? o.itemsManual || "" : null,
+    // Customers can cancel until the 50% deposit is paid (or its screenshot is in).
+    canCancel: o.source !== "past" && !flow().cancelBlock(o),
     // Chef changed the time before approving (WhatsApp: Edit / message > Change time).
     timeChange: o.timeChangedByChef && !o.pending ? { from: o.timeChangedByChef.from, to: o.timeChangedByChef.to, at: o.timeChangedByChef.at || null } : null,
     // Chef's chat about this order, and whether the customer can reply right now.
@@ -993,6 +998,41 @@ function router() {
       const handled = await flow().relayCustomerMessage(req.phone, true, text, false);
       if (!handled) throw new ApiError(409, "Chef has closed this chat. Use Ask a question to send Chef a message.", "chat_closed");
       res.json(orderPayload(orderDb.get(o.orderId)));
+    })
+  );
+
+  // Cancel an order: while Chef is still deciding, or approved but the deposit isn't paid.
+  r.post(
+    "/orders/:id/cancel",
+    requireUser,
+    wrap(async (req, res) => {
+      const o = ownOrder(req.phone, req.params.id);
+      const result = await flow().cancelOrder(o.orderId, "customer");
+      if (!result.ok) throw new ApiError(409, result.reason, "cant_cancel");
+      res.json(orderPayload(orderDb.get(o.orderId)));
+    })
+  );
+
+  // Comments & suggestions, kept by phone number (and optionally tied to an order).
+  r.get(
+    "/feedback",
+    requireUser,
+    wrap((req, res) => {
+      const mine = require("./feedbackStore").all().filter((f) => f.phone === req.phone).reverse();
+      res.json({ comments: mine.map((f) => ({ id: f.id, text: f.text, orderId: f.orderId || null, at: f.createdAt })) });
+    })
+  );
+  r.post(
+    "/feedback",
+    requireUser,
+    wrap(async (req, res) => {
+      const text = String((req.body && req.body.text) || "").trim();
+      if (text.length < 2) throw new ApiError(400, "Please type your comment.");
+      rateLimit(`feedback:${req.phone}`, 10, 60 * 60 * 1000);
+      let orderId = (req.body && req.body.orderId) || null;
+      if (orderId) orderId = ownOrder(req.phone, String(orderId)).orderId;
+      const f = await flow().saveFeedback(req.phone, text.slice(0, 2000), orderId);
+      res.json({ id: f.id, text: f.text, orderId: f.orderId || null, at: f.createdAt });
     })
   );
 

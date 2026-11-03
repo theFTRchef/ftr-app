@@ -238,6 +238,10 @@ struct OrderDetailView: View {
     @State private var uploadError: String?
     @State private var answeringQuote = false
     @State private var copied: String?
+    @State private var commentOn = false
+    @State private var confirmCancel = false
+    @State private var cancelling = false
+    @State private var cancelError: String?
 
     private var order: Order? { model.orders.first { $0.orderId == orderId } }
 
@@ -265,6 +269,21 @@ struct OrderDetailView: View {
                         Notice(tone: .info, icon: "checkmark.seal", text: p.summary)
                     }
                     detailsPanel(o)
+                    Button { commentOn = true } label: {
+                        Label("Comment on this order", systemImage: "text.bubble")
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    if o.canCancel == true {
+                        Button(role: .destructive) { confirmCancel = true } label: {
+                            Label(cancelling ? "Cancelling…" : "Cancel this order", systemImage: "xmark.circle")
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .foregroundStyle(Palette.bad)
+                        .disabled(cancelling)
+                        Text(o.payment != nil ? "You can cancel until you've paid the deposit." : "You can cancel while Chef is reviewing it, or after approval until you pay the deposit.")
+                            .font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                    }
+                    if let cancelError { Notice(tone: .bad, icon: "exclamationmark.circle", text: cancelError) }
                     callChef
                 }
                 .padding(16)
@@ -282,6 +301,13 @@ struct OrderDetailView: View {
                 _ = await model.refreshOrder(orderId)
                 try? await Task.sleep(for: .seconds(30))
             }
+        }
+        .sheet(isPresented: $commentOn) { FeedbackView(orderId: orderId) }
+        .confirmationDialog("Cancel order \(orderId)?", isPresented: $confirmCancel, titleVisibility: .visible) {
+            Button("Cancel order", role: .destructive) { Task { await cancel() } }
+            Button("Keep it", role: .cancel) {}
+        } message: {
+            Text("Chef will be told right away. You can place a new order any time.")
         }
         .onChange(of: photo) { _, item in
             guard let item else { return }
@@ -392,6 +418,10 @@ struct OrderDetailView: View {
             if o.isCustom, let r = o.request {
                 Text(r).font(Typeface.body(16))
             }
+            if o.isPast, let items = o.pastItems, !items.isEmpty {
+                Text(items).font(Typeface.body(16))
+                Text("Added by Chef from our records.").font(Typeface.body(13)).foregroundStyle(Palette.muted)
+            }
             if let note = o.orderNote, !note.isEmpty {
                 Label("“\(note)”", systemImage: "note.text").font(Typeface.body(15)).foregroundStyle(Palette.muted)
             }
@@ -436,9 +466,25 @@ struct OrderDetailView: View {
 
     // MARK: helpers
 
+    private func cancel() async {
+        cancelling = true
+        cancelError = nil
+        defer { cancelling = false }
+        struct Empty: Encodable {}
+        do {
+            let o: Order = try await APIClient.shared.post("orders/\(orderId)/cancel", Empty())
+            if let i = model.orders.firstIndex(where: { $0.orderId == orderId }) { model.orders[i] = o }
+        } catch {
+            cancelError = (error as? APIError)?.message ?? error.localizedDescription
+            _ = await model.refreshOrder(orderId)
+        }
+    }
+
     private func closedText(_ o: Order) -> String {
         if o.status.contains("Released") { return "This order was released because the deposit didn't arrive in time. Call Chef if you'd still like the date." }
         if o.status.contains("Quote Declined") { return "You declined this quote." }
+        if o.status.contains("Cancelled by customer") { return "You cancelled this order." }
+        if o.status.contains("Cancelled by Chef") { return "Chef cancelled this order. Please call if you have questions." }
         return "Chef isn't able to take this order. Please call to talk it through, or try another date."
     }
 

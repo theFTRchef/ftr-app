@@ -50,6 +50,7 @@ struct HomeView: View {
     @State private var showCustom = false
     @State private var showCart = false
     @State private var comingSoon: String?
+    @State private var showFeedback = false
 
     enum Route: Hashable { case catering, availability, section(String) }
 
@@ -101,6 +102,12 @@ struct HomeView: View {
                         Button { showCustom = true } label: {
                             HomeTile(title: "Custom Quote", subtitle: "Tell Chef what you need", icon: "square.and.pencil")
                         }
+                        Button { showFeedback = true } label: {
+                            HomeTile(title: "Comments & Ideas", subtitle: "Tell us how we did", icon: "text.bubble.fill")
+                        }
+                        Button { model.selectedTab = .orders } label: {
+                            HomeTile(title: "My Orders", subtitle: "Past and upcoming", icon: "list.bullet.rectangle")
+                        }
                         Button { comingSoon = "At-Home Chef!" } label: {
                             HomeTile(title: "At-Home Chef!", subtitle: "Coming soon", icon: "house.fill", soon: true)
                         }
@@ -133,6 +140,7 @@ struct HomeView: View {
             .safeAreaInset(edge: .bottom) { if !model.cart.isEmpty { CartBar { showCart = true } } }
             .sheet(isPresented: $showLiveDose) { if let cat = lds { LiveDoseView(category: cat) } }
             .sheet(isPresented: $showCustom) { CustomRequestView() }
+            .sheet(isPresented: $showFeedback) { FeedbackView() }
             .sheet(isPresented: $showCart) { CartView() }
             .alert(comingSoon ?? "", isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
                 Button("OK", role: .cancel) {}

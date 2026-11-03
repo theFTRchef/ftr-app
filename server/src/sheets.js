@@ -93,6 +93,7 @@ async function request(method, suffix, body, attempt = 1) {
 
 function itemsText(order) {
   if (order.type === "custom") return `CUSTOM REQUEST: ${order.request || ""}`;
+  if (order.itemsManual) return `PAST ORDER: ${order.itemsManual}` + (order.orderNote ? ` | NOTE: ${order.orderNote}` : "");
   return itemLines(order) + (order.orderNote ? ` | NOTE: ${order.orderNote}` : "");
 }
 

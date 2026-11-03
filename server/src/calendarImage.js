@@ -11,19 +11,24 @@ const { normalizeDateEntry, offersCatering, offersLiveDose } = require("./availa
 const TZ = "America/New_York";
 const WINDOW_DAYS = 60;
 
+// Same palette as franklintiffinroom.com.
 const C = {
-  bg: "#f3f5f2",
+  bg: "#fbf6ec",
   card: "#ffffff",
-  ink: "#1c2420",
-  muted: "#7b877f",
-  faint: "#c5ccc7",
-  line: "#dfe5e0",
-  open: "#2e6a4c",
-  openSoft: "#dcebe2",
-  closed: "#e9ede8",
-  turmeric: "#d99a12",
+  ink: "#2b2118",
+  muted: "#6b5d4f",
+  faint: "#d3c6b1",
+  line: "#e8dcc6",
+  open: "#2f5d3a",
+  openSoft: "#dfeadc",
+  closed: "#efe7d8",
+  turmeric: "#e3a51a",
+  chili: "#a8321e",
   info: "#2d5a8c"
 };
+const path = require("path");
+const fs = require("fs");
+const FONT_DIR = path.join(__dirname, "..", "fonts");
 
 function todayLocal() {
   return new Date().toLocaleDateString("en-CA", { timeZone: TZ });
@@ -76,9 +81,11 @@ function buildSvg(menu) {
   let y = PAD;
 
   // header
-  parts.push(`<text x="${PAD}" y="${y + 30}" font-size="30" font-weight="700" fill="${C.ink}">Chef availability</text>`);
-  parts.push(`<text x="${PAD}" y="${y + 58}" font-size="19" fill="${C.muted}">${esc(menu.settings?.businessName || "Franklin Tiffin Room")} · tap a date in the next message</text>`);
-  y += 84;
+  // The FTR wordmark, as on the website: Fraunces bold, "Tiffin" in chili red.
+  parts.push(`<text x="${PAD}" y="${y + 34}" font-family="Fraunces, Georgia, serif" font-size="36" font-weight="700" fill="${C.ink}">Franklin <tspan fill="${C.chili}">Tiffin</tspan> Room</text>`);
+  parts.push(`<text x="${PAD}" y="${y + 66}" font-size="20" font-weight="700" fill="${C.chili}" letter-spacing="2">CHEF AVAILABILITY</text>`);
+  parts.push(`<text x="${PAD}" y="${y + 92}" font-size="18" fill="${C.muted}">Green days are open · tap a date in the next message</text>`);
+  y += 116;
 
   // legend
   const legend = [
@@ -163,7 +170,7 @@ function buildSvg(menu) {
   y += 40;
 
   const H = Math.round(y + 8);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="DejaVu Sans, Arial, sans-serif">` +
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Figtree, DejaVu Sans, Arial, sans-serif">` +
     `<rect width="${W}" height="${H}" fill="${C.bg}"/>${parts.join("")}</svg>`;
 }
 
@@ -176,7 +183,11 @@ function renderPng(menu) {
   if (cache.key === key) return { png: cache.png, version: key.slice(0, 10) };
   const { Resvg } = require("@resvg/resvg-js");
   const png = new Resvg(svg, {
-    font: { loadSystemFonts: true, defaultFontFamily: "DejaVu Sans" },
+    font: {
+      fontFiles: fs.existsSync(FONT_DIR) ? fs.readdirSync(FONT_DIR).filter((f) => /\.ttf$/i.test(f)).map((f) => path.join(FONT_DIR, f)) : [],
+      loadSystemFonts: true,
+      defaultFontFamily: "Figtree"
+    },
     fitTo: { mode: "width", value: 760 }
   }).render().asPng();
   cache = { key, png };

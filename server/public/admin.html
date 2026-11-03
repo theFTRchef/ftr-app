@@ -765,11 +765,13 @@ async function boot() {
     S.qr = await api("GET", "/admin/api/zelle-qr").catch(() => null);
     S.rangeReqs = await api("GET", "/admin/api/range-requests").catch(() => []);
     S.customers = await api("GET", "/admin/api/customers").catch(() => []);
+    S.feedback = await api("GET", "/admin/api/feedback").catch(() => []);
   } catch (e) {
     S.mode = "demo";
     S.menu = demoMenu();
     S.orders = demoOrders();
     S.customers = demoCustomers();
+    S.feedback = demoFeedback();
     S.rangeReqs = [{ phone: "12155550147", name: "Deepa Murthy", address: "1200 Delaware Ave, Wilmington, DE 19806", miles: 54.2, limit: 40, eventDate: demoWeekends(8, 1, 1)[0], plates: 150 }];
     $("#previewBanner").hidden = false;
   }
@@ -781,7 +783,7 @@ async function boot() {
 
 async function refreshOrders() {
   if (S.mode !== "live") return;
-  try { S.orders = await api("GET", "/admin/api/orders"); S.rangeReqs = await api("GET", "/admin/api/range-requests").catch(() => S.rangeReqs); S.customers = await api("GET", "/admin/api/customers").catch(() => S.customers); if (S.view === "orders" || S.view === "today" || S.view === "customers") render(); else updateDot(); } catch (e) {}
+  try { S.orders = await api("GET", "/admin/api/orders"); S.rangeReqs = await api("GET", "/admin/api/range-requests").catch(() => S.rangeReqs); S.customers = await api("GET", "/admin/api/customers").catch(() => S.customers); S.feedback = await api("GET", "/admin/api/feedback").catch(() => S.feedback); if (S.view === "orders" || S.view === "today" || S.view === "customers") render(); else updateDot(); } catch (e) {}
 }
 
 // ---------------------------------------------------------------- dirty / save
@@ -890,7 +892,8 @@ function statusPill(o) {
   const st = o.status || "Pending";
   let cls = "p-wait";
   if (st === "Confirmed") cls = "p-good";
-  else if (/declined/i.test(st)) cls = "p-bad";
+  else if (/declined|cancelled/i.test(st)) cls = "p-bad";
+  if (o.source === "past") return '<span class="pill p-off">Past order</span>';
   else if (/^released/i.test(st)) cls = "p-off";
   else if (/under review/i.test(st)) return '<span class="pill p-info">Check deposit</span>';
   else if (/awaiting deposit/i.test(st)) return '<span class="pill p-wait">Deposit due</span>';
@@ -920,8 +923,13 @@ function depositHTML(p) {
   if (p.state === "released") return amt + ' <span class="muted">not paid – released</span>';
   return amt + " due by " + esc(new Date(p.deadline).toLocaleString("en-US", { timeZone: TZ, weekday: "short", hour: "numeric", minute: "2-digit" }));
 }
+function canCancel(o) {
+  if (o.source === "past" || /declined|cancelled|released|completed/i.test(o.status || "")) return false;
+  if (o.pending) return true;
+  return !!(o.payment && o.payment.state === "awaiting");
+}
 function orderCard(o, compact) {
-  const items = o.type === "custom"
+  const items = o.itemsManual ? "<div>" + esc(o.itemsManual).replace(/\n/g, "<br>") + "</div>" : o.type === "custom"
     ? "<div>“" + esc(o.request) + "”</div>" + (o.quoteComment ? '<div class="note">Your note: ' + esc(o.quoteComment) + "</div>" : "")
     : (o.cart || []).map(lineHTML).join("");
   const kind = o.type === "custom" ? "Custom request" : (o.cart || []).some((l) => l.isLiveDoseStation) ? "LIVE Dose Station" : o.fulfillment === "delivery" ? "Catering delivery" : "Catering pickup";
@@ -929,6 +937,7 @@ function orderCard(o, compact) {
   const facts =
     "<dt>Type</dt><dd>" + kind + "</dd>" +
     (o.orderNote ? "<dt>Note</dt><dd>" + esc(o.orderNote) + "</dd>" : "") +
+    ((S.feedback || []).some((f) => f.orderId === o.orderId) ? "<dt>Comments</dt><dd>" + (S.feedback || []).filter((f) => f.orderId === o.orderId).map((f) => "<div>“" + esc(f.text) + "”</div>").join("") + "</dd>" : "") +
     (o.requestedTime ? "<dt>When</dt><dd>" + esc(o.requestedTime) +
       (o.timeChangedByChef ? '<div class="note">Changed by you – customer asked for ' + esc(o.timeChangedByChef.from) + "</div>" : "") + "</dd>" : "") +
     (o.address ? "<dt>Address</dt><dd>" + esc(o.address) +
@@ -945,6 +954,7 @@ function orderCard(o, compact) {
     '<div class="row" style="justify-content:space-between">' + total +
       '<div class="o-actions">' +
         (o.customerPhone ? '<a class="btn sm" href="https://wa.me/' + esc(o.customerPhone) + '" target="_blank" rel="noopener">WhatsApp</a>' : "") +
+        (!compact && canCancel(o) ? '<button class="btn sm" data-act="cancel-order" data-id="' + esc(o.orderId) + '">Cancel order</button>' : "") +
         (compact ? "" : '<button class="btn sm danger" data-act="del-order" data-id="' + esc(o.orderId) + '">Delete</button>') +
       "</div></div>" +
   "</article>";
@@ -1033,7 +1043,8 @@ const FILTERS = [
   ["wait", "Waiting", (o) => o.pending],
   ["dep", "Deposits", (o) => o.payment && (o.payment.state === "awaiting" || o.payment.state === "review")],
   ["ok", "Confirmed", (o) => o.status === "Confirmed"],
-  ["no", "Declined", (o) => /declined/i.test(o.status || "")],
+  ["no", "Declined / cancelled", (o) => /declined|cancelled/i.test(o.status || "")],
+  ["past", "Past", (o) => o.source === "past"],
   ["custom", "Custom", (o) => o.type === "custom"],
   ["lds", "LIVE Dose", (o) => (o.cart || []).some((l) => l.isLiveDoseStation)]
 ];
@@ -1044,7 +1055,8 @@ function filteredOrders() {
 }
 function viewOrders() {
   const list = filteredOrders();
-  return '<div><h2 class="h-page">Orders</h2><p class="sub">Newest first. Saved on the server and copied to your Google Sheet.</p></div>' +
+  return '<div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px"><div><h2 class="h-page">Orders</h2><p class="sub">Newest first. Saved on the server and copied to your Google Sheet.</p></div>' +
+      '<button class="btn sm" data-act="add-past" style="flex:none;margin-top:6px">+ Past order</button></div>' +
     '<input class="search" id="orderSearch" type="search" placeholder="Search name, phone, dish, address, order ID" value="' + esc(S.filters.q) + '" />' +
     '<div class="chips" role="group" aria-label="Filter orders">' + FILTERS.map((f) =>
       '<button class="chip" data-act="filter" data-f="' + f[0] + '" aria-pressed="' + (S.filters.status === f[0]) + '">' + f[1] + '<span class="c num">' + S.orders.filter(f[2]).length + "</span></button>").join("") + "</div>" +
@@ -1078,7 +1090,7 @@ function orderDay(o) {
 function ordersByDay() {
   const map = {};
   S.orders.forEach((o) => {
-    if (/declined|released/i.test(o.status || "")) return;
+    if (/declined|released|cancelled/i.test(o.status || "")) return;
     const d = orderDay(o);
     if (!d) return;
     (map[d] = map[d] || []).push(o);
@@ -1429,6 +1441,95 @@ function viewReports() {
         : '<span class="small muted">Excel downloads work on the live admin page.</span>') + "</div>";
 }
 
+// ---------------------------------------------------------------- PAST ORDERS
+function pastOrderSheet(prefPhone) {
+  const today = todayISO();
+  openSheet({
+    title: "Add a past order",
+    body:
+      '<p class="small muted" style="margin:0">For orders from before the WhatsApp bot. It\'s saved to this customer\'s phone number, counts in their history and reports, and they\'ll see it under “My orders” on WhatsApp.</p>' +
+      '<label class="field"><span>Customer phone</span><input id="p-phone" type="tel" inputmode="tel" placeholder="e.g. 732 555 0142" value="' + esc(prefPhone || "") + '" /><span class="hint" id="p-who">10 digits for a US number.</span></label>' +
+      '<div class="grid2"><label class="field"><span>First name</span><input id="p-first" autocomplete="off" /></label><label class="field"><span>Last name</span><input id="p-last" autocomplete="off" /></label></div>' +
+      '<div class="grid2"><label class="field"><span>Order date</span><input id="p-date" type="date" max="' + today + '" /></label>' +
+      '<label class="field"><span>Type</span><select id="p-kind"><option value="pickup">Catering pickup</option><option value="delivery">Catering delivery</option><option value="live-dose">LIVE Dose Station</option><option value="custom">Custom / other</option></select></label></div>' +
+      '<label class="field"><span>What was ordered</span><textarea id="p-items" placeholder="e.g. 2 Bisi Bele Bhath, 1 Payasa, 100 plates LIVE Dose"></textarea></label>' +
+      '<div class="grid2"><label class="field"><span>Order total ($)</span><input id="p-total" type="number" inputmode="decimal" min="0" step="0.01" /></label>' +
+      '<label class="field"><span>Notes (optional)</span><input id="p-notes" /></label></div>' +
+      '<p class="small" id="p-err" style="color:var(--bad);margin:0" hidden></p>',
+    foot: '<button class="btn" data-close>Cancel</button><button class="btn primary" id="p-ok">Add order</button>',
+    onMount: (el) => {
+      const who = () => {
+        const d = el.querySelector("#p-phone").value.replace(/\D/g, "");
+        const ph = d.length === 10 ? "1" + d : d;
+        const c = (S.customers || []).find((x) => x.phone === ph);
+        el.querySelector("#p-who").textContent = c ? "Existing customer: " + [c.firstName, c.lastName].filter(Boolean).join(" ") + " (" + c.orders + " orders)" : "10 digits for a US number.";
+        if (c) { if (!el.querySelector("#p-first").value) el.querySelector("#p-first").value = c.firstName || ""; if (!el.querySelector("#p-last").value) el.querySelector("#p-last").value = c.lastName || ""; }
+      };
+      el.querySelector("#p-phone").addEventListener("input", who); who();
+      el.querySelector("#p-ok").addEventListener("click", async () => {
+        const v = (id) => el.querySelector(id).value.trim();
+        const err = el.querySelector("#p-err");
+        const body = { phone: v("#p-phone"), firstName: v("#p-first"), lastName: v("#p-last"), date: v("#p-date"), kind: v("#p-kind"), items: v("#p-items"), total: v("#p-total"), notes: v("#p-notes") };
+        const d = body.phone.replace(/\D/g, "");
+        if (!(d.length === 10 || (d.length === 11 && d[0] === "1"))) { err.textContent = "Enter a 10-digit phone number."; err.hidden = false; return; }
+        if (!body.date) { err.textContent = "Pick the order date."; err.hidden = false; return; }
+        if (!body.items) { err.textContent = "Describe what was ordered."; err.hidden = false; return; }
+        if (!(parseFloat(body.total) >= 0)) { err.textContent = "Enter the order total."; err.hidden = false; return; }
+        try {
+          let o;
+          if (S.mode === "live") {
+            o = await api("POST", "/admin/api/orders/past", body);
+            S.customers = await api("GET", "/admin/api/customers").catch(() => S.customers);
+          } else {
+            const ph = d.length === 10 ? "1" + d : d;
+            o = { orderId: "PAST-DEMO" + Math.floor(Math.random() * 900 + 100), source: "past", customerPhone: ph, customerName: (body.firstName + " " + body.lastName).trim(), itemsManual: body.items, orderNote: body.notes || null, subtotal: parseFloat(body.total), fulfillment: body.kind, eventDate: body.date, requestedTime: body.date, status: "Confirmed", pending: false, createdAt: body.date + "T17:00:00Z" };
+          }
+          S.orders = [o].concat(S.orders).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+          if (S.mode !== "live") S.customers = demoCustomers();
+          closeSheet(); toast("Past order added for " + (o.customerName || o.customerPhone)); render();
+        } catch (e) { err.textContent = e.message; err.hidden = false; }
+      });
+    }
+  });
+}
+
+// ---------------------------------------------------------------- COMMENTS
+async function markFeedbackRead() {
+  const unread = (S.feedback || []).filter((f) => !f.read && (!S.fbPhone || f.phone === S.fbPhone)).map((f) => f.id);
+  if (!unread.length) return;
+  (S.feedback || []).forEach((f) => { if (unread.includes(f.id)) f.read = true; });
+  if (S.mode === "live") api("POST", "/admin/api/feedback/read", { ids: unread }).catch(() => {});
+}
+function orderHint(id) {
+  const o = S.orders.find((x) => x.orderId === id);
+  if (!o) return "";
+  const d = o.eventDate ? dateParts(o.eventDate) : null;
+  return " (" + (d ? d.mon + " " + d.day + ", " : "") + money(o.subtotal, true) + ")";
+}
+function viewComments() {
+  const all = S.feedback || [];
+  const list = S.fbPhone ? all.filter((f) => f.phone === S.fbPhone) : all;
+  const who = S.fbPhone ? (list[0] && list[0].name) || S.fbPhone : null;
+  const when = (iso) => new Date(iso).toLocaleString("en-US", { timeZone: TZ, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return (who ? '<div class="row" style="justify-content:space-between"><b>Comments from ' + esc(who) + '</b><button class="btn sm ghost" data-act="fb-all">Show everyone</button></div>' : "") +
+    (list.length
+      ? '<div class="stack">' + list.map((f) =>
+          '<article class="card order' + (f.read ? "" : " wait") + '"><div class="o-top"><div class="grow"><div class="o-name">' + esc(f.name || "Customer") + '</div>' +
+            '<div class="o-meta num">' + esc(f.phone) + " · " + esc(when(f.createdAt)) + "</div></div>" +
+            (f.read ? "" : '<span class="pill p-wait">New</span>') + "</div>" +
+          '<div class="o-items"><div>“' + esc(f.text) + '”</div>' + '<div class="small muted">' + (f.orderId ? "About order " + esc(f.orderId) + orderHint(f.orderId) : "General comment") + "</div></div>" +
+          '<div class="row" style="justify-content:flex-end;gap:8px"><a class="btn sm" href="https://wa.me/' + esc(f.phone) + '" target="_blank" rel="noopener">WhatsApp</a>' +
+            '<button class="btn sm danger" data-act="del-fb" data-id="' + esc(f.id) + '">Delete</button></div></article>').join("") + "</div>"
+      : '<div class="card empty"><b>No comments yet</b>Customers can send comments and suggestions from the WhatsApp menu (“Comments & ideas”).</div>');
+}
+function demoFeedback() {
+  const now = Date.now();
+  return [
+    { id: "FB-DEMO2", phone: "17325550142", name: "Ananya Rao", text: "The Bisi Bele Bhath was amazing! Could you add Akki Rotti to the menu?", orderId: "FTR-DEMO4", read: false, createdAt: new Date(now - 3 * 3600e3).toISOString() },
+    { id: "FB-DEMO1", phone: "17325550163", name: "Meera Iyer", text: "LIVE Dose station was the hit of the party. Crew was super friendly.", orderId: "FTR-DEMO5", read: true, createdAt: new Date(now - 26 * 3600e3).toISOString() }
+  ];
+}
+
 // ---------------------------------------------------------------- CUSTOMERS
 function demoCustomers() {
   const map = {};
@@ -1451,7 +1552,14 @@ function viewCustomers() {
   const total = list.reduce((n, c) => n + Number(c.confirmedTotal || 0), 0);
   const repeat = list.filter((c) => c.confirmedOrders > 1).length;
   const when = (iso) => iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: TZ }) : "–";
-  return '<div><h2 class="h-page">Customers</h2><p class="sub">Everyone who has messaged the bot. Also copied to the “Customers” tab of your Google Sheet. Resetting orders never removes customers.</p></div>' +
+  const fbNew = (S.feedback || []).filter((f) => !f.read).length;
+  const tabs = '<div class="chips" role="group" aria-label="Customers or comments">' +
+    '<button class="chip" data-act="fb-tab" data-t="list" aria-pressed="' + (S.custTab !== "comments") + '">Customers<span class="c num">' + list.length + "</span></button>" +
+    '<button class="chip" data-act="fb-tab" data-t="comments" aria-pressed="' + (S.custTab === "comments") + '">Comments' + '<span class="c num">' + (fbNew ? fbNew + " new" : (S.feedback || []).length) + "</span></button></div>";
+  if (S.custTab === "comments") {
+    return '<div><h2 class="h-page">Customers</h2><p class="sub">Comments and suggestions sent from WhatsApp, by phone number. Also copied to the “Comments” tab of your Google Sheet.</p></div>' + tabs + viewComments();
+  }
+  return '<div><h2 class="h-page">Customers</h2><p class="sub">Everyone who has messaged the bot. Also copied to the “Customers” tab of your Google Sheet. Resetting orders never removes customers.</p></div>' + tabs +
     '<div class="kpis four">' +
       '<div class="card kpi"><b>' + list.length + "</b><span>Customers</span></div>" +
       '<div class="card kpi"><b>' + repeat + "</b><span>Ordered more than once</span></div>" +
@@ -1470,7 +1578,9 @@ function viewCustomers() {
             "<dt>Last order</dt><dd>" + esc(when(c.lastOrder)) + "</dd>" +
             "<dt>Address</dt><dd>" + (c.address ? esc(c.address) + (c.addressVerified ? "" : ' <span class="pill p-wait">not verified</span>') : '<span class="muted">None saved</span>') + "</dd>" +
           "</dl>" +
-          '<div class="row" style="justify-content:flex-end;gap:8px">' +
+          '<div class="row" style="justify-content:flex-end;gap:8px;flex-wrap:wrap">' +
+            ((S.feedback || []).some((f) => f.phone === c.phone) ? '<button class="btn sm ghost" data-act="fb-for" data-phone="' + esc(c.phone) + '">Comments (' + (S.feedback || []).filter((f) => f.phone === c.phone).length + ")</button>" : "") +
+            '<button class="btn sm ghost" data-act="add-past-for" data-phone="' + esc(c.phone) + '">+ Past order</button>' +
             '<a class="btn sm" href="https://wa.me/' + esc(c.phone) + '" target="_blank" rel="noopener">WhatsApp</a>' +
             '<button class="btn sm danger" data-act="del-cust" data-phone="' + esc(c.phone) + '">Delete</button>' +
           "</div></article>").join("") + "</div>"
@@ -1710,6 +1820,48 @@ document.addEventListener("click", (e) => {
     case "edit-cat": catSheet(+el.dataset.ci); break;
     case "add-cat": catSheet(null); break;
     case "edit-lds": ldsSheet(+el.dataset.ci); break;
+    case "cancel-order": {
+      const o = S.orders.find((x) => x.orderId === el.dataset.id) || {};
+      confirmSheet({
+        title: "Cancel order " + el.dataset.id + "?",
+        text: esc(o.customerName || "The customer") + " will get a WhatsApp message that you've cancelled it. The order stays in your records as “Cancelled by Chef”. Orders can only be cancelled before the 50% deposit is paid.",
+        confirmLabel: "Cancel order", danger: true,
+        onConfirm: async () => {
+          try {
+            if (S.mode === "live") {
+              const upd = await api("POST", "/admin/api/orders/" + encodeURIComponent(el.dataset.id) + "/cancel", {});
+              S.orders = S.orders.map((x) => (x.orderId === upd.orderId ? Object.assign({}, x, upd) : x));
+            } else {
+              Object.assign(o, { status: "Cancelled by Chef", pending: false });
+              if (o.payment) o.payment.state = "cancelled";
+            }
+            toast("Order cancelled - customer told"); render();
+          } catch (err) { toast(err.message, true); }
+        }
+      });
+      break;
+    }
+    case "add-past": pastOrderSheet(); break;
+    case "add-past-for": pastOrderSheet(String(el.dataset.phone).replace(/^1(?=\d{10}$)/, "")); break;
+    case "fb-tab": S.custTab = el.dataset.t; if (S.custTab === "comments") markFeedbackRead(); render(); break;
+    case "fb-for": S.custTab = "comments"; S.fbPhone = el.dataset.phone; markFeedbackRead(); render(); break;
+    case "fb-all": S.fbPhone = null; render(); break;
+    case "del-fb": {
+      const id = el.dataset.id;
+      confirmSheet({
+        title: "Delete this comment?",
+        text: "It's removed from this list and the Google Sheet Comments tab. A backup copy is kept on the server.",
+        confirmLabel: "Delete comment", danger: true,
+        onConfirm: async () => {
+          try {
+            if (S.mode === "live") await api("DELETE", "/admin/api/feedback/" + encodeURIComponent(id));
+            S.feedback = (S.feedback || []).filter((f) => f.id !== id);
+            toast("Comment deleted"); render();
+          } catch (err) { toast(err.message, true); }
+        }
+      });
+      break;
+    }
     case "decide": {
       const id = el.dataset.id, act = el.dataset.do;
       const o = S.orders.find((x) => x.orderId === id) || {};

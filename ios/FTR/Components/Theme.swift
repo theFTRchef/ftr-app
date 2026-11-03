@@ -252,8 +252,8 @@ struct StatusPill: View {
         case .deposit_due: "Deposit due"
         case .quote_ready: "Quote ready"
         case .deposit_review: "Checking deposit"
-        case .confirmed: "Confirmed"
-        case .closed: order.status.contains("Released") ? "Released" : "Not booked"
+        case .confirmed: order.isPast ? "Past order" : "Confirmed"
+        case .closed: order.status.contains("Released") ? "Released" : order.status.contains("Cancelled") ? "Cancelled" : "Not booked"
         case .quote_requested: "Awaiting quote"
         default: "With Chef"
         }

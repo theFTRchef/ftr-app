@@ -76,24 +76,36 @@ function txt({ x, y, size, weight = 400, fill, family, anchor, extra = "" }, tex
   return `<text x="${x}" y="${y}"${anchor ? ` text-anchor="${anchor}"` : ""} font-family="${family || FONT}" font-size="${size}" font-weight="${weight}" fill="${fill}" ${extra}>${esc(text)}</text>`;
 }
 
+// Same palette as franklintiffinroom.com.
 const C = {
-  bg: "#f3f5f2",
+  bg: "#fbf6ec",
   card: "#ffffff",
-  ink: "#1c2420",
-  muted: "#66736b",
-  line: "#e3e8e3",
-  leaf: "#2e6a4c",
-  leafSoft: "#dcebe2",
-  turmeric: "#d99a12",
+  ink: "#2b2118",
+  muted: "#6b5d4f",
+  line: "#e8dcc6",
+  leaf: "#2f5d3a",
+  leafSoft: "#e4ede3",
+  turmeric: "#e3a51a",
   turmericSoft: "#fbefd2",
-  chili: "#b3402e"
+  chili: "#a8321e"
 };
 
 const W = 1000;
 const PAD = 40;
 const KANNADA = /[\u0C80-\u0CFF]/;
 const FONT = "Figtree, Noto Sans Kannada, DejaVu Sans, sans-serif";
-const DISPLAY = "Bricolage Grotesque, Figtree, Noto Sans Kannada, DejaVu Sans, sans-serif";
+const DISPLAY = "Fraunces, Georgia, Noto Sans Kannada, DejaVu Serif, serif";
+
+/**
+ * The FTR wordmark, exactly as on the website: "Franklin Tiffin Room" in
+ * Fraunces bold, with "Tiffin" in chili red.
+ */
+function wordmark(x, y, size, anchor = "start") {
+  return (
+    `<text x="${x}" y="${y}"${anchor !== "start" ? ` text-anchor="${anchor}"` : ""} font-family="Fraunces, Georgia, serif" font-size="${size}" font-weight="700" fill="${C.ink}">` +
+    `Franklin <tspan fill="${C.chili}">Tiffin</tspan> Room</text>`
+  );
+}
 
 function esc(s) {
   return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -166,18 +178,24 @@ function ldsInfo(menu, lds) {
   return `On site ${sess}. Extra ${ext.minutes} min $${ext.fee}. Extra doses $${per} each (in ${Number(lds.extraDoseIncrement) || 10}s, while supplies last).`;
 }
 
-function buildSvg(menu) {
+/** LIVE Dose Station (the flagship) first, then the rest in menu order. */
+function orderedCategories(menu) {
+  return (menu.categories || [])
+    .filter((c) => c.type === "live-dose-station" || (c.items || []).length)
+    .slice()
+    .sort((a, b) => (a.type === "live-dose-station" ? 0 : 1) - (b.type === "live-dose-station" ? 0 : 1));
+}
+
+function buildSvg(menu, categoryId = null) {
   const s = menu.settings || {};
   const parts = [];
   let y = PAD;
   const inner = W - PAD * 2;
 
   // Header
-  parts.push(`<circle cx="${PAD + 26}" cy="${y + 26}" r="22" fill="none" stroke="${C.leaf}" stroke-width="9"/>`);
-  parts.push(`<circle cx="${PAD + 26}" cy="${y + 26}" r="10" fill="${C.turmeric}"/>`);
-  parts.push(txt({ x: PAD + 68, y: y + 24, size: 34, weight: 800, fill: C.ink, family: DISPLAY }, s.businessName || "Franklin Tiffin Room"));
-  parts.push(`<text x="${PAD + 68}" y="${y + 54}" font-family="${FONT}" font-size="20" font-weight="600" fill="${C.leaf}" letter-spacing="2">MENU</text>`);
-  y += 76;
+  parts.push(`<text x="${PAD}" y="${y + 16}" font-family="${FONT}" font-size="18" font-weight="700" fill="${C.chili}" letter-spacing="3">MENU</text>`);
+  parts.push(wordmark(PAD, y + 62, 44));
+  y += 84;
   if (s.tagline) {
     wrap(s.tagline, 22, inner, 2).forEach((l) => {
       y += 30;
@@ -186,9 +204,7 @@ function buildSvg(menu) {
   }
   y += 28;
 
-  const cats = (menu.categories || []).slice().sort((a, b) =>
-    (a.type === "live-dose-station" ? 0 : 1) - (b.type === "live-dose-station" ? 0 : 1)
-  );
+  const cats = orderedCategories(menu).filter((c) => !categoryId || c.id === categoryId);
 
   let pickupNoteDone = false;
   for (const cat of cats) {
@@ -204,7 +220,7 @@ function buildSvg(menu) {
       parts.push(`<rect x="${PAD + 24}" y="${y + 22}" width="104" height="30" rx="15" fill="${C.chili}"/>`);
       parts.push(`<circle cx="${PAD + 42}" cy="${y + 37}" r="5" fill="#fff"/>`);
       parts.push(`<text x="${PAD + 54}" y="${y + 43}" font-family="${FONT}" font-size="16" font-weight="700" fill="#fff" letter-spacing="1.5">LIVE</text>`);
-      parts.push(txt({ x: PAD + 144, y: y + 46, size: 30, weight: 800, fill: C.ink, family: DISPLAY }, cat.title || "LIVE Dose Station"));
+      parts.push(txt({ x: PAD + 144, y: y + 46, size: 32, weight: 700, fill: C.ink, family: DISPLAY }, cat.title || "LIVE Dose Station"));
       let ly = y + 64;
       descLines.forEach((l) => {
         ly += 30;
@@ -283,29 +299,30 @@ function fontFiles() {
   }
 }
 
-let cache = { key: null, png: null };
+const cache = new Map();
 
-async function renderPng(menu) {
+async function renderPng(menu, categoryId = null) {
   await hbReady;
-  const svg = buildSvg(menu);
+  const svg = buildSvg(menu, categoryId);
   const key = crypto.createHash("sha1").update(svg).digest("hex");
-  if (cache.key === key) return { png: cache.png, version: key.slice(0, 10) };
+  if (cache.has(key)) return { png: cache.get(key), version: key.slice(0, 10) };
   const { Resvg } = require("@resvg/resvg-js");
   const png = new Resvg(svg, {
     font: { fontFiles: fontFiles(), loadSystemFonts: true, defaultFontFamily: "Figtree" },
     fitTo: { mode: "width", value: W }
   }).render().asPng();
-  cache = { key, png };
+  cache.set(key, png);
+  if (cache.size > 30) cache.delete(cache.keys().next().value);
   return { png, version: key.slice(0, 10) };
 }
 
-async function currentVersion(menu) {
+async function currentVersion(menu, categoryId = null) {
   try {
-    return (await renderPng(menu)).version;
+    return (await renderPng(menu, categoryId)).version;
   } catch (err) {
     console.error("Menu image unavailable:", err.message);
     return null;
   }
 }
 
-module.exports = { buildSvg, renderPng, currentVersion };
+module.exports = { buildSvg, renderPng, currentVersion, orderedCategories };

@@ -195,7 +195,8 @@ function payInstructions(order) {
     `Memo: ${order.orderId}\n\n` +
     `Please pay by ${deadlineLabel(p.deadline)}. ` +
     (p.balance > 0 ? `The balance of ${money(p.balance)} is due ${balanceWhere(order)}.\n\n` : "\n\n") +
-    `After you pay, *PLEASE UPLOAD THE SCREENSHOT CONFIRMATION HERE.*`
+    `After you pay, *PLEASE UPLOAD THE SCREENSHOT CONFIRMATION HERE.*\n\n` +
+    `Changed your mind? Send "cancel" before paying.`
   );
 }
 

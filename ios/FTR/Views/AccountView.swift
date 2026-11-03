@@ -9,6 +9,7 @@ struct AccountView: View {
     @State private var confirmDelete = false
     @State private var deleteError: String?
     @State private var showKitchen = false
+    @State private var showFeedback = false
 
     var body: some View {
         NavigationStack {
@@ -59,6 +60,7 @@ struct AccountView: View {
                 Section("Talk to Chef") {
                     Button { require { showCustom = true } } label: { Label("Request a custom quote", systemImage: "square.and.pencil") }
                     Button { require { showQuestion = true } } label: { Label("Ask a question", systemImage: "questionmark.bubble") }
+                    Button { showFeedback = true } label: { Label("Comments & suggestions", systemImage: "text.bubble") }
                     if let dial = model.config?.phoneDial, let url = URL(string: "tel:\(dial)") {
                         Link(destination: url) { Label("Call \(model.config?.phoneDisplay ?? "Chef")", systemImage: "phone") }
                     }
@@ -111,6 +113,7 @@ struct AccountView: View {
             }
             .sheet(isPresented: $showCustom) { CustomRequestView() }
             .sheet(isPresented: $showQuestion) { QuestionView() }
+            .sheet(isPresented: $showFeedback) { FeedbackView() }
             .sheet(isPresented: $editingName) { EditNameView() }
             .confirmationDialog("Delete your account?", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("Delete account", role: .destructive) {
@@ -254,6 +257,115 @@ struct QuestionView: View {
         ) { text in
             struct B: Encodable { let text: String }
             let _: APIClient.OK = try await APIClient.shared.post("questions", B(text: text))
+        }
+    }
+}
+
+// MARK: - Comments & suggestions
+
+struct FeedbackComment: Decodable, Identifiable, Hashable { let id: String; let text: String; let orderId: String?; let at: String? }
+struct FeedbackList: Decodable { let comments: [FeedbackComment] }
+
+/// Comments and suggestions for Chef, saved with the customer's phone number,
+/// optionally about one of their orders.
+struct FeedbackView: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    var orderId: String? = nil
+
+    @State private var text = ""
+    @State private var aboutOrder: String = ""
+    @State private var sending = false
+    @State private var sent = false
+    @State private var error: String?
+    @State private var mine: [FeedbackComment] = []
+    @State private var showSignIn = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Comments & suggestions").font(Typeface.display(28))
+                    if sent {
+                        Notice(tone: .info, icon: "checkmark.circle", text: "Thank you! Chef reads every comment.")
+                        Button("Done") { dismiss() }.buttonStyle(PrimaryButtonStyle())
+                    } else {
+                        Text("Tell us how we did, or what you'd like to see next. Chef reads every comment.")
+                            .font(Typeface.body(16)).foregroundStyle(Palette.muted)
+                        if model.isSignedIn && !model.orders.isEmpty {
+                            Picker("About an order", selection: $aboutOrder) {
+                                Text("Not about a specific order").tag("")
+                                ForEach(model.orders.filter { $0.stage != .closed || $0.orderId == orderId }) { o in
+                                    Text("\(o.orderId) · \(o.title)").tag(o.orderId)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .tint(Palette.leaf)
+                        }
+                        TextField("Your comment or idea", text: $text, axis: .vertical)
+                            .lineLimit(4...12)
+                            .font(Typeface.body(16))
+                            .fieldStyle()
+                        if let error { Notice(tone: .bad, icon: "exclamationmark.circle", text: error) }
+                        if !model.isSignedIn {
+                            Text("You'll sign in with your phone number so we can keep your comments together.")
+                                .font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                        }
+                        Button {
+                            if !model.isSignedIn { showSignIn = true; return }
+                            Task { await send() }
+                        } label: {
+                            if sending { ProgressView().tint(Palette.leafInk) } else { Text("Send comment") }
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).count < 2 || sending)
+                    }
+                    if !mine.isEmpty {
+                        Text("Your earlier comments").font(Typeface.display(20, relativeTo: .title3)).padding(.top, 8)
+                        ForEach(mine) { c in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(c.text).font(Typeface.body(15))
+                                HStack {
+                                    if let d = c.at.flatMap(ISO8601.parse) { Text(d, format: .dateTime.month(.abbreviated).day().year()) }
+                                    if let o = c.orderId { Text("· \(o)") }
+                                }
+                                .font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                            }
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Palette.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.line))
+                        }
+                    }
+                }
+                .padding(20)
+            }
+            .screenBackground()
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
+            .sheet(isPresented: $showSignIn) { SignInView { showSignIn = false } }
+            .task {
+                aboutOrder = orderId ?? ""
+                await loadMine()
+            }
+        }
+    }
+
+    private func loadMine() async {
+        guard model.isSignedIn else { return }
+        if let r = try? await (APIClient.shared.get("feedback") as FeedbackList) { mine = r.comments }
+    }
+
+    private func send() async {
+        struct B: Encodable { let text: String; let orderId: String? }
+        sending = true
+        error = nil
+        defer { sending = false }
+        do {
+            let c: FeedbackComment = try await APIClient.shared.post("feedback", B(text: text, orderId: aboutOrder.isEmpty ? nil : aboutOrder))
+            mine.insert(c, at: 0)
+            sent = true
+        } catch {
+            self.error = (error as? APIError)?.message ?? error.localizedDescription
         }
     }
 }
