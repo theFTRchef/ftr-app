@@ -2574,6 +2574,20 @@ function statusWord(o) {
   return o.status || "";
 }
 
+const MY_ORDERS_WORDS = [
+  /^\s*(please\s+)?((show|see|view|check|list|get|display|send|give)\s+(me\s+)?)?(all\s+)?(of\s+)?(my|our)\s+(past\s+|previous\s+|old\s+|recent\s+)?orders?(\s+(status|history|details|list))?\s*(please)?[?.!]*\s*$/i,
+  /^\s*(show|see|view|check|list)\s+(the\s+)?orders?\s*[?.!]*\s*$/i,
+  /\border\s+history\b/i,
+  /\b(my|our)\s+(past|previous|old)\s+orders?\b/i,
+  /\bwhat\s+(did|have)\s+(i|we)\s+(order|ordered)\b/i,
+  /\b(status\s+of|where\s+is|check\s+on)\s+(my|our)\s+orders?\b/i,
+  /^\s*orders?\s*[?.!]*\s*$/i
+];
+const FREE_TEXT_STEPS = new Set([
+  "AWAITING_FEEDBACK", "AWAITING_QUESTION", "AWAITING_CUSTOM_REQUEST", "AWAITING_ORDER_NOTE",
+  "AWAITING_ITEM_NOTE", "AWAITING_LDS_NOTE", "AWAITING_ADDRESS", "AWAITING_NAME"
+]);
+
 async function sendMyOrders(from) {
   const orders = require("./orderDb")
     .all()
@@ -2590,8 +2604,12 @@ async function sendMyOrders(from) {
   return sendList(from, {
     header: "My orders",
     body:
-      `You have ${orders.length} order${orders.length === 1 ? "" : "s"} with us.` +
-      (open ? ` Tap one to see it${open ? " or cancel it (before the deposit is paid)" : ""}.` : " Tap one to see the details."),
+      `You have ${orders.length} order${orders.length === 1 ? "" : "s"} with us` +
+      (orders.some((o) => o.source === "past") ? " (including earlier orders Chef added for you)" : "") +
+      `.${orders.length > 10 ? " Showing your 10 most recent." : ""}\n\n` +
+      `Tap an order to see the details or leave a comment on it` +
+      (open ? ` - or cancel it, before the deposit is paid` : "") +
+      `.`,
     buttonLabel: "View orders",
     sections: [
       {
@@ -2854,6 +2872,11 @@ async function handleIncoming(payload) {
   }
   if (isText && /^(cancel|cancel (my )?order)$/i.test(text) && (!inProgress(prior) || away)) {
     return handleCancelWord(from);
+  }
+  // Typed "my orders", "show my orders", "order history"... (not while they're
+  // typing an answer, and not in the middle of building an order).
+  if (isText && MY_ORDERS_WORDS.some((re) => re.test(text)) && !FREE_TEXT_STEPS.has(prior?.step) && (!(prior?.cart || []).length || away)) {
+    return sendMyOrders(from);
   }
 
   // Continue / Start over.
