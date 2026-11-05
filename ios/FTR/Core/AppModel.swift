@@ -368,6 +368,13 @@ final class AppModel {
 
     // MARK: push notifications
 
+    /// Announcements and new dishes always land in Notifications; this adds a phone alert.
+    func setAnnouncementAlerts(_ on: Bool) async {
+        struct B: Encodable { let announcementAlerts: Bool }
+        if on { askForNotifications() }
+        if let p = try? await (api.put("me/preferences", B(announcementAlerts: on)) as Profile) { profile = p }
+    }
+
     /// Asked right after a first order, when it's obvious why.
     func askForNotifications() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in

@@ -52,7 +52,7 @@ struct HomeView: View {
     @State private var comingSoon: String?
     @State private var showFeedback = false
 
-    enum Route: Hashable { case catering, specials, availability, section(String) }
+    enum Route: Hashable { case catering, specials, festival, dry, availability, section(String) }
 
     private var lds: MenuCategory? { model.categories.first { $0.kind == .lds } }
     /// The second flagship: Dose-in-a-Box (a pre-order section marked flagship).
@@ -65,6 +65,16 @@ struct HomeView: View {
         return "Single-serve takeout · next pickup soon"
     }
     private var dib: MenuCategory? { model.categories.first { $0.preorder?.flagship == true } }
+    private var festival: [MenuCategory] { MenuGroup.festival.sections(in: model.categories) }
+    private var dry: [MenuCategory] { MenuGroup.dry.sections(in: model.categories) }
+    private func route(_ group: MenuGroup, _ list: [MenuCategory]) -> Route {
+        list.count == 1 ? .section(list[0].id) : (group == .festival ? .festival : .dry)
+    }
+    private func subtitle(_ list: [MenuCategory], filled: String) -> String {
+        guard list.contains(where: { !$0.items.isEmpty }) else { return "Coming soon" }
+        if let d = list.compactMap({ $0.preorder?.next }).first { return "Order by \(d.orderByLabel) · pickup \(d.label)" }
+        return list.count == 1 ? (list[0].subtitle.isEmpty ? filled : list[0].subtitle) : filled
+    }
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
@@ -126,6 +136,12 @@ struct HomeView: View {
                         NavigationLink(value: specials.count == 1 ? Route.section(specials[0].id) : Route.specials) {
                             HomeTile(title: specials.count == 1 ? specials[0].title : "Chef's Weekly Specials", subtitle: specialsSubtitle, icon: "fork.knife")
                         }
+                        NavigationLink(value: route(.festival, festival)) {
+                            HomeTile(title: "Festival Specials", subtitle: subtitle(festival, filled: "For the festivals coming up"), icon: "sparkles")
+                        }
+                        NavigationLink(value: route(.dry, dry)) {
+                            HomeTile(title: "Dry Products", subtitle: subtitle(dry, filled: "Chef's masala powders and more"), icon: "basket.fill")
+                        }
                         NavigationLink(value: Route.availability) {
                             HomeTile(title: "Chef's Availability", subtitle: "Open dates and times", icon: "calendar")
                         }
@@ -166,7 +182,9 @@ struct HomeView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .catering: CateringSectionsView()
-                case .specials: CateringSectionsView(specialsOnly: true)
+                case .specials: CateringSectionsView(group: .specials)
+                case .festival: CateringSectionsView(group: .festival)
+                case .dry: CateringSectionsView(group: .dry)
                 case .availability: AvailabilityView()
                 case .section(let id): CategoryDishesView(categoryId: id)
                 }
@@ -235,30 +253,66 @@ struct CartBar: View {
 
 // MARK: - Catering sections
 
+/// Which Home button a menu section sits under. Chef picks Festival Specials
+/// or Dry Products per section in admin; the rest go by type (trays or pre-order).
+enum MenuGroup: Hashable {
+    case catering, specials, festival, dry
+
+    func sections(in all: [MenuCategory]) -> [MenuCategory] {
+        all.filter { c in
+            guard c.kind == .catering, c.preorder?.flagship != true else { return false }
+            switch self {
+            case .festival: return c.section == "festival"
+            case .dry: return c.section == "dry"
+            case .specials: return c.section == nil && c.preorder != nil
+            case .catering: return c.section == nil && c.preorder == nil && !c.items.isEmpty
+            }
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .catering: "Catering Items"
+        case .specials: "Chef's Weekly Specials"
+        case .festival: "Festival Specials"
+        case .dry: "Dry Products"
+        }
+    }
+
+    var empty: String {
+        switch self {
+        case .catering: "Chef is updating the menu. Please check back soon."
+        case .specials: "Chef's Weekly Specials are coming soon."
+        case .festival: "No festival specials right now. Chef will announce the next festival menu in Notifications."
+        case .dry: "Chef's masala powders and other dry products are coming soon."
+        }
+    }
+}
+
 /// South Indian, Asian Fusion, Chaats & Snacks... - the menu sections from /admin.
 struct CateringSectionsView: View {
     @Environment(AppModel.self) private var model
     @State private var showCart = false
-    /// Chef's Weekly Specials (single-serve pre-orders) instead of catering trays.
-    var specialsOnly = false
+    var group: MenuGroup = .catering
+    private var specialsOnly: Bool { group == .specials }
 
-    private var sections: [MenuCategory] {
-        model.categories.filter {
-            $0.kind == .catering && $0.preorder?.flagship != true && (specialsOnly ? $0.preorder != nil : ($0.preorder == nil && !$0.items.isEmpty))
-        }
-    }
+    private var sections: [MenuCategory] { group.sections(in: model.categories) }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text(specialsOnly ? "Chef's Weekly Specials" : "Catering Items").font(Typeface.display(30)).foregroundStyle(Palette.red)
+                Text(group.title).font(Typeface.display(30)).foregroundStyle(Palette.red)
                 if specialsOnly {
                     Text("Single-serve takeout, ordered ahead and picked up on Chef's pickup day.").font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                } else if group == .festival {
+                    Text("Chef's menus for the festivals coming up.").font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                } else if group == .dry {
+                    Text("Chef's own masala powders and pantry staples.").font(Typeface.body(14)).foregroundStyle(Palette.muted)
                 } else if model.config?.cateringPickupOnly == true {
                     Text("Trays for pickup from our kitchen · \(model.config?.halfTrays == true ? "full or half trays" : "full trays")")
                         .font(Typeface.body(14)).foregroundStyle(Palette.muted)
                 }
-                if sections.first(where: { $0.preorder == nil })?.open == false {
+                if group == .catering, sections.first(where: { $0.preorder == nil })?.open == false {
                     Notice(tone: .warn, icon: "calendar.badge.exclamationmark", text: "Chef has no catering dates open right now. You can still browse, or ask for a custom quote.")
                 }
                 ForEach(sections) { c in
@@ -286,7 +340,7 @@ struct CateringSectionsView: View {
                     .buttonStyle(.plain)
                 }
                 if sections.isEmpty {
-                    Text(specialsOnly ? "Chef's Weekly Specials are coming soon." : "Chef is updating the menu. Please check back soon.").font(Typeface.body(15)).foregroundStyle(Palette.muted)
+                    Text(group.empty).font(Typeface.body(15)).foregroundStyle(Palette.muted)
                 }
             }
             .padding(16)

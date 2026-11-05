@@ -41,6 +41,17 @@ struct AccountView: View {
                         }
                         .padding(.vertical, 4)
                         Button("Edit name") { editingName = true }
+                        Toggle(isOn: Binding(
+                            get: { p.announcementAlerts == true },
+                            set: { on in Task { await model.setAnnouncementAlerts(on) } }
+                        )) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Alerts for new dishes & announcements")
+                                Text("Festival menus, new items and news from Chef. They always show in Notifications; this also alerts your phone.")
+                                    .font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                            }
+                        }
+                        .tint(Palette.leaf)
                         if let a = p.savedAddress {
                             LabeledContent("Saved address") { Text(a).multilineTextAlignment(.trailing) }
                         }

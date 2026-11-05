@@ -57,6 +57,8 @@ struct MenuCategory: Decodable, Identifiable, Hashable {
     let liveDose: LiveDoseInfo?
     /// Set for pre-order sections (Dose-in-a-Box, weekly takeout).
     let preorder: PreorderInfo?
+    /// Home button Chef put this section under: "festival" or "dry" (nil = Catering Items / Weekly Specials).
+    let section: String?
 }
 
 struct PreorderDay: Decodable, Hashable, Identifiable {
@@ -180,6 +182,8 @@ struct Profile: Decodable, Equatable {
     let unread: Int
     /// The owner's phone (or APP_ADMIN_PHONES): can open Chef's Kitchen.
     let isAdmin: Bool?
+    /// Customer's choice: a phone alert for Chef's announcements and new dishes.
+    let announcementAlerts: Bool?
 }
 
 struct SignInResult: Decodable { let token: String; let profile: Profile }

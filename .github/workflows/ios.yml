@@ -69,6 +69,14 @@ jobs:
             -destination 'generic/platform=iOS' -archivePath build/FTR.xcarchive \
             DEVELOPMENT_TEAM="$TEAM" CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+      - name: Carry the app's entitlements (push notifications) into the archive
+        run: |
+          # An unsigned archive has no entitlements, so the App Store export
+          # dropped push. A placeholder signature with them lets the export
+          # read them and add push to the real distribution signature.
+          codesign --force --sign - --entitlements ios/Config/FTR.entitlements \
+            build/FTR.xcarchive/Products/Applications/FTR.app
+          codesign -d --entitlements - build/FTR.xcarchive/Products/Applications/FTR.app
       - name: Sign for the App Store
         env:
           TEAM: ${{ secrets.APPLE_TEAM_ID }}
@@ -87,6 +95,8 @@ jobs:
           ls -la build/export
           unzip -q -o build/export/*.ipa -d build/ipa
           codesign -d --entitlements - build/ipa/Payload/*.app 2>&1 | head -40
+          codesign -d --entitlements - build/ipa/Payload/*.app 2>&1 | grep -q aps-environment \
+            || { echo "::warning::Push notifications (aps-environment) missing from the signed app"; }
       - name: Upload to TestFlight
         env:
           KEY_ID: ${{ secrets.ASC_KEY_ID }}

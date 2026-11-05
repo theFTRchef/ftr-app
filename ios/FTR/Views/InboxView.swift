@@ -9,11 +9,12 @@ struct InboxView: View {
     @State private var filter: Filter = .all
 
     enum Filter: String, CaseIterable, Identifiable {
-        case all = "All", decisions = "Approvals & declines", messages = "Messages from Chef", payments = "Payments"
+        case all = "All", news = "Announcements", decisions = "Approvals & declines", messages = "Messages from Chef", payments = "Payments"
         var id: String { rawValue }
         func includes(_ tag: String?) -> Bool {
             switch self {
             case .all: return true
+            case .news: return tag == "announcement"
             case .decisions: return ["approved", "declined", "quote", "released"].contains(tag ?? "")
             case .messages: return tag == "chef_message"
             case .payments: return ["deposit_due", "reminder", "paid", "not_received", "screenshot", "released"].contains(tag ?? "")
@@ -34,6 +35,9 @@ struct InboxView: View {
                         .padding(32)
                     } else {
                         LazyVStack(alignment: .leading, spacing: 14) {
+                            if model.profile?.announcementAlerts != true, !alertsCardDismissed {
+                                alertsCard
+                            }
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
                                     ForEach(Filter.allCases) { f in
@@ -113,6 +117,26 @@ struct InboxView: View {
         }
     }
 
+    @AppStorage("ftr.alertsCardDismissed") private var alertsCardDismissed = false
+
+    /// Opt-in for phone alerts about announcements (Apple requires a clear choice).
+    private var alertsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Hear about new dishes first", systemImage: "megaphone.fill")
+                .font(Typeface.body(16, weight: .bold)).foregroundStyle(Palette.ink)
+            Text("Get a phone alert when Chef adds festival specials, new dishes or dry products. You can turn it off any time in Account.")
+                .font(Typeface.body(14)).foregroundStyle(Palette.muted)
+            HStack(spacing: 10) {
+                Button("Turn on alerts") { Task { await model.setAnnouncementAlerts(true) } }
+                    .buttonStyle(PrimaryButtonStyle())
+                Button("Not now") { alertsCardDismissed = true }
+                    .buttonStyle(SecondaryButtonStyle())
+            }
+        }
+        .padding(14)
+        .background(Palette.turmericSoft, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
     private func quoteStillOpen(_ id: String) -> Bool {
         model.orders.first { $0.orderId == id }?.quote?.open ?? false
     }
@@ -144,7 +168,7 @@ struct TagChip: View {
 
     private var good: Bool { ["approved", "paid"].contains(tag) }
     private var bad: Bool { ["declined", "released", "not_received"].contains(tag) }
-    private var todo: Bool { ["deposit_due", "reminder", "quote", "chef_message"].contains(tag) }
+    private var todo: Bool { ["deposit_due", "reminder", "quote", "chef_message", "announcement"].contains(tag) }
     private var icon: String {
         switch tag {
         case "approved": "checkmark.seal.fill"
@@ -155,6 +179,7 @@ struct TagChip: View {
         case "quote": "text.bubble.fill"
         case "screenshot": "photo.fill"
         case "chef_message": "message.fill"
+        case "announcement": "megaphone.fill"
         default: "bell.fill"
         }
     }
