@@ -1297,7 +1297,7 @@ function viewMenu() {
             '<div class="small muted num">Travel: first ' + esc(l.travelFreeMiles ?? 20) + " mi free, then " + money(l.travelFeePerBlock ?? 50) + " per " + esc(l.travelBlockMiles ?? 10) + " mi</div></div>" +
             '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>';
       }
-      return '<div class="h-sec">' + esc(c.title) + (c.section ? ' <span class="pill p-ff">' + (c.section === "festival" ? "Festival Specials" : "Dry Products") + "</span>" : "") + (c.type === "preorder" ? ' <span class="pill p-info">' + (c.flagship ? "Flagship · " : "") + "Pre-order · pickup only</span>" : "") + '<button class="btn ghost sm" data-act="edit-cat" data-ci="' + ci + '">Edit</button></div>" +
+      return '<div class="h-sec">' + esc(c.title) + (c.section ? ' <span class="pill p-ff">' + (c.section === "festival" ? "Festival Specials" : "Dry Products") + "</span>" : "") + (c.type === "preorder" ? ' <span class="pill p-info">' + (c.flagship ? "Flagship · " : "") + "Pre-order · pickup only</span>" : "") + '<button class="btn ghost sm" data-act="edit-cat" data-ci="' + ci + '">Edit</button></div>' +
         (c.type === "preorder" ? '<p class="small muted" style="margin:-4px 0 8px">Single orders, picked up on your pre-order days (Setup › Pre-order pickups). Quantities are whole portions.' + (c.items.some((i) => !(Number(i.price) > 0)) ? ' <b style="color:var(--turmeric-ink)">Dishes with no price are hidden from customers.</b>' : "") + "</p>" : "") +
         '<div class="card list">' + (c.items.length ? c.items.map((it, ii) =>
           '<button class="li" data-act="edit-item" data-ci="' + ci + '" data-ii="' + ii + '">' +
