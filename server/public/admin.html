@@ -717,7 +717,8 @@ function preSummary(e) {
   const lab = (iso) => { const [y, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }); };
   return "Customers order until " + lab(e.orderByDate || shiftISO(e.date, -3)) + " " + t12(e.orderByTime || "18:00") + ", pick up " + lab(e.date) + " " + t12(e.pickupTime || "18:00");
 }
-function nextFriday() { let d = todayISO(); for (let i = 0; i < 8; i++) { d = shiftISO(d, 1); const [y, m, dd] = d.split("-").map(Number); if (new Date(Date.UTC(y, m - 1, dd)).getUTCDay() === 5) return d; } return d; }
+/** The next Friday whose Tuesday order-by day hasn't passed yet. */
+function nextFriday() { let d = todayISO(); for (let i = 0; i < 8; i++) { d = shiftISO(d, 1); const [y, m, dd] = d.split("-").map(Number); if (new Date(Date.UTC(y, m - 1, dd)).getUTCDay() === 5) break; } while (shiftISO(d, -3) < todayISO()) d = shiftISO(d, 7); return d; }
 
 // ---------------------------------------------------------------- demo data
 function demoWeekends(from, count, step) {
