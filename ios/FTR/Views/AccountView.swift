@@ -61,6 +61,7 @@ struct AccountView: View {
                     Button { require { showCustom = true } } label: { Label("Request a custom quote", systemImage: "square.and.pencil") }
                     Button { require { showQuestion = true } } label: { Label("Ask a question", systemImage: "questionmark.bubble") }
                     Button { showFeedback = true } label: { Label("Comments & suggestions", systemImage: "text.bubble") }
+                    ShareFTRButton()
                     if let dial = model.config?.phoneDial, let url = URL(string: "tel:\(dial)") {
                         Link(destination: url) { Label("Call \(model.config?.phoneDisplay ?? "Chef")", systemImage: "phone") }
                     }

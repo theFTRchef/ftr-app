@@ -1029,10 +1029,16 @@ function prepSection() {
   return '<div class="h-sec">Pre-order prep (Dose-in-a-Box &amp; takeout)</div><div class="stack">' + days.map((d) =>
     '<div class="card pad stack"><div class="row" style="justify-content:space-between"><b>Pickup ' + esc(d.pickupLabel) + "</b>" +
       '<span class="pill ' + (d.open ? "p-info" : "p-wait") + '">' + (d.open ? "Taking orders until " + esc(d.orderByLabel) : "Orders closed – prep") + "</span></div>" +
+      (d.status || []).filter((st) => st.min > 0 || st.max != null).map((st) =>
+        '<div class="small"><b>' + esc(st.title) + ":</b> " + esc(st.ordered) + (st.min ? " of " + esc(st.min) + " minimum" : " ordered") +
+        (st.min ? (st.ordered >= st.min ? ' <span class="pill p-good">minimum reached</span>' : ' <span class="pill p-wait">' + esc(st.min - st.ordered) + " more needed</span>") : "") +
+        (st.max != null ? " · " + esc(st.left) + " left of " + esc(st.max) : "") + "</div>").join("") +
       (d.totals.length
         ? '<div class="num" style="font-size:18px">' + d.totals.map((t) => "<b>" + esc(t.qty) + "</b> × " + esc(t.title)).join(" &nbsp;·&nbsp; ") + "</div>" +
           '<div class="small muted">' + d.orders.length + " order" + (d.orders.length === 1 ? "" : "s") + ": " + d.orders.map((o) => esc(o.name) + " (" + esc(o.items) + ")").join("; ") + "</div>"
         : '<div class="small muted">No orders yet.</div>') +
+      (d.cancelled ? '<div class="small" style="color:var(--bad)"><b>Batch cancelled.</b> Customers were told.</div>'
+        : '<div><button class="btn sm danger" data-act="pre-cancel" data-date="' + esc(d.date) + '" data-label="' + esc(d.pickupLabel) + '" data-n="' + d.orders.length + '">Cancel this batch…</button></div>') +
     "</div>").join("") + "</div>";
 }
 function viewToday() {
@@ -1309,6 +1315,8 @@ function itemSheet(ci, ii) {
       '<label class="field"><span>Serves up to</span><input id="f-smax" type="number" inputmode="numeric" min="1" value="' + esc(it.servesMax || "") + '" /></label></div>' +
       '<div class="grid2"><label class="field"><span>Min trays per order</span><input id="f-minq" type="number" inputmode="numeric" min="1" value="' + esc(it.minQty || 1) + '" />' + (S.menu.settings.halfTrays ? '<span class="hint">Not used while half-tray orders are on (Setup).</span>' : "") + '</label>' +
       '<label class="field"><span>Max trays per order</span><input id="f-maxq" type="number" inputmode="numeric" min="1" value="' + esc(it.maxQty || "") + '" placeholder="' + defMax + ' (default)" /><span class="hint">Bigger orders are asked to call you.</span></label></div>' +
+      (cat.type === "preorder" ? '<div class="grid2"><label class="field"><span>Kitchen minimum for the day</span><input id="f-dmin" type="number" inputmode="numeric" min="0" value="' + esc(it.dayMin || "") + '" placeholder="None" /><span class="hint">All customers together, per pickup day. Customers see how many more are needed.</span></label>' +
+        '<label class="field"><span>Most for the day</span><input id="f-dmax" type="number" inputmode="numeric" min="1" value="' + esc(it.dayMax || "") + '" placeholder="No limit" /><span class="hint">Orders stop when it sells out. Customers see how many are left.</span></label></div>' : "") +
       '<label class="field"><span>Description</span><textarea id="f-desc" placeholder="Shown when a customer types &quot;describe&quot;">' + esc(it.description || "") + "</textarea></label>" +
       '<label class="switch"><input type="checkbox" id="f-req"' + (it.requiresNote ? " checked" : "") + ' /><span><b>Ask the customer a question</b><small>For dishes where price depends on their choice, like Palya</small></span></label>' +
       '<label class="field" id="f-promptWrap"' + (it.requiresNote ? "" : " hidden") + '><span>Question to ask</span><input id="f-prompt" value="' + esc(it.notePrompt || "") + '" placeholder="Which vegetable would you like?" /></label>' +
@@ -1325,6 +1333,11 @@ function itemSheet(ci, ii) {
         const smin = parseInt(v("#f-smin")) || null, smax = parseInt(v("#f-smax")) || smin;
         if (smin && smax && smax < smin) { err.textContent = "\"Serves up to\" can't be less than \"Serves from\"."; err.hidden = false; return; }
         const target = isNew ? {} : cat.items[ii];
+        if (cat.type === "preorder") {
+          const dmin = parseInt(v("#f-dmin")) || 0, dmax = parseInt(v("#f-dmax")) || null;
+          if (dmax != null && dmin > dmax) { err.textContent = "The day's minimum can't be more than its most."; err.hidden = false; return; }
+          Object.assign(target, { dayMin: dmin, dayMax: dmax });
+        }
         Object.assign(target, {
           title: v("#f-title"), price, size: v("#f-size"), servesMin: smin, servesMax: smax,
           minQty: parseInt(v("#f-minq")) || 1, maxQty: parseInt(v("#f-maxq")) || null,
@@ -1801,6 +1814,34 @@ document.addEventListener("click", (e) => {
       list.push({ date: d, pickupTime: "18:00", orderByDate: shiftISO(d, -3), orderByTime: "18:00" });
       list.sort((x, y) => (x.date < y.date ? -1 : 1));
       markDirty(); render(); break;
+    }
+    case "pre-cancel": {
+      const dd = el.dataset.date, n = +el.dataset.n;
+      openSheet({
+        title: "Cancel the batch for " + el.dataset.label + "?",
+        body: '<p style="margin:0">' + (n ? "All " + n + " customer" + (n === 1 ? "" : "s") + " with an order for this day will" : "Customers who order will") + " get a regret message: the batch is cancelled, any deposit will be refunded, and cancellations like this are rare and only happen in extreme situations. The day closes to new orders.</p>" +
+          '<p class="small muted" style="margin:0">You refund paid deposits yourself by Zelle – the bot sends you the list.</p>' +
+          '<label class="field"><span>Type CANCEL to confirm</span><input id="pcConfirm" autocomplete="off" /></label>',
+        foot: '<button class="btn" data-close>Keep the batch</button><button class="btn danger solid" id="pcGo">Cancel batch</button>',
+        onMount: (sh) => sh.querySelector("#pcGo").addEventListener("click", async () => {
+          if (sh.querySelector("#pcConfirm").value.trim().toUpperCase() !== "CANCEL") { toast("Type CANCEL to confirm", true); return; }
+          sh.querySelector("#pcGo").disabled = true;
+          try {
+            if (S.mode === "live") {
+              const r = await api("POST", "/admin/api/preorders/" + encodeURIComponent(dd) + "/cancel", { confirm: "CANCEL" });
+              S.preorders = await api("GET", "/admin/api/preorders").catch(() => S.preorders);
+              S.orders = await api("GET", "/admin/api/orders").catch(() => S.orders);
+              S.menu = ensureShape(await api("GET", "/admin/api/menu")); S.saved = canon(S.menu);
+              toast("Batch cancelled – " + r.cancelled.length + " customer" + (r.cancelled.length === 1 ? "" : "s") + " told" + (r.refunds.length ? ", " + r.refunds.length + " deposit" + (r.refunds.length === 1 ? "" : "s") + " to refund" : ""));
+            } else {
+              S.preorders = (S.preorders || []).map((x) => (x.date === dd ? Object.assign({}, x, { cancelled: true, open: false }) : x));
+              toast("Batch cancelled (demo)");
+            }
+            closeSheet(); render();
+          } catch (err) { sh.querySelector("#pcGo").disabled = false; toast(err.message, true); }
+        })
+      });
+      break;
     }
     case "pre-del": {
       (S.menu.availability.preorders || []).splice(+el.dataset.i, 1);

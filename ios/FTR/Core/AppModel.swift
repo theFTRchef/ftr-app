@@ -219,6 +219,14 @@ final class AppModel {
     func isPreorderDish(_ id: String) -> Bool {
         categories.contains { $0.preorder != nil && $0.items.contains { $0.id == id } }
     }
+    /// Where a pre-order dish stands for the next pickup day (min / most), if Chef set limits.
+    func preorderStatus(_ dishId: String) -> (day: PreorderDay, status: PreorderItemStatus)? {
+        for c in categories {
+            guard let p = c.preorder, let day = p.next, c.items.contains(where: { $0.id == dishId }) else { continue }
+            if let st = day.items?.first(where: { $0.itemId == dishId }) { return (day, st) }
+        }
+        return nil
+    }
     var cartIsPreorder: Bool { !cart.isLiveDose && cart.lines.contains { isPreorderDish($0.itemId) } }
 
     /// Why adding this dish would clear the cart (separate order types), or nil.

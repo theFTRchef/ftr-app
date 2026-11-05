@@ -671,7 +671,24 @@ async function sendLiveDoseNotePrompt(to) {
 
 async function sendQtyPrompt(to, item, menu) {
   const min = effectiveMinQty(menu, item);
-  const max = effectiveMaxQty(menu, item);
+  let max = effectiveMaxQty(menu, item);
+  if (item.isPreorder) {
+    // Where this dish stands for the next pickup day (kitchen minimum / most).
+    const day = preorders.open(menu)[0];
+    const st = day && preorders.dayStatus(menu, day.date).find((x) => x.itemId === item.id);
+    if (st && st.max != null && st.left === 0) {
+      return sendText(to, `Sorry - ${item.title} is sold out for pickup ${day.pickupLabel}. Type "menu" to see what else is available.`);
+    }
+    if (st && st.max != null) max = Math.min(max, st.left);
+    const lines = day ? preorders.statusLines(menu, day.date).filter((l) => l.startsWith(item.title + ":")) : [];
+    const options = [min, min + 1, min + 2].filter((n) => n <= max);
+    if (options.length === 0) options.push(min);
+    return sendButtons(to, {
+      body: (`How many "${item.title}" would you like? ($${Number(item.price).toFixed(2)} each)` + (lines.length ? `\n\nPickup ${day.pickupLabel}:\n${lines.join("\n")}` : "")).slice(0, 1024),
+      buttons: options.map((n) => ({ id: `qty:${n}`, title: String(n) })),
+      footer: `Type a number for a different amount (up to ${max}), or "describe" for details.`
+    });
+  }
   if (halfTraysOn(menu) && !item.isPreorder) {
     const options = [0.5, 1, 2].filter((n) => n <= max);
     await sendButtons(to, {
@@ -926,7 +943,7 @@ async function sendOrderSummary(to, session) {
     payments.enabled()
       ? `${payments.settings().depositPercent}% Zelle deposit after Chef approves, balance ${balanceWhen}`
       : `collected ${balanceWhen}`
-  }${session.orderNote ? `\nYour note: ${session.orderNote}` : ""}\n\nShall I send this in for approval?`;
+  }${session.orderNote ? `\nYour note: ${session.orderNote}` : ""}${preorderStatusBlock(session)}\n\nShall I send this in for approval?`;
   await sendButtons(to, {
     body: summary.slice(0, 1024),
     buttons: [
@@ -2830,6 +2847,15 @@ async function saveFeedback(from, text, orderId) {
 // ---------------------------------------------------------------------
 // Pre-orders: Dose-in-a-Box and Chef's weekly takeout.
 // ---------------------------------------------------------------------
+/** For a pre-order summary: where the pickup day stands with this order in it. */
+function preorderStatusBlock(session) {
+  if (!cartOrderTypes(session.cart || []).hasPreorder || !session.selectedDate) return "";
+  const adding = {};
+  for (const l of session.cart) if (l.isPreorder) adding[l.id] = (adding[l.id] || 0) + Number(l.qty || 0);
+  const lines = preorders.statusLines(botMenu(), session.selectedDate, adding).filter((l) => Object.keys(adding).some((id) => l.startsWith(((session.cart.find((c) => c.id === id) || {}).title || "") + ":")));
+  return lines.length ? `\n\n${lines.join("\n")}` : "";
+}
+
 function preorderShort(menu) {
   const e = preorders.open(menu)[0];
   return e ? `Order by ${e.orderByLabel} - pickup ${formatDateLabel(e.date)}` : null;
@@ -3564,6 +3590,11 @@ async function handleIncoming(payload) {
           sessionStore.set(from, { ...session, step: dateStep(hasDates) });
           return;
         }
+        const full = preorders.capacityProblem(menu, session.selectedDate, session.cart);
+        if (full) {
+          await sendText(from, full);
+          return startPreorder(from, menu);
+        }
         const requestedTime = `${formatDateLabel(session.selectedDate)}, pickup at ${formatTimeLabel(e.pickupTime)} (pre-order)`;
         const updated = { ...session, fulfillment: "pickup", requestedTime, step: "AWAITING_CONFIRM" };
         sessionStore.set(from, updated);
@@ -3614,6 +3645,16 @@ async function handleIncoming(payload) {
     }
 
     case "AWAITING_CONFIRM": {
+      if (replyId === "confirm:yes" && cartOrderTypes(session.cart).hasPreorder) {
+        // Someone else may have taken the last boxes while they were deciding.
+        const full = !preorders.openEntry(menu, session.selectedDate)
+          ? "Sorry - orders for that pickup day have just closed."
+          : preorders.capacityProblem(menu, session.selectedDate, session.cart);
+        if (full) {
+          await sendText(from, full);
+          return startPreorder(from, menu);
+        }
+      }
       if (replyId === "confirm:yes") {
         const finalSession = session;
         sessionStore.clear(from);

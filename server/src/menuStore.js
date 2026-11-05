@@ -166,6 +166,10 @@ function saveMenu(menu) {
       c.flagship = c.flagship === true;
       for (const i of c.items) {
         i.minQty = Math.max(1, Math.round(i.minQty || 1));
+        // Kitchen minimum / most for a pickup day (all customers together).
+        i.dayMin = Number(i.dayMin) > 0 ? Math.round(Number(i.dayMin)) : 0;
+        i.dayMax = Number(i.dayMax) > 0 ? Math.round(Number(i.dayMax)) : null;
+        if (i.dayMax != null && i.dayMin > i.dayMax) throw new Error(`${i.title}: the day's minimum can't be more than its most`);
       }
     }
   }

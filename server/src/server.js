@@ -242,7 +242,20 @@ app.get("/admin/api/preorders", requireAdminAuth, (req, res) => {
   const pre = require("./preorders");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
   const days = pre.all(menuStore.getMenu()).filter((e) => e.date >= today);
-  res.json(days.map((e) => ({ ...e, open: Date.now() < e.cutoff, ...pre.prepList(e.date) })));
+  const menu = menuStore.getMenu();
+  res.json(days.map((e) => ({ ...e, open: Date.now() < e.cutoff && !e.cancelled, ...pre.prepList(e.date), status: pre.dayStatus(menu, e.date) })));
+});
+
+// Chef cancels a whole pre-order pickup day: every customer gets a regret message.
+app.post("/admin/api/preorders/:date/cancel", requireAdminAuth, async (req, res) => {
+  if ((req.body || {}).confirm !== "CANCEL") return res.status(400).send("Type CANCEL to confirm.");
+  try {
+    const r = await require("./preorders").cancelBatch(req.params.date);
+    if (!r.ok) return res.status(400).send(r.reason);
+    res.json(r);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 });
 
 app.get("/admin/api/feedback", requireAdminAuth, (req, res) => {

@@ -304,7 +304,16 @@ function preorderInfo(menu, c) {
   return { flagship: !!c.flagship, days, next: days[0] || null };
 }
 function preorderDay(e) {
-  return { date: e.date, label: flow().formatDateLabel(e.date), pickupTime: formatTimeLabel(e.pickupTime), pickupLabel: e.pickupLabel, orderByLabel: e.orderByLabel };
+  const menu = flow().botMenu();
+  return {
+    date: e.date,
+    label: flow().formatDateLabel(e.date),
+    pickupTime: formatTimeLabel(e.pickupTime),
+    pickupLabel: e.pickupLabel,
+    orderByLabel: e.orderByLabel,
+    // Kitchen minimum / most for the day, and how many are ordered so far.
+    items: preorders.dayStatus(menu, e.date).filter((st) => st.min > 0 || st.max != null)
+  };
 }
 
 function availabilityPayload(query) {
@@ -690,6 +699,10 @@ async function buildPreorder(phone, body) {
   const e = preorders.openEntry(menu, date);
   if (!e) throw new ApiError(400, "Orders for that pickup day have closed. Please pick another day.", "date_gone");
   if (body.slotId && body.slotId !== "slot:preorder") throw new ApiError(400, "That time isn't available anymore. Please pick another.", "slot_gone");
+  const full = preorders.capacityProblem(menu, date, cart);
+  if (full) throw new ApiError(409, full, "sold_out");
+  const adding = {};
+  for (const l of cart) adding[l.id] = (adding[l.id] || 0) + l.qty;
   const requestedTime = `${f.formatDateLabel(date)}, pickup at ${formatTimeLabel(e.pickupTime)} (pre-order)`;
   const subtotal = money2(f.cartSubtotal(cart));
   const order = {
@@ -723,7 +736,12 @@ async function buildPreorder(phone, body) {
     requestedTime,
     schedule: null,
     orderNote: order.orderNote,
-    preorder: { pickupLabel: e.pickupLabel, orderByLabel: e.orderByLabel },
+    preorder: {
+      pickupLabel: e.pickupLabel,
+      orderByLabel: e.orderByLabel,
+      items: preorders.dayStatus(menu, date, adding).filter((st) => st.adding > 0 && (st.min > 0 || st.max != null)),
+      notes: preorders.statusLines(menu, date, adding).filter((l) => cart.some((c) => l.startsWith(c.title + ":")))
+    },
     payment: payments.enabled(menu)
       ? { deposit: true, percent: pay.depositPercent, amount: payments.depositFor(subtotal, menu), text: `${pay.depositPercent}% Zelle deposit after Chef approves, balance at pickup.` }
       : { deposit: false, text: "Payment is collected at pickup." }

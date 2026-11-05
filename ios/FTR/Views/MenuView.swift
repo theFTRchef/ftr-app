@@ -146,6 +146,9 @@ struct HomeView: View {
             .refreshable { await model.loadMenu() }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    ShareFTRButton(compact: true)
+                }
                 if let dial = model.config?.phoneDial, let url = URL(string: "tel:\(dial)") {
                     ToolbarItem(placement: .topBarTrailing) {
                         Link(destination: url) { Image(systemName: "phone") }.accessibilityLabel("Call Chef")
@@ -311,6 +314,10 @@ struct CategoryDishesView: View {
                             }
                             ForEach(p.days.prefix(3)) { d in
                                 Text("Pickup \(d.pickupLabel) · order by \(d.orderByLabel)").font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                                ForEach(d.items ?? [], id: \.itemId) { st in
+                                    Text("\(st.title): \(st.summary)").font(Typeface.body(13, weight: .semibold))
+                                        .foregroundStyle(st.min > 0 && st.ordered < st.min ? Palette.turmericInk : Palette.veg)
+                                }
                             }
                         }
                         .padding(.horizontal, 16).padding(.bottom, 10)
@@ -540,5 +547,30 @@ struct DoseGlyph: View {
             ctx.stroke(fold, with: .color(Color(UIColor(hex: 0xA86F00))), lineWidth: 1.5)
         }
         .accessibilityHidden(true)
+    }
+}
+
+
+// MARK: - Share FTR
+
+/// Tell a friend: FTR's website, WhatsApp ordering link and phone, through the iPhone share sheet.
+struct ShareFTRButton: View {
+    @Environment(AppModel.self) private var model
+    var compact = false
+
+    private var message: String {
+        let phone = model.config?.phoneDisplay ?? "1-234-FTR-DOSE"
+        return "Franklin Tiffin Room - Karnataka-style vegetarian home catering in Somerset, NJ. The LIVE Masala Dose Station at your party, Dose-in-a-Box to make at home, and catering trays. Order on WhatsApp: https://wa.me/\(model.config?.phoneDial ?? "12343873673")?text=hi or call \(phone)."
+    }
+
+    var body: some View {
+        ShareLink(item: URL(string: "https://franklintiffinroom.com")!, subject: Text("Franklin Tiffin Room"), message: Text(message)) {
+            if compact {
+                Image(systemName: "square.and.arrow.up")
+            } else {
+                Label("Share FTR with a friend", systemImage: "square.and.arrow.up")
+            }
+        }
+        .accessibilityLabel("Share FTR")
     }
 }

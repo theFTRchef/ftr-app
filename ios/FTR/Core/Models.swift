@@ -65,7 +65,30 @@ struct PreorderDay: Decodable, Hashable, Identifiable {
     let pickupTime: String
     let pickupLabel: String
     let orderByLabel: String
+    /// Kitchen minimum / most for the day, all customers together.
+    let items: [PreorderItemStatus]?
     var id: String { date }
+}
+
+struct PreorderItemStatus: Decodable, Hashable {
+    let itemId: String
+    let title: String
+    let ordered: Int
+    let adding: Int?
+    let min: Int
+    let max: Int?
+    let left: Int?
+    let needed: Int
+    let reached: Bool
+
+    /// "4 of 10 ordered · 6 more needed for the batch · 8 left"
+    var summary: String {
+        var parts: [String] = []
+        if min > 0 { parts.append(ordered >= min ? "\(ordered) ordered · kitchen minimum of \(min) reached" : "\(ordered) of \(min) ordered · \(needed) more needed for the batch") }
+        else { parts.append("\(ordered) ordered") }
+        if let left { parts.append(left == 0 ? "sold out" : "\(left) left") }
+        return parts.joined(separator: " · ")
+    }
 }
 
 struct PreorderInfo: Decodable, Hashable {
@@ -221,6 +244,8 @@ struct OrderPreview: Decodable {
     let requestedTime: String
     let schedule: Schedule?
     let payment: Payment
+    struct Preorder: Decodable { let pickupLabel: String; let orderByLabel: String; let notes: [String]? }
+    let preorder: Preorder?
 }
 
 // MARK: - Orders

@@ -519,6 +519,12 @@ struct CheckoutView: View {
                         .padding(.leading, 30)
                     }
                     if let a = p.address { Label(a, systemImage: "mappin.and.ellipse").font(Typeface.body(15)) }
+                    if let pre = p.preorder {
+                        Label("Order by \(pre.orderByLabel)", systemImage: "clock").font(Typeface.body(15))
+                        ForEach(pre.notes ?? [], id: \.self) { n in
+                            Text(n).font(Typeface.body(14, weight: .semibold)).foregroundStyle(n.contains("batch is on") || n.contains("reached") ? Palette.veg : Palette.turmericInk)
+                        }
+                    }
                     if p.outOfRange != nil {
                         Label("Outside our usual range - Chef will decide", systemImage: "exclamationmark.triangle").font(Typeface.body(15)).foregroundStyle(Palette.turmericInk)
                     }

@@ -484,6 +484,7 @@ struct OrderDetailView: View {
         if o.status.contains("Released") { return "This order was released because the deposit didn't arrive in time. Call Chef if you'd still like the date." }
         if o.status.contains("Quote Declined") { return "You declined this quote." }
         if o.status.contains("Cancelled by customer") { return "You cancelled this order." }
+        if o.status.contains("(batch)") { return "We're truly sorry - Chef had to cancel this pickup day's batch. Any deposit will be refunded by Zelle. This is rare and only happens in extreme situations." }
         if o.status.contains("Cancelled by Chef") { return "Chef cancelled this order. Please call if you have questions." }
         return "Chef isn't able to take this order. Please call to talk it through, or try another date."
     }

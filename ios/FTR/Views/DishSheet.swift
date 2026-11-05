@@ -25,9 +25,12 @@ struct DishSheet: View {
                         .lineSpacing(3)
                         .fixedSize(horizontal: false, vertical: true)
 
+                    if let ps = model.preorderStatus(dish.id) {
+                        PreorderProgress(day: ps.day, status: ps.status, adding: Int(qty))
+                    }
                     Panel {
                         HStack {
-                            Text("Full tray").font(Typeface.body(16))
+                            Text(isPre ? "Each" : "Full tray").font(Typeface.body(16))
                             Spacer()
                             Text(Money.text(dish.price)).font(Typeface.body(16, weight: .bold)).monospacedDigit()
                         }
@@ -41,11 +44,11 @@ struct DishSheet: View {
                         Divider()
                         HStack {
                             VStack(alignment: .leading) {
-                                Text("How many trays?").font(Typeface.body(16, weight: .semibold))
+                                Text(isPre ? "How many?" : "How many trays?").font(Typeface.body(16, weight: .semibold))
                                 Text(limitsText).font(Typeface.body(13)).foregroundStyle(Palette.muted)
                             }
                             Spacer()
-                            QtyStepper(value: $qty, min: dish.minQty, max: dish.maxQty, step: dish.qtyStep)
+                            QtyStepper(value: $qty, min: dish.minQty, max: maxQty, step: dish.qtyStep)
                         }
                     }
 
@@ -61,7 +64,9 @@ struct DishSheet: View {
                     if qty >= dish.maxQty, let phone = model.config?.phoneDisplay {
                         Notice(tone: .info, icon: "phone", text: "Need more than \(Qty.text(dish.maxQty))? Call Chef at \(phone) so we can plan properly.")
                     }
-                    if category?.open == false {
+                    if let st = model.preorderStatus(dish.id)?.status, st.left == 0 {
+                        Notice(tone: .warn, icon: "xmark.circle", text: "Sold out for the next pickup day.")
+                    } else if category?.open == false {
                         Notice(tone: .warn, icon: "calendar", text: "No catering dates are open right now, so this can't be ordered yet.")
                     }
                 }
@@ -102,8 +107,15 @@ struct DishSheet: View {
         Cart.Line(itemId: dish.id, title: dish.title, unitPrice: dish.price, halfTrayPrice: dish.halfTrayPrice, qty: qty).total
     }
 
+    private var isPre: Bool { category?.preorder != nil }
+    /// Never more than what's left for the pickup day.
+    private var maxQty: Double {
+        if let left = model.preorderStatus(dish.id)?.status.left { return Swift.max(dish.minQty, Swift.min(dish.maxQty, Double(left))) }
+        return dish.maxQty
+    }
+
     private var canAdd: Bool {
-        category?.open != false && (!dish.requiresNote || !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        model.preorderStatus(dish.id)?.status.left != 0 && category?.open != false && (!dish.requiresNote || !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
 
     private var warning: AppModel.ReplaceWarning? { model.replaceWarning(for: dish) }
@@ -244,5 +256,45 @@ struct MultiAddSheet: View {
         for d in dishes { model.add(d, qty: qty[d.id] ?? max(1, d.minQty), note: notes[d.id]) }
         onAdded()
         dismiss()
+    }
+}
+
+
+/// Kitchen minimum / most for a pickup day, with what this order adds.
+struct PreorderProgress: View {
+    let day: PreorderDay
+    let status: PreorderItemStatus
+    var adding: Int = 0
+
+    var body: some View {
+        Panel {
+            Text("Pickup \(day.pickupLabel)").font(Typeface.body(15, weight: .bold))
+            Text("Order by \(day.orderByLabel)").font(Typeface.body(13)).foregroundStyle(Palette.muted)
+            if status.min > 0 {
+                let total = status.ordered + adding
+                ProgressView(value: Double(Swift.min(total, status.min)), total: Double(status.min))
+                    .tint(total >= status.min ? Palette.veg : Palette.turmeric)
+                Text(message(total)).font(Typeface.body(14, weight: .semibold))
+                    .foregroundStyle(total >= status.min ? Palette.veg : Palette.turmericInk)
+            } else {
+                Text(status.summary).font(Typeface.body(14))
+            }
+            if let left = status.left {
+                Text(left == 0 ? "Sold out for this day" : "\(left) left for this day").font(Typeface.body(13)).foregroundStyle(Palette.muted)
+            }
+            if status.min > 0 {
+                Text("The kitchen minimum is for the whole day, all customers together. If it isn't reached by the order-by time, Chef may cancel the batch and everyone is told.")
+                    .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+            }
+        }
+    }
+
+    private func message(_ total: Int) -> String {
+        if status.ordered >= status.min { return "\(status.ordered) ordered - kitchen minimum of \(status.min) reached, the batch is on" }
+        if adding > 0 && total >= status.min { return "Your \(adding) bring\(adding == 1 ? "s" : "") it to \(total) - that makes the minimum of \(status.min), the batch is on!" }
+        let more = status.min - total
+        return adding > 0
+            ? "With yours: \(total) of \(status.min) - \(more) more needed for the batch"
+            : "\(status.ordered) of \(status.min) ordered so far - \(more) more needed for the batch"
     }
 }
