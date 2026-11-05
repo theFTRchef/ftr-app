@@ -56,7 +56,8 @@ struct HomeView: View {
 
     private var lds: MenuCategory? { model.categories.first { $0.kind == .lds } }
     /// The second flagship: Dose-in-a-Box (a pre-order section marked flagship).
-    private var dib: MenuCategory? { model.categories.first { $0.preorder?.flagship == true && !$0.items.isEmpty } }
+    /// Always shown (it's a flagship); says "coming soon" until Chef opens a pickup day.
+    private var dib: MenuCategory? { model.categories.first { $0.preorder?.flagship == true } }
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
@@ -97,7 +98,7 @@ struct HomeView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Take-home flagship").font(Typeface.body(13, weight: .bold)).kerning(1.2).foregroundStyle(Palette.turmeric)
                                     Text(dib.title).font(Typeface.display(26, relativeTo: .title2)).foregroundStyle(Palette.cream)
-                                    Text(dib.preorder?.next.map { "Order by \($0.orderByLabel) · pickup \($0.pickupLabel)" } ?? "Next pickup day coming soon")
+                                    Text(dib.items.isEmpty ? "Take-home Masala Dose kit for 4 · coming soon" : dib.preorder?.next.map { "Order by \($0.orderByLabel) · pickup \($0.pickupLabel)" } ?? "Take-home kit for 4 · next pickup day coming soon")
                                         .font(Typeface.body(14)).foregroundStyle(Palette.cream.opacity(0.9))
                                         .multilineTextAlignment(.leading)
                                 }
@@ -309,8 +310,8 @@ struct CategoryDishesView: View {
                     if let p = cat.preorder {
                         Panel {
                             Label("Pre-order · pickup only", systemImage: "bag").font(Typeface.body(15, weight: .bold))
-                            if p.days.isEmpty {
-                                Text("Chef hasn't opened the next pickup day yet. Check back soon.").font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                            if p.days.isEmpty || cat.items.isEmpty {
+                                Text("Chef hasn't opened the next pickup day yet. Check back soon - or tap Share to tell a friend.").font(Typeface.body(14)).foregroundStyle(Palette.muted)
                             }
                             ForEach(p.days.prefix(3)) { d in
                                 Text("Pickup \(d.pickupLabel) · order by \(d.orderByLabel)").font(Typeface.body(14)).foregroundStyle(Palette.muted)
