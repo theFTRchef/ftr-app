@@ -110,6 +110,7 @@ function profileFor(phone) {
     savedAddress: p.address || null,
     needsName: !p.firstName,
     isAdmin: isAdminPhone(phone),
+    announcementAlerts: !!(appUsers.get(phone) || {}).announcementAlerts,
     unread: appInbox.unreadCount(phone)
   };
 }
@@ -238,6 +239,8 @@ function menuPayload() {
         title: c.title,
         subtitle: c.rowDescription || "",
         kind: isLds ? "lds" : "catering",
+        // Home button: "festival" (Festival Specials), "dry" (Dry Products), or absent.
+        ...(c.section ? { section: c.section } : {}),
         open: allowed.has(c.id)
       };
       if (isLds) {
@@ -951,6 +954,16 @@ function router() {
       const lastName = cleanName(req.body.lastName);
       if (!firstName || !lastName) throw new ApiError(400, "Please enter your first and last name.", "bad_name");
       customerStore.save(req.phone, { firstName, lastName });
+      res.json(profileFor(req.phone));
+    })
+  );
+
+  // Alerts for Chef's announcements and new menu items (customer's choice).
+  r.put(
+    "/me/preferences",
+    requireUser,
+    wrap((req, res) => {
+      appUsers.setPrefs(req.phone, { announcementAlerts: (req.body || {}).announcementAlerts === true });
       res.json(profileFor(req.phone));
     })
   );

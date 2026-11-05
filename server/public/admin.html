@@ -147,6 +147,10 @@ nav.tabs a[aria-current="page"]::before { content: ""; position: absolute; top: 
 .p-bad { background: var(--bad-soft); color: var(--bad); }
 .p-info { background: var(--info-soft); color: var(--info); }
 .p-off { background: var(--surface-2); color: var(--muted); }
+.p-ff { background: var(--chili-soft); color: var(--chili-ink); }
+.stars { color: var(--turmeric); font-size: 15px; letter-spacing: 1px; white-space: nowrap; }
+.stars .off { color: var(--line); }
+.sel-sm { font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
 .qr-row { display: flex; gap: 14px; align-items: flex-start; }
 .qr-box { width: 112px; height: 112px; flex: none; border: 1px dashed var(--line); border-radius: 14px; display: grid; place-items: center; text-align: center; padding: 6px; background: var(--surface-2); overflow: hidden; }
 .qr-box img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; background: #fff; }
@@ -166,6 +170,7 @@ nav.tabs a[aria-current="page"]::before { content: ""; position: absolute; top: 
 .btn[disabled] { opacity: .5; cursor: not-allowed; }
 
 .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chips.wrap { flex-wrap: wrap; overflow: visible; }
 .chip {
   border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px;
   font-size: 13.5px; font-weight: 600; white-space: nowrap; color: var(--muted);
@@ -788,6 +793,7 @@ async function boot() {
     S.customers = await api("GET", "/admin/api/customers").catch(() => []);
     S.feedback = await api("GET", "/admin/api/feedback").catch(() => []);
     S.preorders = await api("GET", "/admin/api/preorders").catch(() => []);
+    S.broadcasts = await api("GET", "/admin/api/broadcasts").catch(() => ({ history: [], pending: null }));
   } catch (e) {
     S.mode = "demo";
     S.menu = demoMenu();
@@ -796,7 +802,9 @@ async function boot() {
       S.preorders = [{ date: fri, pickupLabel: "Fri at 6:00 PM", orderByLabel: "Tue, 6 PM", open: true, totals: [{ title: "Dose-in-a-Box", qty: 7 }], orders: [{ name: "Anita Rao", items: "3x Dose-in-a-Box" }, { name: "Rahul Kulkarni", items: "4x Dose-in-a-Box" }] }]; }
     S.orders = demoOrders();
     S.customers = demoCustomers();
+    S.customers.slice(0, 1).forEach((c) => { c.family = true; });
     S.feedback = demoFeedback();
+    S.broadcasts = demoBroadcasts();
     S.rangeReqs = [{ phone: "12155550147", name: "Deepa Murthy", address: "1200 Delaware Ave, Wilmington, DE 19806", miles: 54.2, limit: 40, eventDate: demoWeekends(8, 1, 1)[0], plates: 150 }];
     $("#previewBanner").hidden = false;
   }
@@ -1289,7 +1297,7 @@ function viewMenu() {
             '<div class="small muted num">Travel: first ' + esc(l.travelFreeMiles ?? 20) + " mi free, then " + money(l.travelFeePerBlock ?? 50) + " per " + esc(l.travelBlockMiles ?? 10) + " mi</div></div>" +
             '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>';
       }
-      return '<div class="h-sec">' + esc(c.title) + (c.type === "preorder" ? ' <span class="pill p-info">' + (c.flagship ? "Flagship · " : "") + "Pre-order · pickup only</span>" : "") + '<button class="btn ghost sm" data-act="edit-cat" data-ci="' + ci + '">' + (c.type === "preorder" ? "Edit" : "Rename") + "</button></div>" +
+      return '<div class="h-sec">' + esc(c.title) + (c.section ? ' <span class="pill p-ff">' + (c.section === "festival" ? "Festival Specials" : "Dry Products") + "</span>" : "") + (c.type === "preorder" ? ' <span class="pill p-info">' + (c.flagship ? "Flagship · " : "") + "Pre-order · pickup only</span>" : "") + '<button class="btn ghost sm" data-act="edit-cat" data-ci="' + ci + '">Edit</button></div>" +
         (c.type === "preorder" ? '<p class="small muted" style="margin:-4px 0 8px">Single orders, picked up on your pre-order days (Setup › Pre-order pickups). Quantities are whole portions.' + (c.items.some((i) => !(Number(i.price) > 0)) ? ' <b style="color:var(--turmeric-ink)">Dishes with no price are hidden from customers.</b>' : "") + "</p>" : "") +
         '<div class="card list">' + (c.items.length ? c.items.map((it, ii) =>
           '<button class="li" data-act="edit-item" data-ci="' + ci + '" data-ii="' + ii + '">' +
@@ -1369,7 +1377,10 @@ function catSheet(ci) {
     body: '<label class="field"><span>Section name</span><input id="c-title" value="' + esc(c.title) + '" placeholder="e.g. Sweets" /></label>' +
       '<label class="field"><span>WhatsApp list label</span><input id="c-row" maxlength="24" value="' + esc(c.rowTitle || "") + '" /><span class="hint">What customers tap in the WhatsApp menu. Up to 24 characters.</span></label>' +
       '<label class="field"><span>WhatsApp list description</span><input id="c-desc" maxlength="72" value="' + esc(c.rowDescription || "") + '" /></label>' +
-      '<label class="switch"><input type="checkbox" id="c-pre"' + (c.type === "preorder" ? " checked" : "") + (c.id === "dose-in-a-box" ? " disabled" : "") + ' /><span><b>Pre-order section</b><small>Single-serve takeout, ordered ahead and picked up on your pre-order days (e.g. order by Tuesday, pickup Friday). Off = regular catering trays.</small></span></label>',
+      '<label class="switch"><input type="checkbox" id="c-pre"' + (c.type === "preorder" ? " checked" : "") + (c.id === "dose-in-a-box" ? " disabled" : "") + ' /><span><b>Pre-order section</b><small>Single-serve takeout, ordered ahead and picked up on your pre-order days (e.g. order by Tuesday, pickup Friday). Off = regular catering trays.</small></span></label>' +
+      (c.flagship ? "" : '<label class="field"><span>Button in the app</span><select id="c-sec">' +
+        [["", "Catering Items / Weekly Specials"], ["festival", "Festival Specials"], ["dry", "Dry Products (masala powders and more)"]].map(([k, l]) => '<option value="' + k + '"' + ((c.section || "") === k ? " selected" : "") + ">" + esc(l) + "</option>").join("") +
+        '</select><span class="hint">Which Home button this section shows under. Weekly Specials is for Pre-order sections. Ordering works the same way: catering trays on your open days, or Pre-order pickups if Pre-order is on.</span></label>'),
     foot: (!isNew && c.items.length === 0 ? '<button class="btn danger left" id="c-del">Delete section</button>' : "") + '<button class="btn" data-close>Cancel</button><button class="btn primary" id="c-ok">' + (isNew ? "Add section" : "Done") + "</button>",
     onMount: (el) => {
       el.querySelector("#c-ok").addEventListener("click", () => {
@@ -1378,6 +1389,8 @@ function catSheet(ci) {
         Object.assign(c, { title, rowTitle: el.querySelector("#c-row").value.trim() || title.slice(0, 24), rowDescription: el.querySelector("#c-desc").value.trim() });
         const pre = el.querySelector("#c-pre");
         if (pre && !pre.disabled) { if (pre.checked) c.type = "preorder"; else if (c.type === "preorder") delete c.type; }
+        const sec = el.querySelector("#c-sec");
+        if (sec) { if (sec.value) c.section = sec.value; else delete c.section; }
         if (isNew) S.menu.categories.splice(Math.max(0, S.menu.categories.findIndex((x) => x.type === "live-dose-station")), 0, c);
         closeSheet(); render();
       });
@@ -1598,19 +1611,41 @@ function demoCustomers() {
     if (!c.lastOrder || o.createdAt > c.lastOrder) c.lastOrder = o.createdAt;
     if (o.createdAt < c.createdAt) c.createdAt = o.createdAt;
   });
-  return Object.values(map).sort((a, b) => String(b.lastOrder).localeCompare(String(a.lastOrder)));
+  return Object.values(map).map((c) => Object.assign(c, { stars: starsFor(c.confirmedOrders, c.confirmedTotal), family: false })).sort((a, b) => String(b.lastOrder).localeCompare(String(a.lastOrder)));
+}
+// Same rule as the server (customerReport.js): orders and value each score 1–5, rating is the average.
+function starsFor(n, total) {
+  if (!n) return 0;
+  const pts = (v, steps) => steps.reduce((p, st, i) => (v >= st ? i + 1 : p), 0);
+  return Math.max(1, Math.round((pts(n, [1, 2, 4, 7, 11]) + pts(total, [0.01, 100, 250, 500, 1000])) / 2));
+}
+function starText(n) {
+  return '<span class="stars" aria-label="' + n + ' out of 5 stars">' + "★".repeat(n) + '<span class="off">' + "★".repeat(5 - n) + "</span></span>";
+}
+function tierPill(c) {
+  if (c.family) return '<span class="pill p-ff">Friends &amp; family</span>';
+  return c.stars ? starText(c.stars) : '<span class="pill">New</span>';
 }
 function viewCustomers() {
   const list = S.customers || [];
   const q = (S.custQ || "").trim().toLowerCase();
-  const shown = list.filter((c) => !q || [c.firstName, c.lastName, c.phone, c.address].join(" ").toLowerCase().includes(q));
+  const tf = S.custTier || "all";
+  const inTier = (c) => tf === "all" || (tf === "family" ? c.family : tf === "top" ? !c.family && c.stars >= 4 : tf === "new" ? !c.family && !c.stars : true);
+  const sorts = { orders: (a, b) => b.confirmedOrders - a.confirmedOrders || b.confirmedTotal - a.confirmedTotal, value: (a, b) => b.confirmedTotal - a.confirmedTotal || b.confirmedOrders - a.confirmedOrders };
+  const shown = list.filter((c) => inTier(c) && (!q || [c.firstName, c.lastName, c.phone, c.address].join(" ").toLowerCase().includes(q)));
+  if (sorts[S.custSort]) shown.sort(sorts[S.custSort]);
+  const tierCount = (k) => list.filter((c) => k === "family" ? c.family : k === "top" ? !c.family && c.stars >= 4 : !c.family && !c.stars).length;
   const total = list.reduce((n, c) => n + Number(c.confirmedTotal || 0), 0);
   const repeat = list.filter((c) => c.confirmedOrders > 1).length;
   const when = (iso) => iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: TZ }) : "–";
   const fbNew = (S.feedback || []).filter((f) => !f.read).length;
-  const tabs = '<div class="chips" role="group" aria-label="Customers or comments">' +
+  const tabs = '<div class="chips wrap" role="group" aria-label="Customers, comments or announcements">' +
     '<button class="chip" data-act="fb-tab" data-t="list" aria-pressed="' + (S.custTab !== "comments") + '">Customers<span class="c num">' + list.length + "</span></button>" +
-    '<button class="chip" data-act="fb-tab" data-t="comments" aria-pressed="' + (S.custTab === "comments") + '">Comments' + '<span class="c num">' + (fbNew ? fbNew + " new" : (S.feedback || []).length) + "</span></button></div>";
+    '<button class="chip" data-act="fb-tab" data-t="comments" aria-pressed="' + (S.custTab === "comments") + '">Comments' + '<span class="c num">' + (fbNew ? fbNew + " new" : (S.feedback || []).length) + "</span></button>" +
+    '<button class="chip" data-act="fb-tab" data-t="announce" aria-pressed="' + (S.custTab === "announce") + '">Announcements' + ((S.broadcasts || {}).pending ? '<span class="c num">1 waiting</span>' : "") + "</button></div>";
+  if (S.custTab === "announce") {
+    return '<div><h2 class="h-page">Customers</h2><p class="sub">Tell customers about new dishes, festival menus and new ideas. It goes to their FTR app notifications, and on WhatsApp to anyone who messaged in the last 24 hours.</p></div>' + tabs + viewAnnouncements();
+  }
   if (S.custTab === "comments") {
     return '<div><h2 class="h-page">Customers</h2><p class="sub">Comments and suggestions sent from WhatsApp, by phone number. Also copied to the “Comments” tab of your Google Sheet.</p></div>' + tabs + viewComments();
   }
@@ -1623,11 +1658,16 @@ function viewCustomers() {
     "</div>" +
     '<div class="row" style="gap:8px"><input class="search grow" id="custSearch" placeholder="Search name, phone or address" value="' + esc(S.custQ || "") + '" />' +
       (S.mode === "live" ? '<a class="btn sm" href="/admin/api/customers.csv">Excel</a>' : "") + "</div>" +
+    '<div class="row" style="gap:8px;flex-wrap:wrap;justify-content:space-between"><div class="chips wrap" role="group" aria-label="Show">' +
+      [["all", "All", list.length], ["family", "Friends & family", tierCount("family")], ["top", "4 stars and up", tierCount("top")], ["new", "New", tierCount("new")]].map(([k, l, n]) =>
+        '<button class="chip" data-act="cust-tier" data-t="' + k + '" aria-pressed="' + (tf === k) + '">' + esc(l) + '<span class="c num">' + n + "</span></button>").join("") + "</div>" +
+      '<label class="row small" style="gap:6px">Sort <select id="custSort" class="sel-sm"><option value="recent"' + (!sorts[S.custSort] ? " selected" : "") + '>Most recent</option><option value="orders"' + (S.custSort === "orders" ? " selected" : "") + '>Most orders</option><option value="value"' + (S.custSort === "value" ? " selected" : "") + ">Highest value</option></select></label></div>" +
+    '<p class="small muted" style="margin:0">Stars come from confirmed orders: how many (1, 2, 4, 7, 11+) and how much in total ($1, $100, $250, $500, $1,000+) each score 1–5, and the rating is the average.</p>' +
     (shown.length
       ? '<div class="stack" id="custList">' + shown.map((c) =>
           '<article class="card order"><div class="o-top"><div class="grow"><div class="o-name">' + esc([c.firstName, c.lastName].filter(Boolean).join(" ") || "No name yet") + "</div>" +
             '<div class="o-meta num">' + esc(c.phone) + " · since " + esc(when(c.createdAt)) + "</div></div>" +
-            (c.confirmedOrders > 1 ? '<span class="pill p-good">Repeat</span>' : "") + "</div>" +
+            tierPill(c) + "</div>" +
           '<dl class="o-facts">' +
             "<dt>Orders</dt><dd>" + c.orders + " (" + c.confirmedOrders + " confirmed · " + money(c.confirmedTotal, true) + ")</dd>" +
             "<dt>Last order</dt><dd>" + esc(when(c.lastOrder)) + "</dd>" +
@@ -1635,11 +1675,85 @@ function viewCustomers() {
           "</dl>" +
           '<div class="row" style="justify-content:flex-end;gap:8px;flex-wrap:wrap">' +
             ((S.feedback || []).some((f) => f.phone === c.phone) ? '<button class="btn sm ghost" data-act="fb-for" data-phone="' + esc(c.phone) + '">Comments (' + (S.feedback || []).filter((f) => f.phone === c.phone).length + ")</button>" : "") +
+            '<button class="btn sm ghost" data-act="ff" data-phone="' + esc(c.phone) + '" aria-pressed="' + !!c.family + '">' + (c.family ? "Remove from friends &amp; family" : "Mark friends &amp; family") + "</button>" +
             '<button class="btn sm ghost" data-act="add-past-for" data-phone="' + esc(c.phone) + '">+ Past order</button>' +
             '<a class="btn sm" href="https://wa.me/' + esc(c.phone) + '" target="_blank" rel="noopener">WhatsApp</a>' +
             '<button class="btn sm danger" data-act="del-cust" data-phone="' + esc(c.phone) + '">Delete</button>' +
           "</div></article>").join("") + "</div>"
       : '<div class="card empty"><b>' + (list.length ? "No matches" : "No customers yet") + "</b>" + (list.length ? "Try a different search." : "Customers appear here after they message the bot.") + "</div>");
+}
+
+// ---------------------------------------------------------------- ANNOUNCEMENTS
+const AUDIENCE_LABELS = { all: "Everyone", family: "Friends & family", others: "Everyone except friends & family", ordered: "Customers who have ordered", top: "4 stars and up", new: "New (no orders yet)" };
+function demoBroadcasts() {
+  const now = Date.now();
+  return {
+    pending: { items: [{ key: "x/kaju", title: "Kaju Katli", section: "Festival Specials" }, { key: "y/bbb", title: "Bisi Bele Bhath Powder", section: "Dry Products" }], dueAt: new Date(now + 11 * 60e3).toISOString() },
+    history: [{ id: "ANN-DEMO1", at: new Date(now - 2 * 86400e3).toISOString(), title: "Dose-in-a-Box is back this Friday", text: "Order by Tuesday 6 PM, pick up Friday 6 PM.", audience: "all", audienceLabel: "Everyone", auto: false, counts: { total: 42, app: 18, alerts: 9, whatsapp: 6, unreachable: 21, failed: 0 } }]
+  };
+}
+function annWhen(iso) { return new Date(iso).toLocaleString("en-US", { timeZone: TZ, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); }
+function viewAnnouncements() {
+  const b = S.broadcasts || { history: [] };
+  const p = b.pending;
+  const mins = p ? Math.max(0, Math.ceil((Date.parse(p.dueAt) - Date.now()) / 60e3)) : 0;
+  const auto = S.menu.settings.announceNewItems !== false;
+  return '<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><span class="small muted">New dishes are announced automatically: ' + (auto ? "<b>on</b>" : "<b>off</b>") + ' (Setup › Order rules).</span>' +
+      '<button class="btn primary" data-act="ann-new">New announcement</button></div>' +
+    (p ? '<div class="card pad stack" style="border-color:var(--turmeric)"><div class="row" style="justify-content:space-between"><b>New dishes waiting to be announced</b><span class="pill p-wait">' + (mins ? "in " + mins + " min" : "sending now") + "</span></div>" +
+        '<ul class="small" style="margin:0;padding-left:18px">' + p.items.map((d) => "<li>" + esc(d.title) + ' <span class="muted">· ' + esc(d.section) + "</span></li>").join("") + "</ul>" +
+        '<p class="small muted" style="margin:0">Goes to everyone 15 minutes after your last menu save that added a dish, so several new dishes go out as one message.</p>' +
+        '<div class="row" style="justify-content:flex-end;gap:8px"><button class="btn sm" data-act="ann-skip">Don\'t announce</button><button class="btn sm primary" data-act="ann-send-now">Send now</button></div></div>' : "") +
+    '<div class="h-sec">Sent</div>' +
+    ((b.history || []).length
+      ? '<div class="stack">' + b.history.map((h) => {
+          const c = h.counts || {};
+          return '<article class="card order"><div class="o-top"><div class="grow"><div class="o-name">' + esc(h.title) + '</div><div class="o-meta">' + esc(annWhen(h.at)) + " · " + esc(h.audienceLabel || AUDIENCE_LABELS[h.audience] || "Everyone") + "</div></div>" + (h.auto ? '<span class="pill p-info">New dishes</span>' : "") + "</div>" +
+            '<div class="o-items" style="white-space:pre-line">' + esc(h.text) + "</div>" +
+            '<div class="small muted num">' + c.app + " in the app (" + c.alerts + " with phone alerts) · " + c.whatsapp + " on WhatsApp" + (c.unreachable ? " · " + c.unreachable + " couldn't be reached" : "") + (c.failed ? " · " + c.failed + " WhatsApp failed" : "") + "</div></article>";
+        }).join("") + "</div>"
+      : '<div class="card empty"><b>No announcements yet</b>Tap New announcement to tell customers about a new dish, a festival menu or a new idea.</div>');
+}
+async function annRefresh() {
+  if (S.mode === "live") S.broadcasts = await api("GET", "/admin/api/broadcasts").catch(() => S.broadcasts);
+}
+function announceSheet() {
+  openSheet({
+    title: "New announcement",
+    body:
+      '<label class="field"><span>Title</span><input id="a-title" maxlength="60" placeholder="e.g. Diwali sweets are here" /><span class="hint">Shown in bold. Up to 60 characters.</span></label>' +
+      '<label class="field"><span>Message</span><textarea id="a-text" maxlength="1500" rows="6" placeholder="What\'s new, when to order, how to pick up."></textarea></label>' +
+      '<label class="field"><span>Send to</span><select id="a-aud">' + Object.entries(AUDIENCE_LABELS).map(([k, l]) => '<option value="' + k + '">' + esc(l) + "</option>").join("") + "</select></label>" +
+      '<p class="small" id="a-reach" style="margin:0">Checking who this reaches…</p>' +
+      '<p class="small" id="a-err" style="color:var(--bad);margin:0" hidden></p>',
+    foot: '<button class="btn" data-close>Cancel</button><button class="btn primary" id="a-ok">Send announcement</button>',
+    onMount: (el) => {
+      const reach = async () => {
+        const aud = el.querySelector("#a-aud").value;
+        let r;
+        if (S.mode === "live") r = await api("GET", "/admin/api/broadcasts/preview?audience=" + encodeURIComponent(aud)).catch(() => null);
+        else { const n = aud === "family" ? 1 : (S.customers || []).length; r = { total: n, app: Math.ceil(n / 2), alerts: Math.ceil(n / 4), whatsapp: Math.floor(n / 4), unreachable: n - Math.ceil(n / 2) - Math.floor(n / 4) }; }
+        el.querySelector("#a-reach").innerHTML = r
+          ? "<b>" + r.total + " customer" + (r.total === 1 ? "" : "s") + ".</b> " + r.app + " get it in the FTR app (" + r.alerts + " with a phone alert), " + r.whatsapp + " on WhatsApp." +
+            (r.unreachable ? ' <span class="muted">' + r.unreachable + " can't be reached right now: they don't use the app and haven't messaged on WhatsApp in the last 24 hours.</span>" : "")
+          : "Couldn't check who this reaches.";
+      };
+      el.querySelector("#a-aud").addEventListener("change", reach); reach();
+      el.querySelector("#a-ok").addEventListener("click", async (ev) => {
+        const title = el.querySelector("#a-title").value.trim(), text = el.querySelector("#a-text").value.trim(), audience = el.querySelector("#a-aud").value;
+        const err = el.querySelector("#a-err");
+        if (!title) { err.textContent = "Give the announcement a title."; err.hidden = false; return; }
+        if (!text) { err.textContent = "Write the message."; err.hidden = false; return; }
+        ev.target.disabled = true;
+        try {
+          let entry;
+          if (S.mode === "live") { entry = await api("POST", "/admin/api/broadcasts", { title, text, audience }); await annRefresh(); }
+          else { entry = { id: "ANN-DEMO" + Date.now(), at: new Date().toISOString(), title, text, audience, audienceLabel: AUDIENCE_LABELS[audience], counts: { total: 0, app: 0, alerts: 0, whatsapp: 0, unreachable: 0 } }; S.broadcasts.history.unshift(entry); }
+          closeSheet(); toast("Announcement sent to " + entry.counts.app + " in the app and " + entry.counts.whatsapp + " on WhatsApp"); render();
+        } catch (e) { err.textContent = e.message; err.hidden = false; ev.target.disabled = false; }
+      });
+    }
+  });
 }
 
 // ---------------------------------------------------------------- SETUP
@@ -1666,6 +1780,8 @@ function viewSetup() {
     '<div class="h-sec">Order rules</div><div class="card pad stack">' +
       '<label class="switch" style="padding-top:0"><input type="checkbox" data-bind="s-pickonly"' + (s.cateringPickupOnly !== false ? " checked" : "") + ' /><span><b>Catering: pickup only</b><small>' +
         (s.cateringPickupOnly !== false ? "On – customers must agree “ALL CATERING ORDERS ARE FOR PICKUP ONLY” before choosing dishes. Delivery windows on your days are ignored." : "Off – customers can choose delivery on days with delivery windows.") + "</small></span></label>" +
+      '<label class="switch" style="padding-top:0"><input type="checkbox" data-bind="s-annnew"' + (s.announceNewItems !== false ? " checked" : "") + ' /><span><b>Announce new dishes automatically</b><small>' +
+        (s.announceNewItems !== false ? "On – when a dish appears for customers for the first time, everyone is told 15 minutes after your last save (Customers › Announcements)." : "Off – new dishes appear quietly. You can still send an announcement yourself.") + "</small></span></label>" +
       '<label class="switch" style="padding-top:0"><input type="checkbox" data-bind="s-half"' + (s.halfTrays ? " checked" : "") + ' /><span><b>Half-tray orders</b><small>' +
         (s.halfTrays ? "On – customers can order ½ tray of any dish at " + (s.halfTrayPercent || 65) + "% of the full-tray price. Each dish's own minimum is ignored." : "Off – full trays only, and each dish's minimum applies.") + "</small></span></label>" +
       '<div class="grid2">' +
@@ -1747,6 +1863,7 @@ const BIND = {
   "s-half": (v) => { S.menu.settings.halfTrays = !!v; render(); },
   "s-hpct": (v) => { S.menu.settings.halfTrayPercent = Math.min(100, Math.max(1, parseFloat(v) || 65)); },
   "s-pickonly": (v) => { S.menu.settings.cateringPickupOnly = !!v; render(); },
+  "s-annnew": (v) => { S.menu.settings.announceNewItems = !!v; render(); },
   "s-maxq": (v) => { S.menu.settings.maxOrderQtyPerItem = parseInt(v) || 4; },
   "s-am": (v) => { S.menu.availability.pickupTimes.am = v || "11:30"; },
   "s-pm": (v) => { S.menu.availability.pickupTimes.pm = v || "18:30"; },
@@ -1770,6 +1887,7 @@ const BIND = {
 document.addEventListener("input", (e) => {
   const t = e.target;
   if (t.id === "orderSearch") { S.filters.q = t.value; renderOrderListOnly(); return; }
+  if (t.id === "custSort") { S.custSort = t.value; render(); return; }
   if (t.id === "custSearch") {
     S.custQ = t.value;
     const pos = t.selectionStart; render();
@@ -1965,6 +2083,36 @@ document.addEventListener("click", (e) => {
     case "fb-tab": S.custTab = el.dataset.t; if (S.custTab === "comments") markFeedbackRead(); render(); break;
     case "fb-for": S.custTab = "comments"; S.fbPhone = el.dataset.phone; markFeedbackRead(); render(); break;
     case "fb-all": S.fbPhone = null; render(); break;
+    case "cust-tier": S.custTier = el.dataset.t; render(); break;
+    case "ff": {
+      const c = (S.customers || []).find((x) => x.phone === el.dataset.phone);
+      if (!c) break;
+      const on = !c.family;
+      (async () => {
+        try {
+          if (S.mode === "live") await api("POST", "/admin/api/customers/" + encodeURIComponent(c.phone) + "/family", { family: on });
+          c.family = on;
+          toast((c.firstName || c.phone) + (on ? " is now friends & family" : " is back to a star rating")); render();
+        } catch (err) { toast(err.message, true); }
+      })();
+      break;
+    }
+    case "ann-new": announceSheet(); break;
+    case "ann-skip":
+      (async () => {
+        try { if (S.mode === "live") { await api("POST", "/admin/api/broadcasts/pending/skip", {}); await annRefresh(); } else S.broadcasts.pending = null; toast("New dishes won't be announced"); render(); }
+        catch (err) { toast(err.message, true); }
+      })();
+      break;
+    case "ann-send-now":
+      (async () => {
+        try {
+          if (S.mode === "live") { await api("POST", "/admin/api/broadcasts/pending/send", {}); await annRefresh(); }
+          else { const p = S.broadcasts.pending; S.broadcasts.history.unshift({ id: "ANN-D", at: new Date().toISOString(), title: "New on the FTR menu", text: p.items.map((d) => "• " + d.title).join("\n"), audience: "all", audienceLabel: "Everyone", auto: true, counts: { total: 0, app: 0, alerts: 0, whatsapp: 0, unreachable: 0 } }); S.broadcasts.pending = null; }
+          toast("New dishes announced"); render();
+        } catch (err) { toast(err.message, true); }
+      })();
+      break;
     case "del-fb": {
       const id = el.dataset.id;
       confirmSheet({

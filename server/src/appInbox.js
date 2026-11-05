@@ -119,7 +119,8 @@ function add(phone, entry) {
     at: new Date().toISOString(),
     read: false,
     ...entry,
-    ...classify(entry),
+    // Announcements arrive already labelled; everything else is worked out from the wording.
+    ...(entry.tag ? { tag: entry.tag, tagLabel: entry.tagLabel || "Update" } : classify(entry)),
     orderId: entry.orderId || orderIdIn(`${entry.header || ""} ${entry.text || ""}`)
   };
   list.push(item);

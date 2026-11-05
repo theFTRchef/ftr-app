@@ -227,4 +227,9 @@ async function sendImage(to, url, caption) {
   return res;
 }
 
-module.exports = { sendText, sendButtons, sendList, sendImage, handleStatus, choiceFromNumber, _fit: fit };
+/** WhatsApp only, no app inbox copy (announcements add their own inbox entry). */
+async function sendWhatsAppOnly(to, text) {
+  return sendMessage({ from: FROM(), to, channel: "whatsapp", message_type: "text", text: String(text).slice(0, 4096) });
+}
+
+module.exports = { sendWhatsAppOnly, sendText, sendButtons, sendList, sendImage, handleStatus, choiceFromNumber, _fit: fit };

@@ -159,6 +159,13 @@ function saveMenu(menu) {
     });
     menu.availability.liveDoseSessions = sess.map((w) => ({ start: w.start, end: w.end, ...(w.label ? { label: String(w.label).slice(0, 20) } : {}) }));
   }
+  // Which Home button a section sits under in the app: Festival Specials,
+  // Dry Products, or (blank) the usual Catering Items / Chef's Weekly Specials.
+  for (const c of menu.categories) {
+    const ok = ["festival", "dry"].includes(c.section) && c.type !== "live-dose-station" && !c.flagship;
+    if (!ok) delete c.section;
+  }
+  menu.settings.announceNewItems = menu.settings.announceNewItems !== false;
   // Pre-order pickup days (Dose-in-a-Box and weekly takeout).
   menu.availability.preorders = require("./preorders").clean(menu.availability.preorders || []);
   for (const c of menu.categories) {

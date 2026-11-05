@@ -16,8 +16,28 @@ const COLUMNS = [
   "Confirmed Total",
   "Last Order",
   "First Contact",
-  "Comments"
+  "Comments",
+  "Group",
+  "Rating"
 ];
+
+/**
+ * Rating for everyone who isn't Friends & family: 1-5 stars from how many
+ * confirmed orders they've placed and how much those orders came to.
+ * Each scores 1-5 and the rating is the average, rounded. No confirmed
+ * orders yet = "New" (0 stars).
+ */
+const ORDER_STEPS = [1, 2, 4, 7, 11];          // orders for 1..5 points
+const VALUE_STEPS = [0.01, 100, 250, 500, 1000]; // dollars for 1..5 points
+function points(n, steps) {
+  let p = 0;
+  steps.forEach((s, i) => { if (n >= s) p = i + 1; });
+  return p;
+}
+function stars(confirmedOrders, confirmedTotal) {
+  if (!confirmedOrders) return 0;
+  return Math.max(1, Math.round((points(confirmedOrders, ORDER_STEPS) + points(confirmedTotal, VALUE_STEPS)) / 2));
+}
 
 function localStamp(iso) {
   if (!iso) return "";
@@ -44,9 +64,11 @@ function customers() {
         confirmedTotal: Math.round(confirmed.reduce((sum, o) => sum + Number(o.subtotal || 0), 0) * 100) / 100,
         lastOrder,
         comments: feedback.filter((f) => f.phone === phone).length,
+        family: c.family === true,
         createdAt: c.createdAt || null
       };
     })
+    .map((c) => ({ ...c, stars: stars(c.confirmedOrders, c.confirmedTotal) }))
     .sort((a, b) => String(b.lastOrder || b.createdAt || "").localeCompare(String(a.lastOrder || a.createdAt || "")));
 }
 
@@ -61,8 +83,10 @@ function rows() {
     c.confirmedTotal.toFixed(2),
     localStamp(c.lastOrder),
     localStamp(c.createdAt),
-    c.comments
+    c.comments,
+    c.family ? "Friends & family" : "",
+    c.family ? "" : c.stars ? `${c.stars} star${c.stars === 1 ? "" : "s"}` : "New"
   ]);
 }
 
-module.exports = { COLUMNS, customers, rows };
+module.exports = { COLUMNS, customers, rows, stars, ORDER_STEPS, VALUE_STEPS };

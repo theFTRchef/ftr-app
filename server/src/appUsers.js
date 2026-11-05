@@ -114,6 +114,20 @@ function removePushToken(token) {
   if (changed) store.write(FILE, users);
 }
 
+/** Customer's own choice: alerts on their phone for Chef's announcements and new items. */
+function setPrefs(phone, prefs) {
+  const users = all();
+  const user = users[phone];
+  if (!user) return null;
+  if (typeof prefs.announcementAlerts === "boolean") user.announcementAlerts = prefs.announcementAlerts;
+  store.write(FILE, users);
+  return user;
+}
+
+function phones() {
+  return Object.keys(all());
+}
+
 /** Account deletion from inside the app (required by the App Store). */
 function remove(phone) {
   const users = all();
@@ -123,4 +137,4 @@ function remove(phone) {
   return true;
 }
 
-module.exports = { isAppUser, get, createSession, phoneForToken, endSession, savePushToken, removePushToken, remove };
+module.exports = { isAppUser, get, setPrefs, phones, createSession, phoneForToken, endSession, savePushToken, removePushToken, remove };

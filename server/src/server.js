@@ -128,6 +128,8 @@ app.put("/admin/api/menu", requireAdminAuth, async (req, res) => {
       }
     }
     const saved = menuStore.saveMenu(menu);
+    // Dishes customers can see for the first time get announced (Setup switch).
+    try { require("./broadcasts").noteMenuSaved(saved); } catch (e) { console.error("New-dish check failed:", e.message); }
     res.json(saved);
   } catch (err) {
     res.status(400).send(err.message);
@@ -382,6 +384,41 @@ app.delete("/admin/api/customers/:phone", requireAdminAuth, (req, res) => {
   res.json({ deleted: phone });
 });
 
+// Friends & family switch for one customer.
+app.post("/admin/api/customers/:phone/family", requireAdminAuth, (req, res) => {
+  const saved = require("./broadcasts").setFamily(req.params.phone, (req.body || {}).family === true);
+  if (!saved) return res.status(404).send("Customer not found");
+  res.json({ phone: req.params.phone, family: saved.family === true });
+});
+
+// --- Announcements to customers ---
+app.get("/admin/api/broadcasts", requireAdminAuth, (req, res) => {
+  const b = require("./broadcasts");
+  res.json({ history: b.history(), pending: b.pending(), audiences: b.AUDIENCES });
+});
+app.get("/admin/api/broadcasts/preview", requireAdminAuth, (req, res) => {
+  res.json(require("./broadcasts").preview(String(req.query.audience || "all")));
+});
+app.post("/admin/api/broadcasts", requireAdminAuth, async (req, res) => {
+  try {
+    const { title, text, audience } = req.body || {};
+    res.json(await require("./broadcasts").send({ title, text, audience }));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+app.post("/admin/api/broadcasts/pending/send", requireAdminAuth, async (req, res) => {
+  try {
+    res.json({ sent: await require("./broadcasts").sendPending() });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+app.post("/admin/api/broadcasts/pending/skip", requireAdminAuth, (req, res) => {
+  require("./broadcasts").skipPending();
+  res.json({ skipped: true });
+});
+
 // --- Out-of-range LIVE Dose addresses waiting for Chef ---
 app.get("/admin/api/range-requests", requireAdminAuth, (req, res) => {
   res.json(require("./orderFlow").rangeRequests());
@@ -483,6 +520,7 @@ payments.startSweeper();
 require("./customerSheet").scheduleSync(10000);
 // Send Chef the pre-order prep list when each order-by time passes.
 require("./preorders").startWatcher();
+require("./broadcasts").startWatcher();
 
 app.listen(port, () => {
   console.log(`Franklin Tiffin Room order bot listening on port ${port}`);
