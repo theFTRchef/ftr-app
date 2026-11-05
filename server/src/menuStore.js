@@ -42,9 +42,37 @@ function isWeekend(dateStr) {
   return dow === 0 || dow === 6;
 }
 
+/**
+ * Dish ids must be unique across the WHOLE menu: the bot, the app and the
+ * cart find a dish by its id alone. A dish copied into another section (e.g.
+ * Bisi Bele Bhath in both South Indian Catering and Chef's Weekly Specials)
+ * gets its own id. The pre-order copy is the one renamed, so catering ids
+ * stay put; otherwise the later copy is. Returns true if anything changed.
+ */
+function dedupeItemIds(menu) {
+  const cats = menu.categories || [];
+  const all = new Set();
+  const order = [...cats.filter((c) => c.type !== "preorder"), ...cats.filter((c) => c.type === "preorder")];
+  let changed = false;
+  for (const c of order) {
+    for (const i of c.items || []) {
+      if (!i.id) continue;
+      if (all.has(i.id)) {
+        const base = c.type === "preorder" ? `${i.id}-special` : i.id;
+        i.id = uniqueId(base, all);
+        changed = true;
+      }
+      all.add(i.id);
+    }
+  }
+  return changed;
+}
+
 function getMenu() {
   const raw = fs.readFileSync(DATA_PATH, "utf8");
   const menu = JSON.parse(raw);
+  // One-time fix for menus saved before ids were unique menu-wide.
+  if (dedupeItemIds(menu)) fs.writeFileSync(DATA_PATH, JSON.stringify(menu, null, 2));
   // Upgrade older single-window dates to the multi-window/pickup shape.
   if (menu.availability && Array.isArray(menu.availability.dates)) {
     menu.availability.dates = menu.availability.dates.map(normalizeDateEntry);
@@ -74,16 +102,17 @@ function saveMenu(menu) {
   // Fill in any missing ids (new categories/items added via the admin UI
   // arrive without one).
   const categoryIds = new Set(menu.categories.map((c) => c.id).filter(Boolean));
+  dedupeItemIds(menu);
+  const allItemIds = new Set(menu.categories.flatMap((c) => c.items.map((i) => i.id).filter(Boolean)));
   for (const category of menu.categories) {
     if (!category.id) {
       category.id = uniqueId(slugify(category.title), categoryIds);
       categoryIds.add(category.id);
     }
-    const itemIds = new Set(category.items.map((i) => i.id).filter(Boolean));
     for (const item of category.items) {
       if (!item.id) {
-        item.id = uniqueId(slugify(item.title), itemIds);
-        itemIds.add(item.id);
+        item.id = uniqueId(slugify(item.title), allItemIds);
+        allItemIds.add(item.id);
       }
       item.price = Number(item.price) || 0;
       item.servesMin = item.servesMin ? Number(item.servesMin) : 1;
@@ -217,4 +246,4 @@ function saveMenu(menu) {
   return menu;
 }
 
-module.exports = { getMenu, saveMenu, isWeekend, dayOfWeekUTC };
+module.exports = { dedupeItemIds, getMenu, saveMenu, isWeekend, dayOfWeekUTC };
