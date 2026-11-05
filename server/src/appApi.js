@@ -26,6 +26,7 @@ const { itemsText } = require("./sheets");
 const { paymentText, deadlineLabel } = require("./paymentText");
 const { pickupTimes, offersCatering, offersLiveDose, pickupOnly, ldsSessions, ldsExtension } = require("./availability");
 const { formatTimeLabel } = require("./timeUtils");
+const preorders = require("./preorders");
 const { sendText } = require("./messaging");
 
 const flow = () => require("./orderFlow").shared;
@@ -266,20 +267,24 @@ function menuPayload() {
           }
         };
       }
+      const isPre = c.type === "preorder";
       return {
         ...base,
+        // Pre-order sections (Dose-in-a-Box, weekly takeout). Sent as "catering"
+        // so older app versions still read the menu; this tells newer ones.
+        ...(isPre ? { preorder: preorderInfo(menu, c) } : {}),
         items: (c.items || []).map((i) => ({
           id: i.id,
           title: i.title,
           description: i.description || "",
           price: Number(i.price) || 0,
-          halfTrayPrice: half ? f.trayTotal(menu, Number(i.price) || 0, 0.5) : null,
+          halfTrayPrice: half && !isPre ? f.trayTotal(menu, Number(i.price) || 0, 0.5) : null,
           size: i.size || "",
           servesMin: i.servesMin || null,
           servesMax: i.servesMax || null,
           minQty: f.effectiveMinQty(menu, i),
           maxQty: f.effectiveMaxQty(menu, i),
-          qtyStep: half ? 0.5 : 1,
+          qtyStep: half && !isPre ? 0.5 : 1,
           requiresNote: !!i.requiresNote,
           notePrompt: i.notePrompt || null
         }))
@@ -293,9 +298,36 @@ function probeCart(kind, plates) {
   return kind === "lds" ? [{ isLiveDoseStation: true, mdQty: plates, odQty: 0 }] : [{ isLiveDoseStation: false }];
 }
 
+/** Pickup days for a pre-order section, for the app. */
+function preorderInfo(menu, c) {
+  const days = preorders.open(menu).map(preorderDay);
+  return { flagship: !!c.flagship, days, next: days[0] || null };
+}
+function preorderDay(e) {
+  return { date: e.date, label: flow().formatDateLabel(e.date), pickupTime: formatTimeLabel(e.pickupTime), pickupLabel: e.pickupLabel, orderByLabel: e.orderByLabel };
+}
+
 function availabilityPayload(query) {
   const f = flow();
   const menu = f.botMenu();
+  if (query.kind === "preorder") {
+    return {
+      kind: "preorder",
+      fulfillment: "pickup",
+      dates: preorders.open(menu).map((e) => ({
+        date: e.date,
+        label: f.formatDateLabel(e.date),
+        catering: false,
+        cateringPickup: true,
+        cateringDelivery: false,
+        liveDose: false,
+        summary: `Pickup ${formatTimeLabel(e.pickupTime)} · order by ${e.orderByLabel}`,
+        slots: [{ id: "slot:preorder", title: `Pickup at ${formatTimeLabel(e.pickupTime)}`, subtitle: `Order by ${e.orderByLabel}` }]
+      })),
+      fulfillmentOptions: { pickup: true, delivery: false },
+      preorderDays: preorders.open(menu).map(preorderDay)
+    };
+  }
   const pt = pickupTimes(menu);
   const kind = query.kind === "lds" ? "lds" : query.kind === "catering" ? "catering" : null;
   const fulfillment = query.fulfillment === "delivery" ? "delivery" : "pickup";
@@ -331,6 +363,7 @@ function availabilityPayload(query) {
   });
   return {
     kind,
+    preorderDays: preorders.open(menu).map(preorderDay),
     fulfillment: kind === "lds" ? "delivery" : fulfillment,
     dates: kind ? dates.filter((d) => d.slots.length > 0) : dates,
     fulfillmentOptions: kind === "catering" ? f.cateringFulfillmentOptions(menu, probeCart("catering"), null) : null
@@ -400,6 +433,7 @@ async function addressCheck(body) {
 async function buildOrder(phone, body) {
   const f = flow();
   const menu = f.botMenu();
+  if (body.kind === "preorder") return buildPreorder(phone, body);
   const kind = body.kind === "lds" ? "lds" : "catering";
   const cart = [];
 
@@ -411,7 +445,7 @@ async function buildOrder(phone, body) {
     for (const l of lines) {
       let item = null;
       for (const c of menu.categories) {
-        if (c.type === "live-dose-station") continue;
+        if (c.type === "live-dose-station" || c.type === "preorder") continue;
         item = (c.items || []).find((i) => i.id === l.itemId) || item;
       }
       if (!item) throw new ApiError(400, "One of the dishes in your cart is no longer on the menu. Please remove it.", "item_gone", { itemId: l.itemId });
@@ -629,6 +663,74 @@ async function buildOrder(phone, body) {
   return { order, summary, addressMatch };
 }
 
+/**
+ * Dose-in-a-Box / weekly takeout: whole portions from the pre-order
+ * sections, picked up on one of Chef's pre-order days before its order-by time.
+ */
+async function buildPreorder(phone, body) {
+  const f = flow();
+  const menu = f.botMenu();
+  const lines = Array.isArray(body.items) ? body.items : [];
+  if (!lines.length) throw new ApiError(400, "Your cart is empty.", "empty_cart");
+  if (lines.length > 30) throw new ApiError(400, "That's a lot of items - please call Chef for an order this size.");
+  const cart = [];
+  for (const l of lines) {
+    let item = null;
+    for (const c of menu.categories) if (c.type === "preorder") item = (c.items || []).find((i) => i.id === l.itemId) || item;
+    if (!item) throw new ApiError(400, "One of the items in your cart isn't available any more. Please remove it.", "item_gone", { itemId: l.itemId });
+    const qty = Number(l.qty);
+    const min = f.effectiveMinQty(menu, item), max = f.effectiveMaxQty(menu, item);
+    if (!Number.isInteger(qty) || qty < min) throw new ApiError(400, `Please choose at least ${min} of ${item.title}.`, "bad_qty", { itemId: item.id });
+    if (qty > max) throw new ApiError(400, `For more than ${max} of ${item.title}, please call Chef at ${menu.settings.phoneDisplay}.`, "bad_qty", { itemId: item.id });
+    const note = String(l.note || "").trim().slice(0, 300) || null;
+    if (item.requiresNote && !note) throw new ApiError(400, item.notePrompt || `Please tell us your preference for ${item.title}.`, "note_required", { itemId: item.id });
+    cart.push({ ...item, qty, note, isPreorder: true });
+  }
+  const date = String(body.date || "");
+  const e = preorders.openEntry(menu, date);
+  if (!e) throw new ApiError(400, "Orders for that pickup day have closed. Please pick another day.", "date_gone");
+  if (body.slotId && body.slotId !== "slot:preorder") throw new ApiError(400, "That time isn't available anymore. Please pick another.", "slot_gone");
+  const requestedTime = `${f.formatDateLabel(date)}, pickup at ${formatTimeLabel(e.pickupTime)} (pre-order)`;
+  const subtotal = money2(f.cartSubtotal(cart));
+  const order = {
+    customerPhone: phone,
+    customerName: f.nameFor(phone),
+    cart,
+    subtotal,
+    fulfillment: "pickup",
+    address: "",
+    addressVerified: false,
+    distanceMiles: null,
+    requestedTime,
+    eventDate: date,
+    channel: "app",
+    kind: "preorder",
+    orderNote: String(body.orderNote || "").trim().slice(0, 500) || null
+  };
+  const pay = payments.settings(menu);
+  const summary = {
+    lines: cart.map(linePayload),
+    subtotal,
+    deliveryFeeNote: null,
+    travelFee: null,
+    travelFeeUnknown: false,
+    travelRule: null,
+    fulfillment: "pickup",
+    address: null,
+    addressVerified: false,
+    distanceMiles: null,
+    outOfRange: null,
+    requestedTime,
+    schedule: null,
+    orderNote: order.orderNote,
+    preorder: { pickupLabel: e.pickupLabel, orderByLabel: e.orderByLabel },
+    payment: payments.enabled(menu)
+      ? { deposit: true, percent: pay.depositPercent, amount: payments.depositFor(subtotal, menu), text: `${pay.depositPercent}% Zelle deposit after Chef approves, balance at pickup.` }
+      : { deposit: false, text: "Payment is collected at pickup." }
+  };
+  return { order, summary, addressMatch: null };
+}
+
 function linePayload(l) {
   const f = flow();
   if (l.isLiveDoseStation) {
@@ -684,7 +786,7 @@ function orderPayload(o) {
   const isCustom = o.type === "custom";
   return {
     orderId: o.orderId,
-    type: o.source === "past" ? "past" : isCustom ? "custom" : (o.cart || []).some((l) => l.isLiveDoseStation) ? "lds" : "catering",
+    type: o.source === "past" ? "past" : isCustom ? "custom" : (o.cart || []).some((l) => l.isLiveDoseStation) ? "lds" : (o.cart || []).some((l) => l.isPreorder) ? "preorder" : "catering",
     status: o.status || "Pending Approval",
     stage: stageFor(o),
     createdAt: o.createdAt || null,

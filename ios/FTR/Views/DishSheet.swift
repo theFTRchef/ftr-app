@@ -80,10 +80,10 @@ struct DishSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
             }
-            .confirmationDialog("Your LIVE Dose Station will be removed", isPresented: $confirmReplace, titleVisibility: .visible) {
-                Button("Start a catering order instead", role: .destructive) { commit() }
+            .confirmationDialog(warning?.title ?? "Start a new order?", isPresented: $confirmReplace, titleVisibility: .visible) {
+                Button(warning?.action ?? "Start a new order", role: .destructive) { commit() }
             } message: {
-                Text("Catering trays and the LIVE Dose Station are booked as separate orders.")
+                Text(warning?.message ?? "")
             }
             .onAppear { qty = dish.minQty < 1 ? 1 : dish.minQty }
         }
@@ -106,8 +106,10 @@ struct DishSheet: View {
         category?.open != false && (!dish.requiresNote || !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
 
+    private var warning: AppModel.ReplaceWarning? { model.replaceWarning(for: dish) }
+
     private func add() {
-        if model.cart.isLiveDose { confirmReplace = true } else { commit() }
+        if warning != nil { confirmReplace = true } else { commit() }
     }
 
     private func commit() {
@@ -210,10 +212,10 @@ struct MultiAddSheet: View {
                 .background(.bar)
             }
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
-            .confirmationDialog("Your LIVE Dose Station will be removed", isPresented: $confirmReplace, titleVisibility: .visible) {
-                Button("Start a catering order instead", role: .destructive) { commit() }
+            .confirmationDialog(warning?.title ?? "Start a new order?", isPresented: $confirmReplace, titleVisibility: .visible) {
+                Button(warning?.action ?? "Start a new order", role: .destructive) { commit() }
             } message: {
-                Text("Catering trays and the LIVE Dose Station are booked as separate orders.")
+                Text(warning?.message ?? "")
             }
         }
     }
@@ -232,8 +234,10 @@ struct MultiAddSheet: View {
         !dishes.isEmpty && dishes.allSatisfy { !$0.requiresNote || !(notes[$0.id] ?? "").trimmingCharacters(in: .whitespaces).isEmpty }
     }
 
+    private var warning: AppModel.ReplaceWarning? { dishes.first.flatMap { model.replaceWarning(for: $0) } }
+
     private func add() {
-        if model.cart.isLiveDose { confirmReplace = true } else { commit() }
+        if warning != nil { confirmReplace = true } else { commit() }
     }
 
     private func commit() {

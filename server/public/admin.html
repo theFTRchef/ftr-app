@@ -698,12 +698,26 @@ function ensureShape(menu) {
     menu.availability.liveDoseSessions = [{ start: "11:00", end: "13:00", label: "Lunch" }, { start: "19:00", end: "21:00", label: "Evening" }];
   }
   menu.availability.ldsExtension = Object.assign({ minutes: 30, fee: 100 }, menu.availability.ldsExtension || {});
+  if (!Array.isArray(menu.availability.preorders)) menu.availability.preorders = [];
+  if (Array.isArray(menu.categories) && !menu.categories.some((c) => c.id === "dose-in-a-box")) {
+    const at = menu.categories.findIndex((c) => c.type === "live-dose-station");
+    menu.categories.splice(at >= 0 ? at + 1 : 0, 0, { id: "dose-in-a-box", type: "preorder", flagship: true, title: "Dose-in-a-Box", rowTitle: "Dose-in-a-Box", rowDescription: "Take-home Masala Dose kit for 4 - pre-order, pickup only",
+      items: [{ id: "dose-in-a-box", title: "Dose-in-a-Box", description: "A take-home kit for Mysore Masala Dose, prepped and packed. You just make it on your tawa. In the box: dose batter, potato-onion palya, red garlic chutney and green coconut chutney.", price: 0, size: "Kit - serves 4", servesMin: 4, servesMax: 4, minQty: 1, maxQty: 10 }] });
+  }
   if (!menu.availability.slotLengthMinutes) menu.availability.slotLengthMinutes = 180;
   menu.categories = menu.categories || [];
   return menu;
 }
 function isOpen(e) { return e && (e.pickupAM || e.pickupPM || e.catering.length || e.liveDose.length); }
 function ldsCat() { return S.menu.categories.find((c) => c.type === "live-dose-station"); }
+function preCats() { return S.menu.categories.filter((c) => c.type === "preorder"); }
+function shiftISO(iso, n) { const [y, m, d] = String(iso).split("-").map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); }
+function preSummary(e) {
+  if (!e || !e.date) return "";
+  const lab = (iso) => { const [y, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }); };
+  return "Customers order until " + lab(e.orderByDate || shiftISO(e.date, -3)) + " " + t12(e.orderByTime || "18:00") + ", pick up " + lab(e.date) + " " + t12(e.pickupTime || "18:00");
+}
+function nextFriday() { let d = todayISO(); for (let i = 0; i < 8; i++) { d = shiftISO(d, 1); const [y, m, dd] = d.split("-").map(Number); if (new Date(Date.UTC(y, m - 1, dd)).getUTCDay() === 5) return d; } return d; }
 
 // ---------------------------------------------------------------- demo data
 function demoWeekends(from, count, step) {
@@ -766,9 +780,13 @@ async function boot() {
     S.rangeReqs = await api("GET", "/admin/api/range-requests").catch(() => []);
     S.customers = await api("GET", "/admin/api/customers").catch(() => []);
     S.feedback = await api("GET", "/admin/api/feedback").catch(() => []);
+    S.preorders = await api("GET", "/admin/api/preorders").catch(() => []);
   } catch (e) {
     S.mode = "demo";
     S.menu = demoMenu();
+    { const dib = S.menu.categories.find((c) => c.id === "dose-in-a-box"); if (dib) dib.items[0].price = 45;
+      const fri = nextFriday(); S.menu.availability.preorders = [{ date: fri, pickupTime: "18:00", orderByDate: shiftISO(fri, -3), orderByTime: "18:00" }];
+      S.preorders = [{ date: fri, pickupLabel: "Fri at 6:00 PM", orderByLabel: "Tue, 6 PM", open: true, totals: [{ title: "Dose-in-a-Box", qty: 7 }], orders: [{ name: "Anita Rao", items: "3x Dose-in-a-Box" }, { name: "Rahul Kulkarni", items: "4x Dose-in-a-Box" }] }]; }
     S.orders = demoOrders();
     S.customers = demoCustomers();
     S.feedback = demoFeedback();
@@ -783,7 +801,7 @@ async function boot() {
 
 async function refreshOrders() {
   if (S.mode !== "live") return;
-  try { S.orders = await api("GET", "/admin/api/orders"); S.rangeReqs = await api("GET", "/admin/api/range-requests").catch(() => S.rangeReqs); S.customers = await api("GET", "/admin/api/customers").catch(() => S.customers); S.feedback = await api("GET", "/admin/api/feedback").catch(() => S.feedback); if (S.view === "orders" || S.view === "today" || S.view === "customers") render(); else updateDot(); } catch (e) {}
+  try { S.orders = await api("GET", "/admin/api/orders"); S.rangeReqs = await api("GET", "/admin/api/range-requests").catch(() => S.rangeReqs); S.customers = await api("GET", "/admin/api/customers").catch(() => S.customers); S.feedback = await api("GET", "/admin/api/feedback").catch(() => S.feedback); S.preorders = await api("GET", "/admin/api/preorders").catch(() => S.preorders); if (S.view === "orders" || S.view === "today" || S.view === "customers") render(); else updateDot(); } catch (e) {}
 }
 
 // ---------------------------------------------------------------- dirty / save
@@ -1004,6 +1022,18 @@ function rangeSection() {
       "</div></article>").join("") +
     '<p class="small muted" style="margin:0">Allow lets them carry on with this address (the travel fee still applies). You can also answer from the WhatsApp message the bot sent you.</p></div>';
 }
+function prepSection() {
+  const days = (S.preorders || []).slice(0, 3);
+  if (!days.length) return "";
+  return '<div class="h-sec">Pre-order prep (Dose-in-a-Box &amp; takeout)</div><div class="stack">' + days.map((d) =>
+    '<div class="card pad stack"><div class="row" style="justify-content:space-between"><b>Pickup ' + esc(d.pickupLabel) + "</b>" +
+      '<span class="pill ' + (d.open ? "p-info" : "p-wait") + '">' + (d.open ? "Taking orders until " + esc(d.orderByLabel) : "Orders closed – prep") + "</span></div>" +
+      (d.totals.length
+        ? '<div class="num" style="font-size:18px">' + d.totals.map((t) => "<b>" + esc(t.qty) + "</b> × " + esc(t.title)).join(" &nbsp;·&nbsp; ") + "</div>" +
+          '<div class="small muted">' + d.orders.length + " order" + (d.orders.length === 1 ? "" : "s") + ": " + d.orders.map((o) => esc(o.name) + " (" + esc(o.items) + ")").join("; ") + "</div>"
+        : '<div class="small muted">No orders yet.</div>') +
+    "</div>").join("") + "</div>";
+}
 function viewToday() {
   const waiting = S.orders.filter((o) => o.pending || (o.payment && o.payment.state === "review"));
   const rangeCount = (S.rangeReqs || []).length;
@@ -1025,6 +1055,7 @@ function viewToday() {
       ? '<div class="stack">' + waiting.slice(0, 4).map((o) => orderCard(o, true)).join("") + '<p class="small muted" style="margin:0">Approve or decline here, or from the WhatsApp card the bot sent you. Edit the price from WhatsApp.</p></div>'
       : '<div class="card empty"><b>All caught up</b>New orders that need your approval show up here.</div>') +
     rangeSection() +
+    prepSection() +
     '<div class="h-sec">Next chef days<a class="btn ghost sm" href="#calendar">Edit days</a></div>' +
     (next.length
       ? '<div class="card list">' + next.map((d) => {
@@ -1245,7 +1276,8 @@ function viewMenu() {
             '<div class="small muted num">Travel: first ' + esc(l.travelFreeMiles ?? 20) + " mi free, then " + money(l.travelFeePerBlock ?? 50) + " per " + esc(l.travelBlockMiles ?? 10) + " mi</div></div>" +
             '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>';
       }
-      return '<div class="h-sec">' + esc(c.title) + '<button class="btn ghost sm" data-act="edit-cat" data-ci="' + ci + '">Rename</button></div>' +
+      return '<div class="h-sec">' + esc(c.title) + (c.type === "preorder" ? ' <span class="pill p-info">' + (c.flagship ? "Flagship · " : "") + "Pre-order · pickup only</span>" : "") + '<button class="btn ghost sm" data-act="edit-cat" data-ci="' + ci + '">' + (c.type === "preorder" ? "Edit" : "Rename") + "</button></div>" +
+        (c.type === "preorder" ? '<p class="small muted" style="margin:-4px 0 8px">Single orders, picked up on your pre-order days (Setup › Pre-order pickups). Quantities are whole portions.' + (c.items.some((i) => !(Number(i.price) > 0)) ? ' <b style="color:var(--turmeric-ink)">Dishes with no price are hidden from customers.</b>' : "") + "</p>" : "") +
         '<div class="card list">' + (c.items.length ? c.items.map((it, ii) =>
           '<button class="li" data-act="edit-item" data-ci="' + ci + '" data-ii="' + ii + '">' +
             '<div class="grow"><div class="t">' + esc(it.title || "Untitled dish") + (it.requiresNote ? ' <span class="pill p-info">asks a question</span>' : "") + "</div>" +
@@ -1316,13 +1348,16 @@ function catSheet(ci) {
     title: isNew ? "New menu section" : "Menu section",
     body: '<label class="field"><span>Section name</span><input id="c-title" value="' + esc(c.title) + '" placeholder="e.g. Sweets" /></label>' +
       '<label class="field"><span>WhatsApp list label</span><input id="c-row" maxlength="24" value="' + esc(c.rowTitle || "") + '" /><span class="hint">What customers tap in the WhatsApp menu. Up to 24 characters.</span></label>' +
-      '<label class="field"><span>WhatsApp list description</span><input id="c-desc" maxlength="72" value="' + esc(c.rowDescription || "") + '" /></label>',
+      '<label class="field"><span>WhatsApp list description</span><input id="c-desc" maxlength="72" value="' + esc(c.rowDescription || "") + '" /></label>' +
+      '<label class="switch"><input type="checkbox" id="c-pre"' + (c.type === "preorder" ? " checked" : "") + (c.id === "dose-in-a-box" ? " disabled" : "") + ' /><span><b>Pre-order section</b><small>Single-serve takeout, ordered ahead and picked up on your pre-order days (e.g. order by Tuesday, pickup Friday). Off = regular catering trays.</small></span></label>',
     foot: (!isNew && c.items.length === 0 ? '<button class="btn danger left" id="c-del">Delete section</button>' : "") + '<button class="btn" data-close>Cancel</button><button class="btn primary" id="c-ok">' + (isNew ? "Add section" : "Done") + "</button>",
     onMount: (el) => {
       el.querySelector("#c-ok").addEventListener("click", () => {
         const title = el.querySelector("#c-title").value.trim();
         if (!title) return;
         Object.assign(c, { title, rowTitle: el.querySelector("#c-row").value.trim() || title.slice(0, 24), rowDescription: el.querySelector("#c-desc").value.trim() });
+        const pre = el.querySelector("#c-pre");
+        if (pre && !pre.disabled) { if (pre.checked) c.type = "preorder"; else if (c.type === "preorder") delete c.type; }
         if (isNew) S.menu.categories.splice(Math.max(0, S.menu.categories.findIndex((x) => x.type === "live-dose-station")), 0, c);
         closeSheet(); render();
       });
@@ -1636,6 +1671,22 @@ function viewSetup() {
       (ldsCat() ? '<p class="small muted" style="margin:0">Extra doses on site are charged at your LIVE Dose rate: $' + (ldsCat().liveDoseStation.pricePerHundred / 100) + " per dose, in 10s (while supplies last). Change the rate under Menu → LIVE Dose Station.</p>" : "") +
       (S.menu.settings.cateringPickupOnly === false ? f("s-slot", "Delivery slot length (minutes)", a.slotLengthMinutes, 'type="number" inputmode="numeric" min="15" step="15"', "Delivery windows are split into slots this long for customers to pick.") : "") +
     "</div>" +
+    '<div class="h-sec">Pre-order pickups (Dose-in-a-Box &amp; weekly takeout)</div><div class="card pad stack">' +
+      '<p class="small muted" style="margin:0">Days customers can pick up pre-orders: Dose-in-a-Box and any menu section marked “Pre-order”. Orders close at the order-by time, and you get a WhatsApp prep list then. Pickup only.</p>' +
+      ((a.preorders || []).length ? (a.preorders || []).map((e, i) =>
+        '<div class="card pad stack" style="background:var(--surface-2)">' +
+          '<div class="grid2">' +
+            '<label class="field"><span>Pickup day</span><input type="date" data-pre="' + i + '" data-part="date" value="' + esc(e.date) + '" /></label>' +
+            '<label class="field"><span>Pickup time</span><input type="time" data-pre="' + i + '" data-part="pickupTime" value="' + esc(e.pickupTime || "18:00") + '" /></label>' +
+          "</div><div class=\"grid2\">" +
+            '<label class="field"><span>Order by (day)</span><input type="date" data-pre="' + i + '" data-part="orderByDate" value="' + esc(e.orderByDate || shiftISO(e.date, -3)) + '" /></label>' +
+            '<label class="field"><span>Order by (time)</span><input type="time" data-pre="' + i + '" data-part="orderByTime" value="' + esc(e.orderByTime || "18:00") + '" /></label>' +
+          "</div>" +
+          '<div class="row" style="justify-content:space-between"><span class="small muted">' + esc(preSummary(e)) + '</span><button class="btn sm danger" data-act="pre-del" data-i="' + i + '">Remove</button></div>' +
+        "</div>").join("") : '<p class="small" style="margin:0"><b>No pickup days yet.</b> Dose-in-a-Box and pre-order sections stay hidden from customers until you add one.</p>') +
+      '<div><button class="btn" data-act="pre-add">+ Add a pickup day</button> <span class="small muted">Next Friday 6 PM, order by Tuesday 6 PM – change as you like.</span></div>' +
+      (preCats().some((c) => c.items.some((i) => !(Number(i.price) > 0))) ? '<p class="small" style="margin:0;color:var(--turmeric-ink)">Dishes with no price stay hidden. Set the Dose-in-a-Box price under Menu.</p>' : "") +
+    "</div>" +
     '<div class="h-sec">Delivery area</div><div class="card pad stack">' +
       f("s-kitchen", "Kitchen address", d.kitchenAddress, 'autocomplete="street-address"', typeof d.kitchenLat === "number" ? "Found on the map. Never shown to customers." : "Looked up on the map when you save. Never shown to customers.") +
       '<div class="grid2">' +
@@ -1705,6 +1756,14 @@ document.addEventListener("input", (e) => {
     const el = $("#custSearch"); if (el) { el.focus(); el.setSelectionRange(pos, pos); }
     return;
   }
+  if (t.dataset.pre != null && t.dataset.part) {
+    const e2 = (S.menu.availability.preorders || [])[+t.dataset.pre];
+    if (e2 && t.value) {
+      if (t.dataset.part === "date" && e2.orderByDate === shiftISO(e2.date, -3)) e2.orderByDate = shiftISO(t.value, -3);
+      e2[t.dataset.part] = t.value; markDirty();
+    }
+    return;
+  }
   if (t.dataset.sess != null && t.dataset.part) {
     const w = S.menu.availability.liveDoseSessions[+t.dataset.sess];
     if (w && t.value) { w[t.dataset.part] = t.value; markDirty(); }
@@ -1733,6 +1792,18 @@ document.addEventListener("click", (e) => {
       const en = entryFor(date, true);
       Object.assign(en, { pickupAM: true, pickupPM: true, catering: [], liveDose: S.menu.availability.liveDoseSessions.map((w) => ({ start: w.start, end: w.end })) });
       refreshDaySheet(); break;
+    }
+    case "pre-add": {
+      const list = (S.menu.availability.preorders = S.menu.availability.preorders || []);
+      let d = nextFriday();
+      while (list.some((x) => x.date === d)) d = shiftISO(d, 7);
+      list.push({ date: d, pickupTime: "18:00", orderByDate: shiftISO(d, -3), orderByTime: "18:00" });
+      list.sort((x, y) => (x.date < y.date ? -1 : 1));
+      markDirty(); render(); break;
+    }
+    case "pre-del": {
+      (S.menu.availability.preorders || []).splice(+el.dataset.i, 1);
+      markDirty(); render(); break;
     }
     case "lds-sess": {
       const en = entryFor(date, true), sess = S.menu.availability.liveDoseSessions;

@@ -110,7 +110,7 @@ struct CartView: View {
                 }
                 .padding(.horizontal, 4)
 
-                if let min = model.config?.orderMinimum, min > 0, !model.cart.isLiveDose, model.cart.subtotal < min {
+                if let min = model.config?.orderMinimum, min > 0, !model.cart.isLiveDose, !model.cartIsPreorder, model.cart.subtotal < min {
                     Notice(tone: .warn, icon: "cart.badge.plus", text: "Catering orders start at \(Money.text(min)). Add \(Money.text(min - model.cart.subtotal, cents: true)) more to check out.")
                 }
                 if let sentence = model.config?.paymentSentence {
@@ -145,7 +145,7 @@ struct CartView: View {
     }
 
     private var belowMinimum: Bool {
-        guard let min = model.config?.orderMinimum, min > 0, !model.cart.isLiveDose else { return false }
+        guard let min = model.config?.orderMinimum, min > 0, !model.cart.isLiveDose, !model.cartIsPreorder else { return false }
         return model.cart.subtotal < min
     }
 }
@@ -208,6 +208,8 @@ struct CheckoutView: View {
     @State private var orderNote = ""
 
     private var isLDS: Bool { model.cart.isLiveDose }
+    /// Dose-in-a-Box / weekly takeout: pickup on one of Chef's pre-order days.
+    private var isPre: Bool { model.cartIsPreorder }
     private var ldsInfo: LiveDoseInfo? { model.categories.first(where: { $0.kind == .lds })?.liveDose }
     private var pickupOnly: Bool { model.config?.cateringPickupOnly ?? true }
     private var needsAddress: Bool { isLDS || fulfillment == "delivery" }
@@ -223,13 +225,15 @@ struct CheckoutView: View {
     }
 
     private var readyForPreview: Bool {
-        addressReady && date != nil && slot != nil && (isLDS || fulfillment != "pickup" || !pickupOnly || pickupAgreed)
+        addressReady && date != nil && slot != nil && (isLDS || isPre || fulfillment != "pickup" || !pickupOnly || pickupAgreed)
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
-                if !isLDS { fulfillmentSection }
+                if isPre {
+                    Notice(tone: .info, icon: "bag", text: "Pre-order, pickup only. Pick the pickup day below - orders for each day close at the order-by time.")
+                } else if !isLDS { fulfillmentSection }
                 if needsAddress { addressSection }
                 dateSection
                 if date != nil { slotSection }
@@ -364,7 +368,7 @@ struct CheckoutView: View {
 
     private var dateSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            stepTitle("Date")
+            stepTitle(isPre ? "Pickup day" : "Date")
             if loadingDates {
                 ProgressView().tint(Palette.leaf)
             } else if dates.isEmpty {
@@ -398,7 +402,7 @@ struct CheckoutView: View {
 
     private var slotSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            stepTitle(isLDS ? "On-site serving time" : fulfillment == "pickup" ? "Pickup time" : "Delivery window")
+            stepTitle(isLDS ? "On-site serving time" : isPre || fulfillment == "pickup" ? "Pickup time" : "Delivery window")
             ForEach(date?.slots ?? []) { s in
                 Button { withAnimation(.snappy) { slot = s } } label: {
                     HStack {
@@ -550,10 +554,10 @@ struct CheckoutView: View {
     private var request: OrderRequest {
         let address: String? = needsAddress ? (chosenMatch?.label ?? addressText.trimmingCharacters(in: .whitespacesAndNewlines)) : nil
         return OrderRequest(
-            kind: isLDS ? "lds" : "catering",
+            kind: isLDS ? "lds" : isPre ? "preorder" : "catering",
             items: isLDS ? nil : model.cart.lines.map { .init(itemId: $0.itemId, qty: $0.qty, note: $0.note) },
             liveDose: model.cart.liveDose.map { .init(total: $0.total, md: $0.md, note: $0.note, extend: extendTime) },
-            fulfillment: isLDS ? "delivery" : fulfillment,
+            fulfillment: isLDS ? "delivery" : isPre ? "pickup" : fulfillment,
             date: date?.date,
             slotId: slot?.id,
             address: address,
@@ -572,7 +576,7 @@ struct CheckoutView: View {
     private func loadDates() async {
         loadingDates = true
         defer { loadingDates = false }
-        var q = ["kind": isLDS ? "lds" : "catering", "fulfillment": fulfillment]
+        var q = ["kind": isLDS ? "lds" : isPre ? "preorder" : "catering", "fulfillment": isPre ? "pickup" : fulfillment]
         if let l = model.cart.liveDose { q["plates"] = String(l.total) }
         guard let r = try? await (APIClient.shared.get("availability", query: q) as AvailabilityResponse) else { return }
         dates = r.dates

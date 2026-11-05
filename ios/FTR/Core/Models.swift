@@ -42,7 +42,12 @@ struct AppConfig: Decodable {
 struct MenuResponse: Decodable { let categories: [MenuCategory] }
 
 struct MenuCategory: Decodable, Identifiable, Hashable {
-    enum Kind: String, Decodable { case catering, lds }
+    enum Kind: String, Decodable {
+        case catering, lds
+        init(from decoder: Decoder) throws {
+            self = Kind(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .catering
+        }
+    }
     let id: String
     let title: String
     let subtitle: String
@@ -50,6 +55,23 @@ struct MenuCategory: Decodable, Identifiable, Hashable {
     let open: Bool
     let items: [Dish]
     let liveDose: LiveDoseInfo?
+    /// Set for pre-order sections (Dose-in-a-Box, weekly takeout).
+    let preorder: PreorderInfo?
+}
+
+struct PreorderDay: Decodable, Hashable, Identifiable {
+    let date: String
+    let label: String
+    let pickupTime: String
+    let pickupLabel: String
+    let orderByLabel: String
+    var id: String { date }
+}
+
+struct PreorderInfo: Decodable, Hashable {
+    let flagship: Bool
+    let days: [PreorderDay]
+    let next: PreorderDay?
 }
 
 struct Dish: Decodable, Identifiable, Hashable {
@@ -102,6 +124,7 @@ struct AvailabilityResponse: Decodable {
     let fulfillment: String
     let dates: [OpenDate]
     let fulfillmentOptions: FulfillmentOptions?
+    let preorderDays: [PreorderDay]?
 }
 
 struct OpenDate: Decodable, Identifiable, Hashable {
@@ -260,6 +283,7 @@ struct Order: Decodable, Identifiable, Hashable {
     var id: String { orderId }
     var isCustom: Bool { type == "custom" }
     var isPast: Bool { type == "past" }
+    var isPreorder: Bool { type == "preorder" }
     var isLiveDose: Bool { type == "lds" }
 
     var title: String {

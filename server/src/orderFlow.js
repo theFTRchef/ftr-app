@@ -73,10 +73,14 @@ function formatDateLabel(dateStr) {
 
 function cartOrderTypes(cart) {
   return {
-    hasCatering: cart.some((l) => !l.isLiveDoseStation),
-    hasLiveDose: cart.some((l) => l.isLiveDoseStation)
+    hasCatering: cart.some((l) => !l.isLiveDoseStation && !l.isPreorder),
+    hasLiveDose: cart.some((l) => l.isLiveDoseStation),
+    // Dose-in-a-Box / weekly takeout: order by Chef's deadline, pickup on a set day.
+    hasPreorder: cart.some((l) => l.isPreorder)
   };
 }
+
+const preorders = require("./preorders");
 
 function liveDoseTotalInCart(cart) {
   const line = cart.find((l) => l.isLiveDoseStation);
@@ -137,7 +141,15 @@ function upcomingDates(menu) {
 
 function findDateEntry(menu, dateStr) {
   const raw = (menu.availability?.dates || []).find((d) => d.date === dateStr);
-  return raw ? normalizeDateEntry(raw) : null;
+  const pre = preorders.openEntry(menu, dateStr);
+  if (!raw) return pre ? preorderDateEntry(pre) : null;
+  const entry = normalizeDateEntry(raw);
+  return pre ? { ...entry, preorder: pre } : entry;
+}
+
+/** A pre-order pickup day in the same shape as a chef date. */
+function preorderDateEntry(e) {
+  return { date: e.date, pickupAM: false, pickupPM: false, catering: [], liveDose: [], preorder: e };
 }
 
 function windowLabel(w) {
@@ -183,7 +195,13 @@ function availabilitySummary(menu) {
  * - Catering delivery: fixed-length slots inside each delivery window.
  */
 function timeOptionsFor(menu, d, cart, fulfillment) {
-  const { hasLiveDose } = cartOrderTypes(cart);
+  const { hasLiveDose, hasPreorder } = cartOrderTypes(cart);
+  if (hasPreorder) {
+    const e = d.preorder || preorders.openEntry(menu, d.date);
+    return e
+      ? [{ id: "slot:preorder", title: `Pickup at ${formatTimeLabel(e.pickupTime)}`, description: `Order by ${e.orderByLabel}` }]
+      : [];
+  }
   if (hasLiveDose) {
     // Standard on-site sessions (customerView has already mapped the day's
     // LIVE Dose windows onto them).
@@ -207,6 +225,12 @@ function timeOptionsFor(menu, d, cart, fulfillment) {
 }
 
 function getAvailableDatesForCart(menu, cart, fulfillment, onlyDate) {
+  if (cartOrderTypes(cart).hasPreorder) {
+    return preorders
+      .open(menu)
+      .filter((e) => !onlyDate || e.date === onlyDate)
+      .map((e) => preorderDateEntry(e));
+  }
   return upcomingDates(menu)
     .filter((d) => !onlyDate || d.date === onlyDate)
     .filter((d) => timeOptionsFor(menu, d, cart, fulfillment).length > 0);
@@ -280,6 +304,9 @@ async function sendWelcome(to, greet = true) {
         title: "Options",
         rows: [
           { id: "hub:order", title: "Place an order", description: "Start a catering or LIVE Dose Station order" },
+          ...(preorders.open(menu).length && menu.categories.some((c) => c.type === "preorder" && (c.items || []).length)
+            ? [{ id: "hub:preorder", title: "Dose-in-a-Box", description: (preorderShort(menu) || "Take-home Masala Dose kit - pre-order").slice(0, 72) }]
+            : []),
           { id: "hub:browse", title: "See our menu", description: "Browse dishes and prices without ordering" },
           { id: "hub:myorders", title: "My orders", description: "See your orders, or cancel one before it's paid" },
           { id: "hub:custom", title: "Custom request", description: "Tell the chef what you need and get a price quote" },
@@ -374,11 +401,15 @@ const MIXED_ORDER_MESSAGE =
   "Catering and the LIVE Dose Station are booked as separate orders - they use the same crew, so we can't do both for one event. Let's finish this order first; you can start a new one afterwards by sending \"hi\".";
 
 function categoriesAllowedForCart(menu, cart, onlyDate) {
-  const { hasCatering, hasLiveDose } = cartOrderTypes(cart || []);
+  const { hasCatering, hasLiveDose, hasPreorder } = cartOrderTypes(cart || []);
   const dates = upcomingDates(menu).filter((d) => !onlyDate || d.date === onlyDate);
   const cateringOpen = dates.some(offersCatering);
   const liveDoseOpen = dates.some(offersLiveDose);
+  const preorderOpen = preorders.open(menu).some((e) => !onlyDate || e.date === onlyDate);
   return menu.categories.filter((c) => {
+    // Pre-order sections: their own order (pickup on Chef's pre-order days).
+    if (c.type === "preorder") return preorderOpen && !hasCatering && !hasLiveDose && (c.items || []).length > 0;
+    if (hasPreorder) return false;
     const isLds = c.type === "live-dose-station";
     // Hide an order type the chef has no open dates for.
     if (isLds && !liveDoseOpen) return false;
@@ -419,12 +450,12 @@ async function sendMainMenu(to, greet = true, intro = "") {
     });
   }
   const sections = allowed.map((c) => ({
-    title: c.title,
+    title: c.title.slice(0, 24),
     rows: [
       {
         id: `cat:${c.id}`,
         title: (c.rowTitle || c.title || "").slice(0, 24),
-        description: (c.rowDescription || "").slice(0, 72)
+        description: (c.type === "preorder" ? preorderShort(menu) || c.rowDescription || "" : c.rowDescription || "").slice(0, 72)
       }
     ]
   }));
@@ -515,6 +546,7 @@ function halfTraysOn(menu) {
 
 /** Smallest amount a customer can order of this dish right now. */
 function effectiveMinQty(menu, item) {
+  if (item && item.isPreorder) return item.minQty || 1;
   return halfTraysOn(menu) ? 0.5 : item.minQty || 1;
 }
 
@@ -556,6 +588,7 @@ function parseQty(text) {
 }
 
 function effectiveMaxQty(menu, item) {
+  if (item && item.isPreorder) return item.maxQty || 20;
   return item.maxQty || menu.settings.maxOrderQtyPerItem || 4;
 }
 
@@ -639,7 +672,7 @@ async function sendLiveDoseNotePrompt(to) {
 async function sendQtyPrompt(to, item, menu) {
   const min = effectiveMinQty(menu, item);
   const max = effectiveMaxQty(menu, item);
-  if (halfTraysOn(menu)) {
+  if (halfTraysOn(menu) && !item.isPreorder) {
     const options = [0.5, 1, 2].filter((n) => n <= max);
     await sendButtons(to, {
       body: `How many trays of "${item.title}" would you like?\n\nFull tray: $${item.price.toFixed(2)}\nHalf tray: $${trayTotal(menu, item.price, 0.5).toFixed(2)}`,
@@ -789,8 +822,9 @@ async function sendDatePrompt(to, menu, session) {
 
   const rows = dates.slice(0, 10).map((d) => {
     const opts = timeOptionsFor(menu, d, cart, fulfillment);
-    const desc =
-      fulfillment === "pickup" && !cartOrderTypes(cart).hasLiveDose
+    const desc = cartOrderTypes(cart).hasPreorder
+      ? `${opts.map((o) => o.title).join(" or ")} - ${opts[0] ? opts[0].description : ""}`
+      : fulfillment === "pickup" && !cartOrderTypes(cart).hasLiveDose
         ? opts.map((o) => o.title.replace("Pickup by ", "")).join(" or ")
         : (cartOrderTypes(cart).hasLiveDose ? d.liveDose : d.catering).map(windowLabel).join(", ");
     return {
@@ -2091,7 +2125,14 @@ async function proceedToCheckout(from, session, menu) {
   }
   const min = orderMinimum(menu);
   const subtotal = cartSubtotal(session.cart);
-  const { hasLiveDose } = cartOrderTypes(session.cart);
+  const { hasLiveDose, hasPreorder } = cartOrderTypes(session.cart);
+  if (hasPreorder) {
+    // Pre-orders are always picked up on one of Chef's pre-order days; no minimum.
+    const updated = { ...session, fulfillment: "pickup" };
+    const hasDates = await sendDatePrompt(from, menu, updated);
+    sessionStore.set(from, { ...updated, step: dateStep(hasDates) });
+    return;
+  }
   // An LDS order can't take more items, so the minimum only applies to
   // catering carts.
   if (!hasLiveDose && min > 0 && subtotal < min) {
@@ -2786,6 +2827,49 @@ async function saveFeedback(from, text, orderId) {
   return entry;
 }
 
+// ---------------------------------------------------------------------
+// Pre-orders: Dose-in-a-Box and Chef's weekly takeout.
+// ---------------------------------------------------------------------
+function preorderShort(menu) {
+  const e = preorders.open(menu)[0];
+  return e ? `Order by ${e.orderByLabel} - pickup ${formatDateLabel(e.date)}` : null;
+}
+
+function preorderIntro(menu) {
+  const days = preorders.open(menu);
+  if (!days.length) return "";
+  return (
+    `Pre-order, pickup only:\n` +
+    days.slice(0, 3).map((e) => `- Pickup ${e.pickupLabel} (order by ${e.orderByLabel})`).join("\n")
+  );
+}
+
+async function startPreorder(from, menu) {
+  const cats = menu.categories.filter((c) => c.type === "preorder" && (c.items || []).length);
+  const days = preorders.open(menu);
+  if (!cats.length || !days.length) {
+    return sendText(
+      from,
+      `Dose-in-a-Box isn't open for orders right now - Chef opens it on select weeks. Send "hi" to see what's available, or call ${menu.settings.phoneDisplay}.`
+    );
+  }
+  const session = { ...sessionStore.getOrCreate(from), cart: [], eventDate: null, selectedDate: null, fulfillment: "pickup" };
+  if (cats.length === 1) {
+    sessionStore.set(from, { ...session, step: "AWAITING_ITEM", itemCategoryId: cats[0].id });
+    return sendCategoryItems(from, cats[0], preorderIntro(menu));
+  }
+  sessionStore.set(from, { ...session, step: "AWAITING_CATEGORY" });
+  return sendList(from, {
+    header: "Pre-order",
+    body: `${preorderIntro(menu)}\n\nWhat would you like?`.slice(0, 1024),
+    buttonLabel: "View",
+    sections: cats.map((c) => ({
+      title: c.title.slice(0, 24),
+      rows: [{ id: `cat:${c.id}`, title: (c.rowTitle || c.title).slice(0, 24), description: (c.rowDescription || "").slice(0, 72) }]
+    }))
+  });
+}
+
 /** Typed "11/7 pickup at 11:30 AM" from the main menu: jump straight in. */
 async function typedDateShortcut(from, menu, text) {
   const req = parseOrderRequest(text);
@@ -2917,6 +3001,9 @@ async function handleIncoming(payload) {
   }
   if (replyId === "hub:order") {
     return startDateFirst(from, menu);
+  }
+  if (replyId === "hub:preorder") {
+    return startPreorder(from, menu);
   }
 
   if (replyId && (replyId.startsWith("caccept:") || replyId.startsWith("creject:"))) {
@@ -3065,6 +3152,10 @@ async function handleIncoming(payload) {
             });
             return sendLiveDoseTotalPrompt(from, category);
           }
+          if (category.type === "preorder") {
+            sessionStore.set(from, { ...session, step: "AWAITING_ITEM", itemCategoryId: category.id });
+            return sendCategoryItems(from, category, preorderIntro(menu));
+          }
           if (pickupOnly(menu) && !session.pickupAgreed) {
             return askPickupAgreement(from, session, menu, category);
           }
@@ -3113,7 +3204,8 @@ async function handleIncoming(payload) {
         return sendQtyPrompt(from, item, menu);
       }
       let qty = null;
-      const half = halfTraysOn(menu);
+      // Pre-order items (Dose-in-a-Box, takeout) are whole portions.
+      const half = halfTraysOn(menu) && !(session.pendingItem && session.pendingItem.isPreorder);
       if (replyId && replyId.startsWith("qty:")) {
         qty = Number(replyId.slice(4));
       } else if (isText) {
@@ -3464,6 +3556,19 @@ async function handleIncoming(payload) {
         const dateEntry = findDateEntry(menu, updated.selectedDate);
         if (dateEntry) return sendSlotPrompt(from, menu, dateEntry, updated);
       }
+      if (replyId === "slot:preorder") {
+        const e = preorders.openEntry(menu, session.selectedDate);
+        if (!e) {
+          await sendText(from, `Sorry - orders for that pickup day have closed. Please pick another day.`);
+          const hasDates = await sendDatePrompt(from, menu, session);
+          sessionStore.set(from, { ...session, step: dateStep(hasDates) });
+          return;
+        }
+        const requestedTime = `${formatDateLabel(session.selectedDate)}, pickup at ${formatTimeLabel(e.pickupTime)} (pre-order)`;
+        const updated = { ...session, fulfillment: "pickup", requestedTime, step: "AWAITING_CONFIRM" };
+        sessionStore.set(from, updated);
+        return sendOrderSummary(from, updated);
+      }
       if (replyId === "slot:pickup-am" || replyId === "slot:pickup-pm") {
         const dateEntry = findDateEntry(menu, session.selectedDate);
         const isAM = replyId === "slot:pickup-am";
@@ -3584,6 +3689,7 @@ module.exports = {
     // Comments, and cancelling before the deposit is paid.
     saveFeedback,
     cancelOrder,
-    cancelBlock
+    cancelBlock,
+    cartOrderTypes
   }
 };

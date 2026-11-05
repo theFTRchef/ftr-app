@@ -55,6 +55,8 @@ struct HomeView: View {
     enum Route: Hashable { case catering, availability, section(String) }
 
     private var lds: MenuCategory? { model.categories.first { $0.kind == .lds } }
+    /// The second flagship: Dose-in-a-Box (a pre-order section marked flagship).
+    private var dib: MenuCategory? { model.categories.first { $0.preorder?.flagship == true && !$0.items.isEmpty } }
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
@@ -88,6 +90,26 @@ struct HomeView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(lds == nil)
+
+                    if let dib {
+                        NavigationLink(value: Route.section(dib.id)) {
+                            HStack(spacing: 14) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Take-home flagship").font(Typeface.body(13, weight: .bold)).kerning(1.2).foregroundStyle(Palette.turmeric)
+                                    Text(dib.title).font(Typeface.display(26, relativeTo: .title2)).foregroundStyle(Palette.cream)
+                                    Text(dib.preorder?.next.map { "Order by \($0.orderByLabel) · pickup \($0.pickupLabel)" } ?? "Next pickup day coming soon")
+                                        .font(Typeface.body(14)).foregroundStyle(Palette.cream.opacity(0.9))
+                                        .multilineTextAlignment(.leading)
+                                }
+                                Spacer(minLength: 0)
+                                Image(systemName: "shippingbox.fill").font(.system(size: 36)).foregroundStyle(Palette.turmeric)
+                            }
+                            .padding(18)
+                            .background(Palette.forest, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Palette.goldLine, lineWidth: 2))
+                        }
+                        .buttonStyle(.plain)
+                    }
 
                     LazyVGrid(columns: columns, spacing: 12) {
                         NavigationLink(value: Route.catering) {
@@ -206,7 +228,7 @@ struct CateringSectionsView: View {
     @Environment(AppModel.self) private var model
     @State private var showCart = false
 
-    private var sections: [MenuCategory] { model.categories.filter { $0.kind == .catering && !$0.items.isEmpty } }
+    private var sections: [MenuCategory] { model.categories.filter { $0.kind == .catering && !$0.items.isEmpty && $0.preorder?.flagship != true } }
 
     var body: some View {
         ScrollView {
@@ -216,7 +238,7 @@ struct CateringSectionsView: View {
                     Text("Trays for pickup from our kitchen · \(model.config?.halfTrays == true ? "full or half trays" : "full trays")")
                         .font(Typeface.body(14)).foregroundStyle(Palette.muted)
                 }
-                if sections.first?.open == false {
+                if sections.first(where: { $0.preorder == nil })?.open == false {
                     Notice(tone: .warn, icon: "calendar.badge.exclamationmark", text: "Chef has no catering dates open right now. You can still browse, or ask for a custom quote.")
                 }
                 ForEach(sections) { c in
@@ -224,6 +246,13 @@ struct CateringSectionsView: View {
                         HStack(alignment: .center, spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(c.title).font(Typeface.display(21, relativeTo: .title3)).foregroundStyle(Palette.ink)
+                                if let p = c.preorder {
+                                    Text(p.next.map { "Pre-order · pickup \($0.pickupLabel)" } ?? "Pre-order · next pickup coming soon")
+                                        .font(Typeface.body(12.5, weight: .bold))
+                                        .padding(.horizontal, 8).padding(.vertical, 3)
+                                        .foregroundStyle(Palette.turmericInk)
+                                        .background(Palette.turmericSoft, in: Capsule())
+                                }
                                 Text(c.subtitle.isEmpty ? "\(c.items.count) dish\(c.items.count == 1 ? "" : "es")" : c.subtitle)
                                     .font(Typeface.body(14)).foregroundStyle(Palette.muted).lineLimit(2).multilineTextAlignment(.leading)
                             }
@@ -274,7 +303,18 @@ struct CategoryDishesView: View {
                         }
                     }
                     .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 12)
-                    if !cat.open {
+                    if let p = cat.preorder {
+                        Panel {
+                            Label("Pre-order · pickup only", systemImage: "bag").font(Typeface.body(15, weight: .bold))
+                            if p.days.isEmpty {
+                                Text("Chef hasn't opened the next pickup day yet. Check back soon.").font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                            }
+                            ForEach(p.days.prefix(3)) { d in
+                                Text("Pickup \(d.pickupLabel) · order by \(d.orderByLabel)").font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                            }
+                        }
+                        .padding(.horizontal, 16).padding(.bottom, 10)
+                    } else if !cat.open {
                         Notice(tone: .warn, icon: "calendar.badge.exclamationmark", text: "Chef has no catering dates open right now. You can still browse, or ask for a custom quote.")
                             .padding(.horizontal, 20).padding(.bottom, 8)
                     }
@@ -361,6 +401,7 @@ struct CategoryDishesView: View {
 /// Chef's open dates from the admin calendar, with what each day offers.
 struct AvailabilityView: View {
     @State private var dates: [OpenDate] = []
+    @State private var preDays: [PreorderDay] = []
     @State private var loading = true
 
     var body: some View {
@@ -373,6 +414,24 @@ struct AvailabilityView: View {
                     ProgressView().tint(Palette.leaf).padding(.top, 20)
                 } else if dates.isEmpty {
                     Notice(tone: .warn, icon: "calendar", text: "No open dates right now. Ask for a custom quote or call Chef about your event.")
+                }
+                if !preDays.isEmpty {
+                    Text("Dose-in-a-Box & takeout pickups").font(Typeface.display(20, relativeTo: .title3)).foregroundStyle(Palette.ink).padding(.top, 6)
+                    ForEach(preDays) { p in
+                        HStack(alignment: .top, spacing: 14) {
+                            DateBadge(iso: p.date)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(p.label).font(Typeface.body(17, weight: .bold)).foregroundStyle(Palette.ink)
+                                Label("Pickup at \(p.pickupTime)", systemImage: "shippingbox").font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                                Label("Order by \(p.orderByLabel)", systemImage: "clock").font(Typeface.body(14)).foregroundStyle(Palette.turmericInk)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(14)
+                        .background(Palette.turmericSoft, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.line))
+                    }
+                    Text("Catering & LIVE Dose").font(Typeface.display(20, relativeTo: .title3)).foregroundStyle(Palette.ink).padding(.top, 6)
                 }
                 ForEach(dates) { d in
                     HStack(alignment: .top, spacing: 14) {
@@ -401,7 +460,7 @@ struct AvailabilityView: View {
 
     private func load() async {
         defer { loading = false }
-        if let r = try? await (APIClient.shared.get("availability") as AvailabilityResponse) { dates = r.dates }
+        if let r = try? await (APIClient.shared.get("availability") as AvailabilityResponse) { dates = r.dates; preDays = r.preorderDays ?? [] }
     }
 }
 

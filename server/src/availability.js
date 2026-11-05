@@ -121,7 +121,14 @@ function customerView(menu) {
         if (noDelivery) e.catering = [];
         return e;
       })
-    }
+    },
+    // Pre-order sections (Dose-in-a-Box, weekly takeout): only dishes with a
+    // price, each tagged so the cart knows it's a pre-order.
+    categories: (menu.categories || []).map((c) =>
+      c.type === "preorder"
+        ? { ...c, items: (c.items || []).filter((i) => Number(i.price) > 0).map((i) => ({ ...i, isPreorder: true })) }
+        : c
+    )
   };
 }
 

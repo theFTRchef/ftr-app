@@ -237,6 +237,14 @@ app.post("/admin/api/orders/past", requireAdminAuth, async (req, res) => {
 });
 
 // --- Comments & suggestions ---
+// --- Pre-orders (Dose-in-a-Box, weekly takeout): prep list per pickup day ---
+app.get("/admin/api/preorders", requireAdminAuth, (req, res) => {
+  const pre = require("./preorders");
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  const days = pre.all(menuStore.getMenu()).filter((e) => e.date >= today);
+  res.json(days.map((e) => ({ ...e, open: Date.now() < e.cutoff, ...pre.prepList(e.date) })));
+});
+
 app.get("/admin/api/feedback", requireAdminAuth, (req, res) => {
   res.json(require("./feedbackStore").all().slice().reverse());
 });
@@ -460,6 +468,9 @@ const port = process.env.PORT || 3000;
 payments.startSweeper();
 // Bring the Google Sheet "Customers" tab up to date at start-up.
 require("./customerSheet").scheduleSync(10000);
+// Send Chef the pre-order prep list when each order-by time passes.
+require("./preorders").startWatcher();
+
 app.listen(port, () => {
   console.log(`Franklin Tiffin Room order bot listening on port ${port}`);
   console.log(`Admin panel at http://localhost:${port}/admin`);

@@ -49,6 +49,8 @@ function getMenu() {
   if (menu.availability && Array.isArray(menu.availability.dates)) {
     menu.availability.dates = menu.availability.dates.map(normalizeDateEntry);
   }
+  // Dose-in-a-Box is a standing section (Chef sets its price and pickup days).
+  require("./preorders").ensureDoseInABox(menu);
   return menu;
 }
 
@@ -156,6 +158,16 @@ function saveMenu(menu) {
       }
     });
     menu.availability.liveDoseSessions = sess.map((w) => ({ start: w.start, end: w.end, ...(w.label ? { label: String(w.label).slice(0, 20) } : {}) }));
+  }
+  // Pre-order pickup days (Dose-in-a-Box and weekly takeout).
+  menu.availability.preorders = require("./preorders").clean(menu.availability.preorders || []);
+  for (const c of menu.categories) {
+    if (c.type === "preorder") {
+      c.flagship = c.flagship === true;
+      for (const i of c.items) {
+        i.minQty = Math.max(1, Math.round(i.minQty || 1));
+      }
+    }
   }
   const ext = menu.availability.ldsExtension || {};
   menu.availability.ldsExtension = {

@@ -215,8 +215,27 @@ final class AppModel {
 
     // MARK: cart
 
+    /// Dose-in-a-Box and weekly takeout dishes (pickup on Chef's pre-order days).
+    func isPreorderDish(_ id: String) -> Bool {
+        categories.contains { $0.preorder != nil && $0.items.contains { $0.id == id } }
+    }
+    var cartIsPreorder: Bool { !cart.isLiveDose && cart.lines.contains { isPreorderDish($0.itemId) } }
+
+    /// Why adding this dish would clear the cart (separate order types), or nil.
+    struct ReplaceWarning { let title: String; let message: String; let action: String }
+    func replaceWarning(for dish: Dish) -> ReplaceWarning? {
+        let pre = isPreorderDish(dish.id)
+        if cart.isLiveDose {
+            return .init(title: "Your LIVE Dose Station will be removed", message: "The LIVE Dose Station is booked as its own order.", action: pre ? "Start a pre-order instead" : "Start a catering order instead")
+        }
+        guard !cart.lines.isEmpty, cartIsPreorder != pre else { return nil }
+        return pre
+            ? .init(title: "Your catering trays will be removed", message: "Pre-orders (picked up on Chef's pre-order day) are a separate order from catering trays.", action: "Start a pre-order instead")
+            : .init(title: "Your pre-order will be removed", message: "Catering trays are a separate order from pre-orders (Dose-in-a-Box and weekly takeout).", action: "Start a catering order instead")
+    }
+
     func add(_ dish: Dish, qty: Double, note: String?) {
-        if cart.isLiveDose { cart = Cart() }
+        if replaceWarning(for: dish) != nil { cart = Cart() }
         let trimmed = note?.trimmingCharacters(in: .whitespacesAndNewlines)
         let n = (trimmed?.isEmpty ?? true) ? nil : trimmed
         if let idx = cart.lines.firstIndex(where: { $0.itemId == dish.id && $0.note == n }) {
