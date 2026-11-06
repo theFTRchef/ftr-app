@@ -246,7 +246,7 @@ fun FeedbackSheet(model: AppModel, orderId: String?, onDismiss: () -> Unit) {
                         OutlinedTextField(label, {}, readOnly = true, label = { Text("About an order") }, textStyle = Type.body(15.0),
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menuOpen) },
                             modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable))
-                        androidx.compose.material3.ExposedDropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        ExposedDropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                             DropdownMenuItem(text = { Text("Not about a specific order") }, onClick = { about = ""; menuOpen = false })
                             choices.forEach { o -> DropdownMenuItem(text = { Text("${o.orderId} · ${o.title}") }, onClick = { about = o.orderId; menuOpen = false }) }
                         }
