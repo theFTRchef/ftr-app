@@ -12,7 +12,7 @@ UP = f"https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applic
 TOKEN = os.environ["PLAY_TOKEN"]
 
 
-def call(method, url, body=None, data=None, ctype="application/json"):
+def call(method, url, body=None, data=None, ctype="application/json", fatal=True):
     if body is not None:
         data = json.dumps(body).encode()
     req = urllib.request.Request(url, data=data, method=method)
@@ -24,7 +24,11 @@ def call(method, url, body=None, data=None, ctype="application/json"):
             raw = r.read()
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
-        sys.exit(f"Google Play said {e.code} for {method} {url.split('?')[0]}:\n{e.read().decode()[:2000]}")
+        msg = f"Google Play said {e.code} for {method} {url.split('?')[0]}:\n{e.read().decode()[:2000]}"
+        if fatal:
+            sys.exit(msg)
+        print("::warning::" + msg.replace("\n", " "))
+        return None
 
 
 aab, *rest = sys.argv[1:]
@@ -38,8 +42,9 @@ code = bundle["versionCode"]
 print(f"Uploaded bundle, version code {code}")
 if mapping:
     with open(mapping, "rb") as f:
-        call("POST", f"{UP}/edits/{edit}/bundles/{code}/deobfuscationFiles/proguard?uploadType=media", data=f.read(), ctype="application/octet-stream")
-    print("Uploaded R8 mapping file")
+        if call("POST", f"{UP}/edits/{edit}/apks/{code}/deobfuscationFiles/proguard?uploadType=media",
+                data=f.read(), ctype="application/octet-stream", fatal=False) is not None:
+            print("Uploaded R8 mapping file")
 call("PUT", f"{API}/edits/{edit}/tracks/internal", {
     "track": "internal",
     "releases": [{"name": name, "versionCodes": [str(code)], "status": "completed"}],
