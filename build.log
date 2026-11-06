@@ -1,0 +1,870 @@
+Command line invocation:
+    /Applications/Xcode_26.3.app/Contents/Developer/usr/bin/xcodebuild build -project ios/FTR.xcodeproj -scheme FTR -configuration Debug -destination "generic/platform=iOS Simulator" -derivedDataPath dd CODE_SIGNING_ALLOWED=NO
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'FTR' in project 'FTR' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode_26.3.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode_26.3.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: ab0de6c5f37c671c3d1a3905ccdf9776
+Build description path: /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/XCBuildData/ab0de6c5f37c671c3d1a3905ccdf9776.xcbuilddata
+ClangStatCache /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk /Users/runner/work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator26.2-23C57-e244bd9a5feaf902f95f61bf06266e52.sdkstatcache
+    cd /Users/runner/work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -o /Users/runner/work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator26.2-23C57-e244bd9a5feaf902f95f61bf06266e52.sdkstatcache
+
+CreateBuildDirectory /Users/runner/work/ftr-app/ftr-app/dd/Build/Products
+    cd /Users/runner/work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/runner/work/ftr-app/ftr-app/dd/Build/Products
+
+CreateBuildDirectory /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex
+    cd /Users/runner/work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex
+
+CreateBuildDirectory /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator
+    cd /Users/runner/work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator
+
+CreateBuildDirectory /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+    cd /Users/runner/work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR-c26e65d36ba7818df74aa1971aa85023-VFS-iphonesimulator/all-product-headers.yaml
+    cd /Users/runner/work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR-c26e65d36ba7818df74aa1971aa85023-VFS-iphonesimulator/all-product-headers.yaml
+
+CreateBuildDirectory /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/ExplicitPrecompiledModules
+    cd /Users/runner/work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+CreateBuildDirectory /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+    cd /Users/runner/work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR_const_extract_protocols.json (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.SwiftConstValuesFileList (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.SwiftFileList (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.SwiftFileList
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.LinkFileList (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.LinkFileList
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR-OutputFileMap.json (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_const_extract_protocols.json (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftConstValuesFileList (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.LinkFileList (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.LinkFileList
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-OutputFileMap.json (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.hmap
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyStaticMetadataFileList (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyMetadataFileList (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-non-framework-target-headers.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibPath-normal-x86_64.txt (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibPath-normal-x86_64.txt
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibPath-normal-arm64.txt (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibPath-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibInstallName-normal-x86_64.txt (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibInstallName-normal-x86_64.txt
+
+WriteAuxiliaryFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibInstallName-normal-arm64.txt (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    write-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibInstallName-normal-arm64.txt
+
+MkDir /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /bin/mkdir -p /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+Ld /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/Binary/__preview.dylib normal arm64 (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -O0 -L/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -install_name @rpath/FTR.debug.dylib -dead_strip -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_dependency_info.dat -o /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/Binary/__preview.dylib
+
+Ld /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/Binary/__preview.dylib normal x86_64 (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target x86_64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -O0 -L/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -install_name @rpath/FTR.debug.dylib -dead_strip -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR_dependency_info.dat -o /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/Binary/__preview.dylib
+
+MkDir /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/unthinned (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /bin/mkdir -p /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/unthinned
+
+MkDir /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /bin/mkdir -p /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned
+
+GenerateAssetSymbols /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/usr/bin/actool /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets --compile /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app --output-format human-readable-text --notices --warnings --export-dependency-info /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_dependencies --output-partial-info-plist /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist --app-icon AppIcon --accent-color AccentColor --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --minimum-deployment-target 17.0 --platform iphonesimulator --bundle-identifier com.franklintiffinroom.app --generate-swift-asset-symbols /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.swift --generate-objc-asset-symbols /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.h --generate-asset-symbol-index /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/* com.apple.actool.compilation-results */
+/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.h
+/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.swift
+
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/RobotoSlab-ExtraBold.ttf /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/RobotoSlab-ExtraBold.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/RobotoSlab-ExtraBold.ttf /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/RobotoSlab-Bold.ttf /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/RobotoSlab-Bold.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/RobotoSlab-Bold.ttf /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/PrivacyInfo.xcprivacy /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/PrivacyInfo.xcprivacy (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/PrivacyInfo.xcprivacy /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Oswald-Medium.ttf /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Oswald-Medium.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Oswald-Medium.ttf /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/OFL-LICENSE.txt /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/OFL-LICENSE.txt (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/OFL-LICENSE.txt /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/OFL-Fraunces.txt /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/OFL-Fraunces.txt (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/OFL-Fraunces.txt /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/JosefinSans-SemiBold.ttf /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/JosefinSans-SemiBold.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/JosefinSans-SemiBold.ttf /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/JosefinSans-Bold.ttf /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/JosefinSans-Bold.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/JosefinSans-Bold.ttf /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Fraunces-MediumItalic.ttf /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Fraunces-MediumItalic.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Fraunces-MediumItalic.ttf /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Archivo-SemiBold.ttf /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-SemiBold.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-SemiBold.ttf /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Archivo-Regular.ttf /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-Regular.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-Regular.ttf /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Archivo-Medium.ttf /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-Medium.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-Medium.ttf /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CompileAssetCatalogVariant thinned /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/usr/bin/actool /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets --compile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_dependencies_thinned --output-partial-info-plist /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --accent-color AccentColor --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --minimum-deployment-target 17.0 --platform iphonesimulator
+/* com.apple.actool.compilation-results */
+/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist_thinned
+/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned/AppIcon60x60@2x.png
+/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned/AppIcon76x76@2x~ipad.png
+/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned/Assets.car
+
+
+CreateUniversalBinary /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/__preview.dylib normal arm64\ x86_64 (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo -create /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/Binary/__preview.dylib /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/Binary/__preview.dylib -output /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/__preview.dylib
+
+SwiftDriver FTR normal x86_64 com.apple.xcode.tools.swift.compiler (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-SwiftDriver -- /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FTR -Onone -enforce-exclusivity\=checked @/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -target x86_64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/ftr-app/ftr-app/dd/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64 -c -j4 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator26.2-23C57-e244bd9a5feaf902f95f61bf06266e52.sdkstatcache -output-file-map /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources-normal/x86_64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/x86_64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR-Swift.h -working-directory /Users/runner/work/ftr-app/ftr-app/ios -experimental-emit-module-separately -disable-cmo
+
+SwiftDriver FTR normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-SwiftDriver -- /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FTR -Onone -enforce-exclusivity\=checked @/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/ftr-app/ftr-app/dd/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64 -c -j4 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator26.2-23C57-e244bd9a5feaf902f95f61bf06266e52.sdkstatcache -output-file-map /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-Swift.h -working-directory /Users/runner/work/ftr-app/ftr-app/ios -experimental-emit-module-separately -disable-cmo
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/SwiftShims-5LUM9TEZ6S9N11XF0DKRECRFA.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_float-4G8KJRZRPP8MGH9DBAWWNK91Y.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_stddef-B4HAUTO8KZ6S8JZCANXT418BT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_AvailabilityInternal-C8WCN12JAYR8F35QIG81CPPF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_stdbool-NK3QH97JSBHY9FXEY3KNFWJU.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/ptrauth-CNARCHN16VFIH160P52B6VDBY.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_AvailabilityInternal-ESTGB0UVAYUMZ5441TBXAXITQ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/DeveloperToolsSupport-S0W0HKM3JG1TSP600CQMRLLQ.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_SwiftConcurrencyShims-CJI8L6IWI2718E1DY2WV2PFGG.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_stdarg-4SBD8LK7JESL9H21WXS1KQS2R.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_float-6WXH1852QURUVH45TLIMHH5JN.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/ptrcheck-7333YJUM41HIMO0ZHJFGK24OA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_stdarg-CX03H3FCG9Q5FTTHDNXSF6KRB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_SwiftConcurrencyShims-7JYNUG62PS55SH5CEGMC2A8M6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_DarwinFoundation1-22IQDM0IDPPB8U2XFGWGDNFPS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/ptrauth-LVSAXEG7KJ6UDJ1D9P8CLP3E.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/DeveloperToolsSupport-BIETVDSLZU3USQXMSQXBORMVP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/SwiftShims-3I7KJ54I8IWX1O2YO4EGF45QN.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/ptrcheck-DP5IH27UEIRS2Y89M2SX1DFMT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_stddef-6LA66ODF3R7T42CI1CCMR81W3.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_DarwinFoundation1-CURAJBA9JT3FB2ELHD9RWCW29.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/ExtensionFoundation-7C70FWPPNZERQXOL33T0UNJ0T.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_limits-8JZ5OIX701VLII99XUUFV6RG6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_DarwinFoundation2-6M0UDRIHK9GOR4R18DSHVON3.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_stdbool-ARQ2IZD3616IBXN7JH6IWH6MF.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/ExtensionFoundation-YY0COOTEARWEWHJXQ95367WV.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_limits-7TARDGN7Q15IAIDQCFKFWNOWV.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_DarwinFoundation2-64PMNK7NL1RWHQPH2BW9V4F31.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/sys_types-E47LK2GMNAQ9XUVGZ95UNOO95.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_stdint-2UXZOQFPZFN6S97QENP26YYWG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_tgmath-32BZML4L4JNUK211195KKLG6L.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_stdatomic-CZ3CFP82IAFAPZFRX9QBQ09NY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_intrinsics-7UB30FBI6KAN242KYKQWRP9H4.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_stdint-BOCYUG27132U6DOTGCR035KNE.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/sys_types-C1UULEYMOGKXE0HWFSN1HAMBM.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_tgmath-EPTRHG9DTL4D53NUOWW2LMEI9.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_stdatomic-BZADRGX8R52L7EEOE7UJJGZSV.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_DarwinFoundation3-2VC35WPJ07K4535XU6E6X0UL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_DarwinFoundation3-DFC0GVM0TREMF4P4TAU27WQCI.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_intrinsics-238SL4VKK0M22SMDU7PUA6U42.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_inttypes-6Q32AJU41CJZP6BR9WPM1LYQ7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_Builtin_inttypes-BYKFKNRP8FB8LGESR8H5ZDAN6.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Darwin-6OY027MDHPMAT5HA82SDX01XQ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Darwin-A75ZRBIKNDD5XOSSY49XMCI44.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/simd-57MZD3FDK7AXLZD6SC80NXWJQ.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/ObjectiveC-BUX87HYII54NYHZVP55HJRL2E.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/MachO-61R772PYT2009HLO64I6C49Y7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/ObjectiveC-D0X739I4S3CTJXQ44OH7N5BLH.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/os_object-DXVLIP8ZRUZH9Q1ASFTARUWRT.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/simd-CH1FCJQDWH3I82R3QGSTHLXET.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/os_object-BTT5W7JA8SP4BZHBL088A4BHY.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/os_workgroup-2K222XGTLZB5NRB8FN2ZTIMWT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/os_workgroup-7Q2X8T3EBZYXFTASKCSMP3WIO.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Dispatch-AUQ9A7X5B1VD1YCMKB0OFMECT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Dispatch-9H5TVERFT73E4PNKWN13UGU5B.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/XPC-6HZP7JESKZJ1LDB84R6TQSOPI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/XPC-4Y8TM2W9ZDG2YHSZXA3GE2GOX.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/os-AZ4BSWVH2097K4XRBIYFK8G2L.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreFoundation-AHYUAE303M0GHP6LF1GT3W0BG.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/dnssd-56Q420LSMBKM89RXFSHL5LCD2.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CFNetwork-CVKRSH9O36BEXRJFZVMFPC8EU.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreAudioTypes-87R52BODOR4IQHO7F1DPN2F9N.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Security-CS3AJE4S2AW0T7M064EQA2QM0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Spatial-8M6W6AAUCG95WPLCC398RMVGZ.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreAudio-3JGAXG3KN4GCU8FGQ42JOH568.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Foundation-EFV415QZ29U51JCCGWWU5QQTC.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreGraphics-840832MNTC85DOM75V0AQ9F3W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/dnssd-5T1W4064THIMNF982OKOBG3FE.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/MachO-554T6BDLU172GXT164GRO9OV1.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreText-1GLCHLK7ET66Y5BBWO85T8VBL.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/ImageIO-CKACY1AZ34K5V9GRLIYIQEBCW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/os-6U0414UZ8G3QCKS41OW98539I.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Spatial-1VKFZ3Z5YZGKY20JB0V5OAM2M.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreFoundation-1MDQE5R8VWE55RAL8MVB7KCIX.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/UIUtilities-D0FMA0D4VRBJIVZSG1NL6XM9C.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/FileProvider-8VFPLH5SU9IU63Z1M1L8L7EQ9.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreGraphics-DFZ4FNIQ0KJI039KAB6QPVFUR.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/OpenGLES-9JOS7TWHLW3TN2USB6VYP7RPF.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/DataDetection-BF3MR3PMKKMBQJXXJPJKMSCOU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CFNetwork-5ZV1ULCHNEVQ2LWTRLBB7DAUF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreText-KBZFF20NH7Y55SPAA5Y1U63J.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/ImageIO-64FJSQR8Y5SDV3RBEUW7MD3IP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Security-CIEGLLETV688B4HEGZR0KBNRT.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/UserNotifications-CTD3Q53G9F9ZRTO3KPOAUOG8J.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_LocationEssentials-2HCTH5HTS0QEB3P0VKZH4VCFN.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Network-D2NP6N9ZTKK8BX6ODSIS2EE9.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Accessibility-2OW1FIY4ZT613N935N0MO1YT6.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/UniformTypeIdentifiers-DB9G2XLE8LIV1DSJ9FMDTWGRL.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreData-DDWPXCSU558LG32C1XVLRXRX9.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreMIDI-98L4PTDXY3OMA7MJ5UCBPV3L8.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreTransferable-DELHUVCF0S6B5XGPX0BV360FI.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/AVRouting-EJFDE4GINXHACDT0DT9J6KR93.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Symbols-UTXEFXXBJAN8TQ87H3ZMD5C8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Foundation-3GG71EM2JAP62VY7N42GKD6CR.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/AudioToolbox-1O47IAL4RCWEQFX7G3DY9XY2X.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreLocation-1JJD1V8SI5U4I7I8WZ9C8C6LJ.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/OSLog-6NBGXW3VLQWQC6RUX8QG6UF7W.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/IOSurface-EZX6S9SGC1MWIW2NL9G5C678W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreAudioTypes-CTIM9800NTDJ8JHR5R4UI2NE8.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Metal-AUJZRVJI0ZDXN7UWRRI7BCR2E.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreAudio-DH4GR1V3KSWXRE7JX7JX3QLCK.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreVideo-7XGTA7Q7XR6BZL0QVFOGBLMEJ.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreImage-2KEKA54XDBPBB0OGHNO1XA4TT.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/QuartzCore-8ETQIWMLHEH2N8Z9UQ6FB1XBE.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreMedia-C5LGBV7REBMU11B2QZ06E62ZI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Network-C07CM3DAD1K4P2MHAGHIIJF9N.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/SwiftUICore-44M4PZ6H75S0QCZIE1F91TMA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreData-F4ZL4LUXN4JA2ES9HS3RP9ZZ3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/OpenGLES-BJ8CK1H2CKKL0FRQ8DPU7VVGJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/AVRouting-884PPKOBMZDS6VU52AAIJP9EB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/FileProvider-9AKQWWCVX5V57TBNXYMPHAAXN.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Symbols-6XU5WWSC51X1GEDP4A8O9WGCJ.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/MediaToolbox-A11YF3LN0UK7UYHIAXUNOCB5W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/_LocationEssentials-2PXZHHER92YPXQ30ZGAQXX8AA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/DataDetection-9RCB7Z7QYNI3OOYGTZX8J4SR3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/UniformTypeIdentifiers-83ZQR6MK1OY9HYMFKVNI6L8EZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/UserNotifications-1BBB5FVL2WRR2LIL78WMHLXF4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/OSLog-CFRZCAE3DPVBD35DUABUPXN4K.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/UIKit-75MG3O1AOLXENBMXYEQ3B1CRS.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/AVFAudio-D5M0M0BZAJO88YH0I4DXSX6PD.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/UIUtilities-5D4KTWMBF93GN94GL6UJNUSSN.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Accessibility-B4ZTKC80D9IPK9JAZW7Z7Z7A8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreLocation-5K9OH3014NFC8F3MCLYFQARPW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreMIDI-DGLDKLCSUER30AXGRHTUZKEGG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreTransferable-BBQDY3NGWKSHKY2QHHBJFOGZX.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/AVFoundation-AFUS2323803OZG4DR1TS1YMDS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/IOSurface-71H7KE5UPM7VUZ9MF5ANZGCAL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/AudioToolbox-9W2DHJDZ5AUVNTM1HIJRK812B.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Metal-ADYFXG90R2JHN1QRGUPC6FQY5.pcm
+
+LinkAssetCatalog /Users/runner/work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-linkAssetCatalog --thinned /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned --thinned-dependencies /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist_thinned --unthinned /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/unthinned --unthinned-dependencies /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist_unthinned --output /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app --plist-output /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist
+note: Emplaced /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/AppIcon60x60@2x.png (in target 'FTR' from project 'FTR')
+note: Emplaced /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Assets.car (in target 'FTR' from project 'FTR')
+note: Emplaced /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/AppIcon76x76@2x~ipad.png (in target 'FTR' from project 'FTR')
+
+ProcessInfoPlistFile /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Info.plist /Users/runner/work/ftr-app/ftr-app/ios/Config/Info.plist (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-infoPlistUtility /Users/runner/work/ftr-app/ftr-app/ios/Config/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist -o /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Info.plist
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreVideo-16VIJM4GW1I7SSZ56AS1S1271.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/QuartzCore-3DPKDW8S1HV8C92N449QAJXMK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreImage-A0Q6BMIM9NZZL8UUR7W8OESFV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/CoreMedia-CU8F47NXWDFNZ43RR8JGVLW7H.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Photos-78NIEHYTE2KRP5YPRFSNGOIN5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/SwiftUICore-5HOMT0219YKJBZNX4SXD51WEU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/UIKit-7MJIS6ON2URSCCPZYR6O0C99J.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/MediaToolbox-JFRXXFYQ51RRO9JH33DXI9K1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/AVFAudio-8RTBGMS6YLXTKB4ES5DN2DDY3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/AVFoundation-52BFL82AY49TG7H4QCE1JYXIH.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/SwiftUI-6TSKX36PC5249JDNONWFAFRZ5.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/WebKit-D7032ELSXM11LU4K2MB9ZUZRZ.pcm
+
+SwiftExplicitDependencyGeneratePcm x86_64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/PhotosUI-64LV8NWHHKJH9QEK3T51KGB08.pcm
+
+SwiftEmitModule normal x86_64 Emitting\ module\ for\ FTR (in target 'FTR' from project 'FTR')
+EmitSwiftModule normal x86_64 (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 Compiling\ Models.swift,\ AccountView.swift,\ CartView.swift,\ DishSheet.swift,\ InboxView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/Models.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/AccountView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/CartView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/DishSheet.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/InboxView.swift (in target 'FTR' from project 'FTR')
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/Models.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/AccountView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/CartView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/DishSheet.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/InboxView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 Compiling\ KitchenView.swift,\ LiveDoseView.swift,\ MenuView.swift,\ OrdersView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/KitchenView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/LiveDoseView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/MenuView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/OrdersView.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/KitchenView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/LiveDoseView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/MenuView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/OrdersView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Photos-8BGP9H2EDW6LH88FAOW1ZRZC3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/WebKit-BOJIKTLEHJ2UK1V0V5JZRT6SK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/PhotosUI-A5UBWN0QMB8BXTWEHZHD1DH8C.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/SwiftUI-DLACQJPP63VJRD7J6PDS72OX2.pcm
+
+SwiftCompile normal x86_64 Compiling\ RootView.swift,\ SignInView.swift,\ WelcomeView.swift,\ GeneratedAssetSymbols.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/RootView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/SignInView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/WelcomeView.swift /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/RootView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/SignInView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/WelcomeView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ FTR (in target 'FTR' from project 'FTR')
+
+EmitSwiftModule normal arm64 (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftDriverJobDiscovery normal x86_64 Emitting module for FTR (in target 'FTR' from project 'FTR')
+
+SwiftDriver\ Compilation\ Requirements FTR normal x86_64 com.apple.xcode.tools.swift.compiler (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FTR -Onone -enforce-exclusivity\=checked @/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -target x86_64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/ftr-app/ftr-app/dd/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64 -c -j4 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator26.2-23C57-e244bd9a5feaf902f95f61bf06266e52.sdkstatcache -output-file-map /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources-normal/x86_64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/x86_64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR-Swift.h -working-directory /Users/runner/work/ftr-app/ftr-app/ios -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for FTR (in target 'FTR' from project 'FTR')
+
+SwiftDriver\ Compilation\ Requirements FTR normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FTR -Onone -enforce-exclusivity\=checked @/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/ftr-app/ftr-app/dd/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64 -c -j4 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator26.2-23C57-e244bd9a5feaf902f95f61bf06266e52.sdkstatcache -output-file-map /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-Swift.h -working-directory /Users/runner/work/ftr-app/ftr-app/ios -experimental-emit-module-separately -disable-cmo
+
+SwiftCompile normal arm64 Compiling\ KitchenView.swift,\ LiveDoseView.swift,\ MenuView.swift,\ OrdersView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/KitchenView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/LiveDoseView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/MenuView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/OrdersView.swift (in target 'FTR' from project 'FTR')
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/KitchenView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/LiveDoseView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/MenuView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/OrdersView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftMergeGeneratedHeaders /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/FTR-Swift.h /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-Swift.h /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR-Swift.h (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-swiftHeaderTool -arch arm64 /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-Swift.h -arch x86_64 /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR-Swift.h -o /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/FTR-Swift.h
+
+SwiftDriverJobDiscovery normal x86_64 Compiling RootView.swift, SignInView.swift, WelcomeView.swift, GeneratedAssetSymbols.swift (in target 'FTR' from project 'FTR')
+
+Copy /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/x86_64-apple-ios-simulator.swiftmodule /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.swiftmodule (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.swiftmodule /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/x86_64-apple-ios-simulator.swiftmodule
+
+Copy /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/x86_64-apple-ios-simulator.swiftdoc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.swiftdoc (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.swiftdoc /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/x86_64-apple-ios-simulator.swiftdoc
+
+Copy /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/x86_64-apple-ios-simulator.abi.json /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.abi.json (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.abi.json /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/x86_64-apple-ios-simulator.abi.json
+
+Copy /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.swiftmodule /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.swiftdoc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftdoc (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftdoc /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.abi.json /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.abi.json (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.abi.json /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/Project/x86_64-apple-ios-simulator.swiftsourceinfo /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.swiftsourceinfo (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.swiftsourceinfo /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/Project/x86_64-apple-ios-simulator.swiftsourceinfo
+
+Copy /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftsourceinfo (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftsourceinfo /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+SwiftCompile normal arm64 Compiling\ FTRApp.swift,\ Theme.swift,\ TiffinProgress.swift,\ APIClient.swift,\ AppModel.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/App/FTRApp.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Components/Theme.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Components/TiffinProgress.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/APIClient.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/AppModel.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/App/FTRApp.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+/Users/runner/work/ftr-app/ftr-app/ios/FTR/App/FTRApp.swift:62:25: warning: result of call to 'run(resultType:body:)' is unused
+        await MainActor.run { Task { await self.model?.refreshAccountData() } }
+                        ^   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Components/Theme.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Components/TiffinProgress.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/APIClient.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/AppModel.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftDriverJobDiscovery normal x86_64 Compiling KitchenView.swift, LiveDoseView.swift, MenuView.swift, OrdersView.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 Compiling\ Models.swift,\ AccountView.swift,\ CartView.swift,\ DishSheet.swift,\ InboxView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/Models.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/AccountView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/CartView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/DishSheet.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/InboxView.swift (in target 'FTR' from project 'FTR')
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/Models.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/AccountView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/CartView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/DishSheet.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/InboxView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 Compiling\ FTRApp.swift,\ Theme.swift,\ TiffinProgress.swift,\ APIClient.swift,\ AppModel.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/App/FTRApp.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Components/Theme.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Components/TiffinProgress.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/APIClient.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/AppModel.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/App/FTRApp.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+/Users/runner/work/ftr-app/ftr-app/ios/FTR/App/FTRApp.swift:62:25: warning: result of call to 'run(resultType:body:)' is unused
+        await MainActor.run { Task { await self.model?.refreshAccountData() } }
+                        ^   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Components/Theme.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Components/TiffinProgress.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/APIClient.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal x86_64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Core/AppModel.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftDriverJobDiscovery normal x86_64 Compiling Models.swift, AccountView.swift, CartView.swift, DishSheet.swift, InboxView.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 Compiling\ RootView.swift,\ SignInView.swift,\ WelcomeView.swift,\ GeneratedAssetSymbols.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/RootView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/SignInView.swift /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/WelcomeView.swift /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/RootView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/SignInView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/ios/FTR/Views/WelcomeView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    
+
+SwiftDriverJobDiscovery normal x86_64 Compiling FTRApp.swift, Theme.swift, TiffinProgress.swift, APIClient.swift, AppModel.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriverJobDiscovery normal arm64 Compiling FTRApp.swift, Theme.swift, TiffinProgress.swift, APIClient.swift, AppModel.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriver\ Compilation FTR normal x86_64 com.apple.xcode.tools.swift.compiler (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-Swift-Compilation -- /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FTR -Onone -enforce-exclusivity\=checked @/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -target x86_64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/ftr-app/ftr-app/dd/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64 -c -j4 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator26.2-23C57-e244bd9a5feaf902f95f61bf06266e52.sdkstatcache -output-file-map /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources-normal/x86_64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/x86_64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR-Swift.h -working-directory /Users/runner/work/ftr-app/ftr-app/ios -experimental-emit-module-separately -disable-cmo
+
+Ld /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/Binary/FTR.debug.dylib normal x86_64 (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target x86_64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -O0 -L/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -filelist /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.LinkFileList -install_name @rpath/FTR.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/Frameworks -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.swiftmodule @/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR-linker-args.resp -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -o /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/Binary/FTR.debug.dylib
+
+ConstructStubExecutorLinkFileList /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-ExecutorLinkFileList-normal-x86_64.txt (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    construct-stub-executor-link-file-list /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/Binary/FTR.debug.dylib /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-ExecutorLinkFileList-normal-x86_64.txt
+note: Using stub executor library with Swift entry point. (in target 'FTR' from project 'FTR')
+
+Ld /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/Binary/FTR normal x86_64 (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target x86_64-apple-ios17.0-simulator -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -O0 -L/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibPath-normal-x86_64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibInstallName-normal-x86_64.txt -Xlinker -filelist -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-ExecutorLinkFileList-normal-x86_64.txt /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/Binary/FTR.debug.dylib -o /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/Binary/FTR
+
+SwiftDriverJobDiscovery normal arm64 Compiling KitchenView.swift, LiveDoseView.swift, MenuView.swift, OrdersView.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriverJobDiscovery normal arm64 Compiling RootView.swift, SignInView.swift, WelcomeView.swift, GeneratedAssetSymbols.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriverJobDiscovery normal arm64 Compiling Models.swift, AccountView.swift, CartView.swift, DishSheet.swift, InboxView.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriver\ Compilation FTR normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-Swift-Compilation -- /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FTR -Onone -enforce-exclusivity\=checked @/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/ftr-app/ftr-app/dd/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64 -c -j4 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator26.2-23C57-e244bd9a5feaf902f95f61bf06266e52.sdkstatcache -output-file-map /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/ftr-app/ftr-app/dd/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-Swift.h -working-directory /Users/runner/work/ftr-app/ftr-app/ios -experimental-emit-module-separately -disable-cmo
+
+Ld /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/Binary/FTR.debug.dylib normal arm64 (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -O0 -L/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -filelist /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.LinkFileList -install_name @rpath/FTR.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/Frameworks -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule @/Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-linker-args.resp -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -o /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/Binary/FTR.debug.dylib
+
+CreateUniversalBinary /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR.debug.dylib normal arm64\ x86_64 (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo -create /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/Binary/FTR.debug.dylib /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/Binary/FTR.debug.dylib -output /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR.debug.dylib
+
+ConstructStubExecutorLinkFileList /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-ExecutorLinkFileList-normal-arm64.txt (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    construct-stub-executor-link-file-list /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/Binary/FTR.debug.dylib /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'FTR' from project 'FTR')
+
+Ld /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/Binary/FTR normal arm64 (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -isysroot /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -O0 -L/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F/Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-ExecutorLinkFileList-normal-arm64.txt /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/Binary/FTR.debug.dylib -o /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/Binary/FTR
+
+CreateUniversalBinary /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR normal arm64\ x86_64 (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo -create /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/Binary/FTR /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/Binary/FTR -output /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR
+
+ExtractAppIntentsMetadata (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name FTR --sdk-root /Applications/Xcode_26.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk --xcode-version 17C529 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.franklintiffinroom.app --output /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app --target-triple arm64-apple-ios17.0-simulator --target-triple x86_64-apple-ios17.0-simulator --binary-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR --dependency-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_dependency_info.dat --dependency-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR_dependency_info.dat --stringsdata-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --stringsdata-file /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList --source-file-list /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.SwiftFileList --metadata-file-list /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftConstValuesFileList --swift-const-vals-list /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/x86_64/FTR.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-11-06 19:55:39.913 appintentsmetadataprocessor[4154:15201] Starting appintentsmetadataprocessor export
+2026-11-06 19:55:39.926 appintentsmetadataprocessor[4154:15201] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+CopySwiftLibs /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR.debug.dylib --scan-folder /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Frameworks --scan-folder /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/PlugIns --scan-folder /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/SystemExtensions --scan-folder /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+Ignoring --strip-bitcode because --sign was not passed
+
+AppIntentsSSUTraining (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /Applications/Xcode_26.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Info.plist --temp-dir-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/ssu --bundle-id com.franklintiffinroom.app --product-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app --extracted-metadata-path /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Metadata.appintents --metadata-file-list /Users/runner/work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyMetadataFileList --archive-ssu-assets
+2026-11-06 19:55:40.009 appintentsnltrainingprocessor[4156:15210] Parsing options for appintentsnltrainingprocessor
+2026-11-06 19:55:40.012 appintentsnltrainingprocessor[4156:15210] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-RegisterExecutionPolicyException /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+Validate /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    builtin-validationUtility /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app (in target 'FTR' from project 'FTR')
+    cd /Users/runner/work/ftr-app/ftr-app/ios
+    /usr/bin/touch -c /Users/runner/work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+** BUILD SUCCEEDED **
+
