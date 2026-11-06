@@ -279,8 +279,8 @@ async function sendWelcome(to, greet = true) {
   if (greet) {
     const profile = customerStore.get(to);
     hello = profile?.firstName
-      ? `Welcome back to ${menu.settings.businessName}, ${profile.firstName}!\n\n`
-      : `Welcome to ${menu.settings.businessName}!\n\n`;
+      ? `🙏 Namaste, ${profile.firstName}! Welcome back to ${menu.settings.businessName}.\n\n`
+      : `🙏 Namaste, welcome to ${menu.settings.businessName}!\n\n`;
     // First time on WhatsApp but Chef already loaded their earlier orders.
     if (profile && !profile.botSeenAt) {
       const past = require("./orderDb").all().filter((o) => o.customerPhone === to && o.source === "past");
@@ -1849,7 +1849,7 @@ async function checkTypedAddress(from, session, menu, text) {
  * anything else. Returns true if it handled the message.
  */
 const NAME_PROMPT =
-  "Welcome to Franklin Tiffin Room! Before we start, what's your first and last name?";
+  "🙏 Namaste, welcome to Franklin Tiffin Room! Before we start, what's your first and last name?";
 
 async function handleNameCapture(from, isText, text) {
   const profile = customerStore.get(from);
