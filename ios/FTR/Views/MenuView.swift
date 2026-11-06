@@ -50,8 +50,15 @@ struct HomeView: View {
                     Button { showLiveDose = true } label: {
                         VStack(alignment: .leading, spacing: 0) {
                             ZStack(alignment: .topLeading) {
-                                Palette.photo
-                                DoseGlyph().frame(width: 110, height: 110).frame(maxWidth: .infinity, maxHeight: .infinity)
+                                Color.clear
+                                    .aspectRatio(4.0 / 3.0, contentMode: .fit)
+                                    .overlay(
+                                        Image("FlagshipDose")
+                                            .resizable()
+                                            .scaledToFill()
+                                            .accessibilityLabel("Chef cooking Mysore Masala Dose on the griddle at a party")
+                                    )
+                                    .clipped()
                                 Text("OUR FLAGSHIP")
                                     .font(Typeface.body(11, weight: .bold, relativeTo: .caption))
                                     .kerning(0.8)
@@ -60,7 +67,6 @@ struct HomeView: View {
                                     .background(Palette.turmericSoft, in: Capsule())
                                     .padding(12)
                             }
-                            .frame(height: 150)
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("THE OG MYSORE MASALA DOSE")
                                     .font(Typeface.display(28, relativeTo: .title))

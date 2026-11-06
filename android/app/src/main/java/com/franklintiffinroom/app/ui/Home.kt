@@ -57,6 +57,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.franklintiffinroom.app.R
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.Image
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -138,8 +143,11 @@ fun HomeScreen(model: AppModel, nav: Nav) {
                 Modifier.fillMaxWidth().card(P.surface, P.line, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp))
                     .clickable(enabled = lds != null) { showLiveDose = true },
             ) {
-                Box(Modifier.fillMaxWidth().height(150.dp).background(P.photo)) {
-                    DoseGlyph(Modifier.size(110.dp).align(Alignment.Center))
+                Box(Modifier.fillMaxWidth().aspectRatio(4f / 3f).background(P.photo)) {
+                    Image(
+                        painterResource(R.drawable.flagship_dose), "Chef cooking Mysore Masala Dose on the griddle at a party",
+                        Modifier.fillMaxSize(), contentScale = ContentScale.Crop,
+                    )
                     Text("OUR FLAGSHIP", style = Type.bold(11.0).copy(letterSpacing = 0.8.sp), color = P.turmericInk,
                         modifier = Modifier.padding(12.dp).background(P.turmericSoft, RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 5.dp))
                 }
