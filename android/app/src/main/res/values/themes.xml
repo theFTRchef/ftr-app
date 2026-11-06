@@ -10,5 +10,5 @@
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
         <item name="postSplashScreenTheme">@style/Theme.FTR</item>
     </style>
-    <color name="ftr_bg">#FFFBF3</color>
+    <color name="ftr_bg">#F7F1E8</color>
 </resources>

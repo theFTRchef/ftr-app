@@ -57,6 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -79,35 +80,6 @@ import com.franklintiffinroom.app.core.OpenDate
 import com.franklintiffinroom.app.core.PreorderDay
 import com.franklintiffinroom.app.core.Qty
 import com.franklintiffinroom.app.core.Tab
-
-// MARK: welcome
-
-@Composable
-fun WelcomeScreen(model: AppModel, enter: () -> Unit) {
-    // No connection yet (phone just woke up, weak signal): keep trying quietly.
-    LaunchedEffect(model.loadError, model.config) {
-        while (model.config == null && model.loadError != null) {
-            kotlinx.coroutines.delay(5000)
-            model.loadMenu()
-        }
-    }
-    Column(Modifier.fillMaxSize().padding(horizontal = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.weight(1f))
-        FtrLogo(46)
-        Spacer(Modifier.height(22.dp))
-        Text("Bringing back the OG flavor of Masala Dose", style = Type.tagline(20), color = P.red, textAlign = TextAlign.Center)
-        Spacer(Modifier.weight(1f))
-        val err = model.loadError
-        if (err != null && model.config == null) {
-            Text(err, style = Type.body(15.0), color = P.muted, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(12.dp))
-            SecondaryButton("Try again", Modifier.padding(horizontal = 12.dp)) { model.reloadMenu() }
-        } else {
-            PrimaryButton("Enter FTR", Modifier.padding(horizontal = 12.dp), enabled = model.config != null, busy = model.config == null, onClick = enter)
-        }
-        Spacer(Modifier.height(56.dp))
-    }
-}
 
 // MARK: home
 
@@ -159,40 +131,43 @@ fun HomeScreen(model: AppModel, nav: Nav) {
         bottomBar = { if (!model.cart.isEmpty) CartBar(model) { showCart = true } },
     ) { pad ->
         RefreshColumn(pad, onRefresh = { model.loadMenu() }, spacing = 18) {
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                FtrLogo(30)
-                Text("Multi Cuisine Personal Chef in Somerset, NJ", style = Type.tagline(15), color = P.ink)
-                VegMark()
-            }
+            FtrHeader()
 
-            // Flagship first, full width - as on every flyer.
-            Row(
-                Modifier.fillMaxWidth().background(P.turmeric, RoundedCornerShape(20.dp)).border(2.dp, P.goldLine, RoundedCornerShape(20.dp))
-                    .clickable(enabled = lds != null) { showLiveDose = true }.padding(18.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            // Flagship first, full width.
+            Column(
+                Modifier.fillMaxWidth().card(P.surface, P.line, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp))
+                    .clickable(enabled = lds != null) { showLiveDose = true },
             ) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("OUR FLAGSHIP", style = Type.bold(13.0).copy(letterSpacing = 1.2.sp), color = P.red)
-                    Text("Live Dose", style = Type.display(26), color = Color(0xFF1E3A27))
-                    Text(if (lds?.open == false) "No LIVE Dose dates open right now" else "Live on-site Masala Dose at your event", style = Type.body(14.0), color = Color(0xFF1E3A27))
+                Box(Modifier.fillMaxWidth().height(150.dp).background(P.photo)) {
+                    DoseGlyph(Modifier.size(110.dp).align(Alignment.Center))
+                    Text("OUR FLAGSHIP", style = Type.bold(11.0).copy(letterSpacing = 0.8.sp), color = P.turmericInk,
+                        modifier = Modifier.padding(12.dp).background(P.turmericSoft, RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 5.dp))
                 }
-                DoseGlyph(Modifier.size(58.dp))
+                Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("THE OG MYSORE MASALA DOSE", style = Type.display(28), color = P.ink)
+                    Text(if (lds?.open == false) "No LIVE Dose dates open right now" else "Cooked live at your party by Chef's crew. 100% vegetarian.", style = Type.body(14.0), color = P.muted)
+                    Text("Book the LIVE Dose Station", style = Type.bold(14.0), color = P.leafInk,
+                        modifier = Modifier.padding(top = 4.dp).background(P.leaf, RoundedCornerShape(50)).padding(horizontal = 18.dp, vertical = 12.dp))
+                }
             }
 
             if (dib != null) {
                 Row(
-                    Modifier.fillMaxWidth().background(P.forest, RoundedCornerShape(20.dp)).border(2.dp, P.goldLine, RoundedCornerShape(20.dp))
-                        .clickable { nav.push(Screen.Category(dib.id)) }.padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    Modifier.fillMaxWidth().background(P.surface2, RoundedCornerShape(22.dp)).clip(RoundedCornerShape(22.dp))
+                        .clickable { nav.push(Screen.Category(dib.id)) }.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("TAKE-HOME FLAGSHIP", style = Type.bold(13.0).copy(letterSpacing = 1.2.sp), color = P.turmeric)
-                        Text(dib.title, style = Type.display(26), color = P.cream)
-                        val sub = if (dib.items.isEmpty()) "Take-home Masala Dose kit for 4 · coming soon"
-                        else dib.preorder?.next?.let { "Order by ${it.orderByLabel} · pickup ${it.pickupLabel}" } ?: "Take-home kit for 4 · next pickup day coming soon"
-                        Text(sub, style = Type.body(14.0), color = P.cream.copy(alpha = 0.9f))
+                    Box(Modifier.size(86.dp).background(P.photo, RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Inventory2, null, tint = P.muted, modifier = Modifier.size(30.dp))
                     }
-                    Icon(Icons.Filled.Inventory2, null, tint = P.turmeric, modifier = Modifier.size(40.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("TAKE-HOME · SERVES 4", style = Type.bold(11.0).copy(letterSpacing = 1.sp), color = P.red)
+                        Text(dib.title.uppercase(), style = Type.display(22), color = P.ink)
+                        val sub = if (dib.items.isEmpty()) "Take-home Masala Dose kit · coming soon"
+                        else dib.preorder?.next?.let { "Order by ${it.orderByLabel} · pickup ${it.pickupLabel}" } ?: "Next pickup day coming soon"
+                        Text(sub, style = Type.body(13.0), color = P.muted)
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = P.ink)
                 }
             }
 
@@ -238,9 +213,9 @@ fun HomeTile(title: String, subtitle: String, icon: ImageVector, modifier: Modif
             .clickable(onClick = onClick).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(icon, null, tint = if (soon) P.muted else P.red, modifier = Modifier.size(26.dp))
+        Icon(icon, null, tint = if (soon) P.muted else P.red, modifier = Modifier.size(24.dp))
         Spacer(Modifier.weight(1f))
-        Text(title, style = Type.display(18), color = if (soon) P.muted else P.ink)
+        Text(title.uppercase(), style = Type.display(16), color = if (soon) P.muted else P.ink)
         Text(subtitle, style = if (soon) Type.semi(13.0) else Type.body(13.0), color = if (soon) P.turmericInk else P.muted)
     }
 }
@@ -250,7 +225,7 @@ fun CartBar(model: AppModel, open: () -> Unit) {
     BottomBar {
         val label = if (model.cart.isLiveDose) "LIVE Dose Station" else "${model.cart.count} dish${if (model.cart.count == 1) "" else "es"}"
         androidx.compose.material3.Button(
-            onClick = open, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(14.dp),
+            onClick = open, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(50),
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = P.leaf, contentColor = P.leafInk),
         ) {
             Text(label, style = Type.bold(17.0))
@@ -438,14 +413,16 @@ fun AvailabilityScreen(nav: Nav) {
     }
 }
 
-/** A simple drawn dose: a golden crêpe folded on a forest-green plate. */
+/** A simple drawn dose: a golden crêpe on a beige plate (stand-in until Chef adds photos). */
 @Composable
 fun DoseGlyph(modifier: Modifier = Modifier) {
-    val forest = P.forest
+    val plate = P.beige
+    val rim = P.goldLine
     Canvas(modifier.clearAndSetSemantics { }) {
         val w = size.width
         val h = size.height
-        drawOval(forest, topLeft = Offset(0f, h * 0.18f), size = Size(w, h * 0.72f))
+        drawOval(plate, topLeft = Offset(0f, h * 0.18f), size = Size(w, h * 0.72f))
+        drawOval(rim, topLeft = Offset(1f, h * 0.18f + 1f), size = Size(w - 2f, h * 0.72f - 2f), style = Stroke(width = 1.5.dp.toPx()))
         val cone = Path().apply {
             moveTo(w * 0.12f, h * 0.56f)
             quadraticTo(w * 0.5f, h * 0.08f, w * 0.9f, h * 0.36f)
