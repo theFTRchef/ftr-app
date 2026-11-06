@@ -514,6 +514,9 @@ app.get("/calendar.png", (req, res) => {
 
 app.get("/healthz", (req, res) => res.status(200).send("ok"));
 
+// Public: one "get the app" link for flyers and QR codes.
+require("./appLink").register(app);
+
 const port = process.env.PORT || 3000;
 payments.startSweeper();
 // Bring the Google Sheet "Customers" tab up to date at start-up.
