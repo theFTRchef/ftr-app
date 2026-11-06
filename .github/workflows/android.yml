@@ -48,4 +48,27 @@ jobs:
           path: |
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/mapping/release/mapping.txt
           if-no-files-found: error
+
+      # Sends the new build straight to Play Console → Internal testing.
+      # Needs the PLAY_SERVICE_ACCOUNT_JSON secret (a Google Cloud service account
+      # invited to Play Console with release permission). Skipped until it's added.
+      - name: Check for the Play upload key
+        id: play
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -n "$PLAY_JSON" ]; then echo "ready=true" >> "$GITHUB_OUTPUT"; else echo "::notice::PLAY_SERVICE_ACCOUNT_JSON not set - download the .aab and upload it to Play Console by hand."; fi
+
+      - name: Upload to Google Play internal testing
+        if: steps.play.outputs.ready == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.franklintiffinroom.app
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          mappingFile: android/app/build/outputs/mapping/release/mapping.txt
+          track: internal
+          status: completed
+          releaseName: "Build ${{ github.run_number }}"
