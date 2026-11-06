@@ -103,6 +103,7 @@ object Api {
         val (status, text) = try {
             client.newCall(req).await().use { r -> r.code to (r.body?.string() ?: "") }
         } catch (e: IOException) {
+            android.util.Log.w("FTR", "Network error for $method $path", e)
             throw ApiError.offline()
         }
         if (status !in 200..299) {

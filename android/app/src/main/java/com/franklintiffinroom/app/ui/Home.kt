@@ -84,6 +84,13 @@ import com.franklintiffinroom.app.core.Tab
 
 @Composable
 fun WelcomeScreen(model: AppModel, enter: () -> Unit) {
+    // No connection yet (phone just woke up, weak signal): keep trying quietly.
+    LaunchedEffect(model.loadError, model.config) {
+        while (model.config == null && model.loadError != null) {
+            kotlinx.coroutines.delay(5000)
+            model.loadMenu()
+        }
+    }
     Column(Modifier.fillMaxSize().padding(horizontal = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.weight(1f))
         FtrLogo(46)
