@@ -7,14 +7,15 @@
 	<string>$(FTR_API_BASE_URL)</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Fraunces-Bold.ttf</string>
-		<string>Fraunces-SemiBoldItalic.ttf</string>
+		<string>Oswald-Medium.ttf</string>
+		<string>Archivo-Regular.ttf</string>
+		<string>Archivo-Medium.ttf</string>
+		<string>Archivo-SemiBold.ttf</string>
+		<string>Fraunces-MediumItalic.ttf</string>
+		<string>RobotoSlab-Bold.ttf</string>
+		<string>RobotoSlab-ExtraBold.ttf</string>
 		<string>JosefinSans-SemiBold.ttf</string>
 		<string>JosefinSans-Bold.ttf</string>
-		<string>Outfit-Regular.ttf</string>
-		<string>Outfit-Medium.ttf</string>
-		<string>Outfit-SemiBold.ttf</string>
-		<string>Outfit-Bold.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

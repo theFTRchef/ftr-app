@@ -1,46 +1,5 @@
 import SwiftUI
 
-// MARK: - Welcome
-
-/// The first screen: logo, slogan and one button into FTR.
-struct WelcomeView: View {
-    @Environment(AppModel.self) private var model
-    let enter: () -> Void
-
-    var body: some View {
-        VStack(spacing: 22) {
-            Spacer()
-            FTRLogo(size: 46)
-            Text("Bringing back the OG flavor of Masala Dose")
-                .font(Typeface.tagline(20))
-                .foregroundStyle(Palette.red)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 28)
-            Spacer()
-            if let err = model.loadError, model.config == nil {
-                Text(err)
-                    .font(Typeface.body(15))
-                    .foregroundStyle(Palette.muted)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-                Button("Try again") { Task { await model.loadMenu() } }
-                    .buttonStyle(SecondaryButtonStyle())
-                    .padding(.horizontal, 40)
-            } else {
-                Button(action: enter) {
-                    if model.config == nil { ProgressView().tint(Palette.leafInk) } else { Text("Enter FTR") }
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .disabled(model.config == nil)
-                .padding(.horizontal, 40)
-            }
-            Spacer().frame(height: 40)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .screenBackground()
-    }
-}
-
 // MARK: - Home
 
 /// The home screen: one tile for each thing a customer can do.
@@ -81,30 +40,50 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    VStack(spacing: 6) {
-                        FTRLogo(size: 30)
-                        Text("Multi Cuisine Personal Chef in Somerset, NJ")
-                            .font(Typeface.tagline(15)).foregroundStyle(Palette.ink)
-                        VegMark().foregroundStyle(Palette.ink)
+                    HStack {
+                        FTRHeader()
+                        Spacer(minLength: 0)
                     }
-                    .padding(.top, 6)
+                    .padding(.top, 2)
 
-                    // Flagship first, full width - as on every flyer.
+                    // Flagship first, full width.
                     Button { showLiveDose = true } label: {
-                        HStack(spacing: 14) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Our flagship").font(Typeface.body(13, weight: .bold)).kerning(1.2).foregroundStyle(Palette.red)
-                                Text("Live Dose").font(Typeface.display(26, relativeTo: .title2))
-                                Text(lds?.open == false ? "No LIVE Dose dates open right now" : "Live on-site Masala Dose at your event")
-                                    .font(Typeface.body(14))
+                        VStack(alignment: .leading, spacing: 0) {
+                            ZStack(alignment: .topLeading) {
+                                Palette.photo
+                                DoseGlyph().frame(width: 110, height: 110).frame(maxWidth: .infinity, maxHeight: .infinity)
+                                Text("OUR FLAGSHIP")
+                                    .font(Typeface.body(11, weight: .bold, relativeTo: .caption))
+                                    .kerning(0.8)
+                                    .foregroundStyle(Palette.turmericInk)
+                                    .padding(.horizontal, 10).padding(.vertical, 5)
+                                    .background(Palette.turmericSoft, in: Capsule())
+                                    .padding(12)
                             }
-                            Spacer(minLength: 0)
-                            DoseGlyph().frame(width: 58, height: 58)
+                            .frame(height: 150)
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("THE OG MYSORE MASALA DOSE")
+                                    .font(Typeface.display(28, relativeTo: .title))
+                                    .foregroundStyle(Palette.ink)
+                                    .multilineTextAlignment(.leading)
+                                Text(lds?.open == false ? "No LIVE Dose dates open right now" : "Cooked live at your party by Chef's crew. 100% vegetarian.")
+                                    .font(Typeface.body(14))
+                                    .foregroundStyle(Palette.muted)
+                                    .multilineTextAlignment(.leading)
+                                Text("Book the LIVE Dose Station")
+                                    .font(Typeface.body(14, weight: .bold))
+                                    .foregroundStyle(Palette.leafInk)
+                                    .padding(.horizontal, 18).padding(.vertical, 12)
+                                    .background(Palette.leaf, in: Capsule())
+                                    .padding(.top, 4)
+                            }
+                            .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 18)
                         }
-                        .foregroundStyle(Color(UIColor(hex: 0x1E3A27)))
-                        .padding(18)
-                        .background(Palette.turmeric, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Palette.goldLine, lineWidth: 2))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Palette.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.line))
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .disabled(lds == nil)
@@ -112,19 +91,25 @@ struct HomeView: View {
                     if let dib {
                         NavigationLink(value: Route.section(dib.id)) {
                             HStack(spacing: 14) {
+                                ZStack {
+                                    Palette.photo
+                                    Image(systemName: "shippingbox").font(.system(size: 28, weight: .light)).foregroundStyle(Palette.muted)
+                                }
+                                .frame(width: 86, height: 86)
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Take-home flagship").font(Typeface.body(13, weight: .bold)).kerning(1.2).foregroundStyle(Palette.turmeric)
-                                    Text(dib.title).font(Typeface.display(26, relativeTo: .title2)).foregroundStyle(Palette.cream)
-                                    Text(dib.items.isEmpty ? "Take-home Masala Dose kit for 4 · coming soon" : dib.preorder?.next.map { "Order by \($0.orderByLabel) · pickup \($0.pickupLabel)" } ?? "Take-home kit for 4 · next pickup day coming soon")
-                                        .font(Typeface.body(14)).foregroundStyle(Palette.cream.opacity(0.9))
+                                    Text("TAKE-HOME · SERVES 4").font(Typeface.body(11, weight: .bold, relativeTo: .caption)).kerning(1).foregroundStyle(Palette.red)
+                                    Text(dib.title.uppercased()).font(Typeface.display(22, relativeTo: .title2)).foregroundStyle(Palette.ink)
+                                    Text(dib.items.isEmpty ? "Take-home Masala Dose kit · coming soon" : dib.preorder?.next.map { "Order by \($0.orderByLabel) · pickup \($0.pickupLabel)" } ?? "Next pickup day coming soon")
+                                        .font(Typeface.body(13)).foregroundStyle(Palette.muted)
                                         .multilineTextAlignment(.leading)
                                 }
                                 Spacer(minLength: 0)
-                                Image(systemName: "shippingbox.fill").font(.system(size: 36)).foregroundStyle(Palette.turmeric)
+                                Image(systemName: "chevron.right").font(.system(size: 15, weight: .medium)).foregroundStyle(Palette.ink)
                             }
-                            .padding(18)
-                            .background(Palette.forest, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Palette.goldLine, lineWidth: 2))
+                            .padding(12)
+                            .background(Palette.surface2, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
@@ -212,11 +197,11 @@ struct HomeTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 22, weight: .semibold))
+                .font(.system(size: 21, weight: .regular))
                 .foregroundStyle(soon ? Palette.muted : Palette.red)
             Spacer(minLength: 0)
-            Text(title)
-                .font(Typeface.display(18, relativeTo: .headline))
+            Text(title.uppercased())
+                .font(Typeface.display(16, relativeTo: .headline))
                 .foregroundStyle(soon ? Palette.muted : Palette.ink)
                 .multilineTextAlignment(.leading)
             Text(subtitle)
@@ -600,12 +585,13 @@ struct DishRow: View {
     }
 }
 
-/// A simple drawn dose: a golden crêpe folded on a leaf-green plate.
+/// A simple drawn dose: a golden crêpe folded on a beige plate (stand-in until Chef adds photos).
 struct DoseGlyph: View {
     var body: some View {
         Canvas { ctx, size in
             let w = size.width, h = size.height
-            ctx.fill(Path(ellipseIn: CGRect(x: 0, y: h * 0.18, width: w, height: h * 0.72)), with: .color(Palette.forest))
+            ctx.fill(Path(ellipseIn: CGRect(x: 0, y: h * 0.18, width: w, height: h * 0.72)), with: .color(Palette.beige))
+            ctx.stroke(Path(ellipseIn: CGRect(x: 1, y: h * 0.18 + 1, width: w - 2, height: h * 0.72 - 2)), with: .color(Palette.goldLine), lineWidth: 1.5)
             var cone = Path()
             cone.move(to: CGPoint(x: w * 0.12, y: h * 0.56))
             cone.addQuadCurve(to: CGPoint(x: w * 0.9, y: h * 0.36), control: CGPoint(x: w * 0.5, y: h * 0.08))

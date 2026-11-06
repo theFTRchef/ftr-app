@@ -4,7 +4,8 @@ struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
     /// The welcome screen shows until the customer taps Enter FTR.
-    @State private var entered = false
+    /// (Screenshot runs pass -ftrSkipWelcome to land on Home.)
+    @State private var entered = ProcessInfo.processInfo.arguments.contains("-ftrSkipWelcome")
 
     var body: some View {
         @Bindable var model = model

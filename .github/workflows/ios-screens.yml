@@ -1,0 +1,57 @@
+name: iOS screens
+
+# Runs the app in the iPhone simulator against the live server and saves
+# screenshots of the welcome animation and Home (smoke test, run by hand).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  screens:
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Build for the simulator
+        run: |
+          xcodebuild build -project ios/FTR.xcodeproj -scheme FTR -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath dd \
+            CODE_SIGNING_ALLOWED=NO | tee build.log | grep -E "error:|\*\* BUILD" || true
+          grep -q "\*\* BUILD SUCCEEDED \*\*" build.log
+      - name: Run and take screenshots
+        run: |
+          set -x
+          mkdir -p shots
+          DEV=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for r in sorted(d, reverse=True) if 'iOS' in r for x in d[r] if x['name'].startswith('iPhone 16') or x['name'].startswith('iPhone 15')))")
+          xcrun simctl boot "$DEV"; xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl status_bar "$DEV" override --time 9:41 || true
+          APP=$(find dd/Build/Products -name "FTR.app" -maxdepth 3 | head -1)
+          xcrun simctl install "$DEV" "$APP"
+          BID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
+          sleep 5
+          xcrun simctl launch "$DEV" "$BID"
+          for t in 0.8 1.2 1.0 1.0 1.0 3; do sleep $t; xcrun simctl io "$DEV" screenshot "shots/welcome-$(date +%s%N | cut -c1-13).png"; done
+          xcrun simctl terminate "$DEV" "$BID"
+          xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome; sleep 8
+          xcrun simctl io "$DEV" screenshot shots/home.png
+          xcrun simctl ui "$DEV" appearance dark
+          xcrun simctl terminate "$DEV" "$BID"; xcrun simctl launch "$DEV" "$BID"; sleep 9
+          xcrun simctl io "$DEV" screenshot shots/welcome-dark.png
+          xcrun simctl terminate "$DEV" "$BID"; xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome; sleep 8
+          xcrun simctl io "$DEV" screenshot shots/home-dark.png
+      - name: Save the screenshots to the ci-screens-ios branch
+        if: always()
+        run: |
+          cp build.log shots/ || true
+          cd shots
+          git init -q -b ci-screens-ios
+          git config user.name "FTR CI"
+          git config user.email "ci@franklintiffinroom.com"
+          git add -A
+          git commit -qm "iOS screens run ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" ci-screens-ios
