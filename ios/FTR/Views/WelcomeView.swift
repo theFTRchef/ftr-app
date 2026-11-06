@@ -37,7 +37,7 @@ struct WelcomeView: View {
             VStack(spacing: 0) {
                 Spacer(minLength: 12)
                 VStack(spacing: 8) {
-                    LotusNamaste(tl: tl).frame(width: 92, height: 87)
+                    LotusNamaste(tl: tl).frame(width: 170, height: 152)
                     Text("Namaste")
                         .font(.custom("Fraunces-MediumItalic", size: 30, relativeTo: .largeTitle))
                         .foregroundStyle(Palette.ink)
@@ -128,7 +128,7 @@ struct WelcomeTimeline {
     var petalCenter: Double { p(3.4, 3.75) }
     var petalSide: Double { p(3.45, 3.9) }
     var petalOuter: Double { p(3.55, 4.05) }
-    var hands: Double { ease(3.85, 4.6) }
+    var hands: Double { p(3.5, 4.3) }
     var button: Double { p(4.5, 5.1) }
 }
 
@@ -161,16 +161,12 @@ struct AnimatedSeal: View {
     }
 }
 
-/// Folded hands drawn in gold, rising from a lotus whose petals open.
+/// Mehndi namaste hands (licensed from OlyvaDesign, Etsy order 4224628634)
+/// rising from a lotus whose petals open in front of the wrists.
 struct LotusNamaste: View {
     let tl: WelcomeTimeline
+    @Environment(\.colorScheme) private var scheme
 
-    private static let hands = [
-        "M32 6 C27 12 23 24 21 36 C20 44 21 50 24 56 L23 66",
-        "M32 6 C37 12 41 24 43 36 C44 44 43 50 40 56 L41 66",
-        "M32 9 V58",
-        "M30 40 C26 42 24 46 25 52 M34 40 C38 42 40 46 39 52",
-    ].map { SVGPath.parse($0) }
     private static let petalC = SVGPath.parse("M55 100 C47 90 47 78 55 68 C63 78 63 90 55 100 Z")
     private static let petalL = SVGPath.parse("M55 100 C40 98 30 88 28 76 C40 78 50 86 55 100 Z")
     private static let petalR = SVGPath.parse("M55 100 C70 98 80 88 82 76 C70 78 60 86 55 100 Z")
@@ -178,38 +174,44 @@ struct LotusNamaste: View {
     private static let petalRR = SVGPath.parse("M55 100 C74 102 92 96 100 86 C84 84 66 90 55 100 Z")
 
     var body: some View {
-        Canvas { ctx, size in
-            let k = min(size.width / 110, size.height / 104)
-            ctx.scaleBy(x: k, y: k)
-            let origin = CGPoint(x: 55, y: 100)
+        ZStack(alignment: .top) {
+            Image("NamasteHands")
+                .renderingMode(.template)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(width: 112, height: 131)
+                .foregroundStyle(scheme == .dark ? Palette.cream : Color.black)
+                .opacity(tl.hands)
+                .offset(y: (1 - tl.hands) * 10)
 
-            func petal(_ base: GraphicsContext, _ path: Path, _ color: UInt32, _ amount: Double, rotate: Double, scaleFrom: Double, alpha: Double) {
-                guard amount > 0 else { return }
-                var c = base
-                c.opacity = amount * alpha
-                c.translateBy(x: origin.x, y: origin.y)
-                c.rotate(by: .degrees(rotate * (1 - amount)))
-                let sc = scaleFrom + (1 - scaleFrom) * amount
-                c.scaleBy(x: sc, y: sc)
-                c.translateBy(x: -origin.x, y: -origin.y)
-                c.fill(path, with: .color(Color(UIColor(hex: color))))
-            }
-
-            petal(ctx, Self.petalLL, 0xA4483F, tl.petalOuter, rotate: 60, scaleFrom: 0.4, alpha: 0.75)
-            petal(ctx, Self.petalRR, 0xA4483F, tl.petalOuter, rotate: -60, scaleFrom: 0.4, alpha: 0.75)
-            petal(ctx, Self.petalL, 0xD9A99A, tl.petalSide, rotate: 40, scaleFrom: 0.4, alpha: 1)
-            petal(ctx, Self.petalR, 0xD9A99A, tl.petalSide, rotate: -40, scaleFrom: 0.4, alpha: 1)
-            petal(ctx, Self.petalC, 0xE7C9BD, tl.petalCenter, rotate: 0, scaleFrom: 0.2, alpha: 1)
-
-            if tl.hands > 0 {
-                var h = ctx
-                h.translateBy(x: 23, y: 0)
-                let style = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
-                for path in Self.hands {
-                    h.stroke(path.trimmedPath(from: 0, to: tl.hands), with: .color(Color(UIColor(hex: 0x9C7220))), style: style)
+            Canvas { ctx, size in
+                // Lotus drawn from its 98 x 40 box (6...104, 64...104).
+                let k = size.width / 98
+                ctx.scaleBy(x: k, y: k)
+                ctx.translateBy(x: -6, y: -64)
+                let origin = CGPoint(x: 55, y: 100)
+                func petal(_ base: GraphicsContext, _ path: Path, _ color: UInt32, _ amount: Double, rotate: Double, scaleFrom: Double, alpha: Double) {
+                    guard amount > 0 else { return }
+                    var c = base
+                    c.opacity = amount * alpha
+                    c.translateBy(x: origin.x, y: origin.y)
+                    c.rotate(by: .degrees(rotate * (1 - amount)))
+                    let sc = scaleFrom + (1 - scaleFrom) * amount
+                    c.scaleBy(x: sc, y: sc)
+                    c.translateBy(x: -origin.x, y: -origin.y)
+                    c.fill(path, with: .color(Color(UIColor(hex: color))))
                 }
+                petal(ctx, Self.petalLL, 0xA4483F, tl.petalOuter, rotate: 60, scaleFrom: 0.4, alpha: 0.75)
+                petal(ctx, Self.petalRR, 0xA4483F, tl.petalOuter, rotate: -60, scaleFrom: 0.4, alpha: 0.75)
+                petal(ctx, Self.petalL, 0xD9A99A, tl.petalSide, rotate: 40, scaleFrom: 0.4, alpha: 1)
+                petal(ctx, Self.petalR, 0xD9A99A, tl.petalSide, rotate: -40, scaleFrom: 0.4, alpha: 1)
+                petal(ctx, Self.petalC, 0xE7C9BD, tl.petalCenter, rotate: 0, scaleFrom: 0.2, alpha: 1)
             }
+            .frame(width: 170, height: 69)
+            .offset(y: 83)
         }
+        .frame(width: 170, height: 152, alignment: .top)
         .accessibilityHidden(true)
     }
 }

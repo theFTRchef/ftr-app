@@ -89,7 +89,7 @@ fun WelcomeScreen(model: AppModel, enter: () -> Unit) {
                     .semantics(mergeDescendants = true) { contentDescription = "Namaste, welcome to FTR" },
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                LotusNamaste(tl, Modifier.size(92.dp, 87.dp))
+                LotusNamaste(tl, Modifier.size(170.dp, 152.dp))
                 Text("Namaste", style = Type.tagline(30), color = P.ink)
                 Text("WELCOME TO FTR", style = Type.body(13.0).copy(fontFamily = Type.josefin, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, letterSpacing = 3.sp), color = P.muted)
             }
@@ -151,7 +151,7 @@ class Welcome(private val t: Float) {
     val petalCenter get() = p(3.4f, 3.75f)
     val petalSide get() = p(3.45f, 3.9f)
     val petalOuter get() = p(3.55f, 4.05f)
-    val hands get() = ease(3.85f, 4.6f)
+    val hands get() = p(3.5f, 4.3f)
     val button get() = p(4.5f, 5.1f)
 }
 
@@ -185,50 +185,42 @@ fun AnimatedSeal(tl: Welcome, modifier: Modifier = Modifier) {
 
 private fun svg(d: String): Path = PathParser().parsePathString(d).toPath()
 
-private val hands = listOf(
-    "M32 6 C27 12 23 24 21 36 C20 44 21 50 24 56 L23 66",
-    "M32 6 C37 12 41 24 43 36 C44 44 43 50 40 56 L41 66",
-    "M32 9 V58",
-    "M30 40 C26 42 24 46 25 52",
-    "M34 40 C38 42 40 46 39 52",
-).map(::svg)
 private val petalC = svg("M55 100 C47 90 47 78 55 68 C63 78 63 90 55 100 Z")
 private val petalL = svg("M55 100 C40 98 30 88 28 76 C40 78 50 86 55 100 Z")
 private val petalR = svg("M55 100 C70 98 80 88 82 76 C70 78 60 86 55 100 Z")
 private val petalLL = svg("M55 100 C36 102 18 96 10 86 C26 84 44 90 55 100 Z")
 private val petalRR = svg("M55 100 C74 102 92 96 100 86 C84 84 66 90 55 100 Z")
 
-/** Folded hands drawn in gold, rising from a lotus whose petals open. */
+/** Mehndi namaste hands (licensed from OlyvaDesign, Etsy order 4224628634) rising from a lotus whose petals open in front of the wrists. */
 @Composable
 fun LotusNamaste(tl: Welcome, modifier: Modifier = Modifier) {
-    Canvas(modifier.clearAndSetSemantics { }) {
-        val k = minOf(size.width / 110f, size.height / 104f)
-        scale(k, k, pivot = Offset.Zero) {
-            val origin = Offset(55f, 100f)
-            fun petal(path: Path, color: Long, amount: Float, rotate: Float, scaleFrom: Float, alpha: Float) {
-                if (amount <= 0f) return
-                val sc = scaleFrom + (1 - scaleFrom) * amount
-                rotate(rotate * (1 - amount), pivot = origin) {
-                    scale(sc, sc, pivot = origin) {
-                        drawPath(path, Color(0xFF000000 or color), alpha = amount * alpha)
+    val dark = androidx.compose.foundation.isSystemInDarkTheme()
+    Box(modifier.clearAndSetSemantics { }) {
+        Image(
+            painterResource(R.drawable.namaste_hands), null,
+            Modifier.align(Alignment.TopCenter).size(112.dp, 131.dp)
+                .graphicsLayer { alpha = tl.hands; translationY = (1 - tl.hands) * 10.dp.toPx() },
+            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(if (dark) P.cream else Color.Black),
+        )
+        Canvas(Modifier.align(Alignment.TopCenter).padding(top = 83.dp).size(170.dp, 69.dp)) {
+            val k = size.width / 98f
+            scale(k, k, pivot = Offset.Zero) {
+                translate(-6f, -64f) {
+                    val origin = Offset(55f, 100f)
+                    fun petal(path: Path, color: Long, amount: Float, rotate: Float, scaleFrom: Float, alpha: Float) {
+                        if (amount <= 0f) return
+                        val sc = scaleFrom + (1 - scaleFrom) * amount
+                        rotate(rotate * (1 - amount), pivot = origin) {
+                            scale(sc, sc, pivot = origin) {
+                                drawPath(path, Color(0xFF000000 or color), alpha = amount * alpha)
+                            }
+                        }
                     }
-                }
-            }
-            petal(petalLL, 0xA4483F, tl.petalOuter, 60f, 0.4f, 0.75f)
-            petal(petalRR, 0xA4483F, tl.petalOuter, -60f, 0.4f, 0.75f)
-            petal(petalL, 0xD9A99A, tl.petalSide, 40f, 0.4f, 1f)
-            petal(petalR, 0xD9A99A, tl.petalSide, -40f, 0.4f, 1f)
-            petal(petalC, 0xE7C9BD, tl.petalCenter, 0f, 0.2f, 1f)
-
-            if (tl.hands > 0f) {
-                translate(23f, 0f) {
-                    val measure = PathMeasure()
-                    for (h in hands) {
-                        measure.setPath(h, false)
-                        val part = Path()
-                        measure.getSegment(0f, measure.length * tl.hands, part, true)
-                        drawPath(part, Color(0xFF9C7220), style = Stroke(width = 2f, cap = StrokeCap.Round, join = StrokeJoin.Round))
-                    }
+                    petal(petalLL, 0xA4483F, tl.petalOuter, 60f, 0.4f, 0.75f)
+                    petal(petalRR, 0xA4483F, tl.petalOuter, -60f, 0.4f, 0.75f)
+                    petal(petalL, 0xD9A99A, tl.petalSide, 40f, 0.4f, 1f)
+                    petal(petalR, 0xD9A99A, tl.petalSide, -40f, 0.4f, 1f)
+                    petal(petalC, 0xE7C9BD, tl.petalCenter, 0f, 0.2f, 1f)
                 }
             }
         }
