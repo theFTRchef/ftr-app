@@ -6,6 +6,10 @@ on:
     paths: ["android/**", ".github/workflows/android.yml"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write   # lets the build sign in to Google without a key file
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -51,24 +55,25 @@ jobs:
             android/app/build/outputs/mapping/release/mapping.txt
           if-no-files-found: error
 
-      # Sends the new build straight to Play Console → Internal testing.
-      # Needs the PLAY_SERVICE_ACCOUNT_JSON secret (a Google Cloud service account
-      # invited to Play Console with release permission). Skipped until it's added.
-      - name: Check for the Play upload key
-        id: play
-        env:
-          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-        run: |
-          if [ -n "$PLAY_JSON" ]; then echo "ready=true" >> "$GITHUB_OUTPUT"; else echo "::notice::PLAY_SERVICE_ACCOUNT_JSON not set - download the .aab and upload it to Play Console by hand."; fi
+      # Sends the new build straight to Play Console -> Internal testing.
+      # Keyless: GitHub signs in to Google Cloud (project ftr-bot-513217) as the
+      # ftr-play-upload account, which is invited in Play Console. Main branch only.
+      - name: Sign in to Google
+        id: google
+        if: github.ref == 'refs/heads/main'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/428165957167/locations/global/workloadIdentityPools/github/providers/ftr-app
+          service_account: ftr-play-upload@ftr-bot-513217.iam.gserviceaccount.com
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
 
       - name: Upload to Google Play internal testing
-        if: steps.play.outputs.ready == 'true'
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: com.franklintiffinroom.app
-          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
-          mappingFile: android/app/build/outputs/mapping/release/mapping.txt
-          track: internal
-          status: completed
-          releaseName: "Build ${{ github.run_number }}"
+        if: github.ref == 'refs/heads/main'
+        env:
+          PLAY_TOKEN: ${{ steps.google.outputs.access_token }}
+        run: |
+          python3 android/scripts/play_upload.py \
+            android/app/build/outputs/bundle/release/app-release.aab \
+            android/app/build/outputs/mapping/release/mapping.txt \
+            "Build ${{ github.run_number }}"
