@@ -10,8 +10,12 @@ struct HomeView: View {
     @State private var showCart = false
     @State private var comingSoon: String?
     @State private var showFeedback = false
+    @Environment(\.ftrWide) private var wide
 
     enum Route: Hashable { case catering, specials, festival, dry, availability, section(String) }
+
+    /// (Screenshot runs pass -ftrOpenCatering to open the catering menu.)
+    @State private var path: [Route] = ProcessInfo.processInfo.arguments.contains("-ftrOpenCatering") ? [.catering] : []
 
     private var lds: MenuCategory? { model.categories.first { $0.kind == .lds } }
     /// The second flagship: Dose-in-a-Box (a pre-order section marked flagship).
@@ -37,122 +41,30 @@ struct HomeView: View {
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
-                VStack(spacing: 18) {
-                    HStack {
-                        FTRHeader()
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.top, 2)
-
-                    // Flagship first, full width.
-                    Button { showLiveDose = true } label: {
-                        VStack(alignment: .leading, spacing: 0) {
-                            ZStack(alignment: .topLeading) {
-                                Color.clear
-                                    .aspectRatio(4.0 / 3.0, contentMode: .fit)
-                                    .overlay(
-                                        Image("FlagshipDose")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .accessibilityLabel("Chef cooking Mysore Masala Dose on the griddle at a party")
-                                    )
-                                    .clipped()
-                                Text("OUR FLAGSHIP")
-                                    .font(Typeface.body(11, weight: .bold, relativeTo: .caption))
-                                    .kerning(0.8)
-                                    .foregroundStyle(Palette.turmericInk)
-                                    .padding(.horizontal, 10).padding(.vertical, 5)
-                                    .background(Palette.turmericSoft, in: Capsule())
-                                    .padding(12)
+                Group {
+                    if wide {
+                        // Duo open / wide window: flagship photo on the left, everything else on the right.
+                        HStack(alignment: .top, spacing: 20) {
+                            flagshipCard(tall: true)
+                                .frame(maxWidth: .infinity)
+                            VStack(spacing: 16) {
+                                headerRow
+                                dibCard
+                                tilesGrid
                             }
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("THE OG MYSORE MASALA DOSE")
-                                    .font(Typeface.display(28, relativeTo: .title))
-                                    .foregroundStyle(Palette.ink)
-                                    .multilineTextAlignment(.leading)
-                                Text(lds?.open == false ? "No LIVE Dose dates open right now" : "Cooked live at your party by Chef's crew. 100% vegetarian.")
-                                    .font(Typeface.body(14))
-                                    .foregroundStyle(Palette.muted)
-                                    .multilineTextAlignment(.leading)
-                                Text("Book the LIVE Dose Station")
-                                    .font(Typeface.body(14, weight: .bold))
-                                    .foregroundStyle(Palette.leafInk)
-                                    .padding(.horizontal, 18).padding(.vertical, 12)
-                                    .background(Palette.leaf, in: Capsule())
-                                    .padding(.top, 4)
-                            }
-                            .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 18)
+                            .frame(maxWidth: .infinity)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Palette.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.line))
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(lds == nil)
-
-                    if let dib {
-                        NavigationLink(value: Route.section(dib.id)) {
-                            HStack(spacing: 14) {
-                                ZStack {
-                                    Palette.photo
-                                    Image(systemName: "shippingbox").font(.system(size: 28, weight: .light)).foregroundStyle(Palette.muted)
-                                }
-                                .frame(width: 86, height: 86)
-                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("TAKE-HOME · SERVES 4").font(Typeface.body(11, weight: .bold, relativeTo: .caption)).kerning(1).foregroundStyle(Palette.red)
-                                    Text(dib.title.uppercased()).font(Typeface.display(22, relativeTo: .title2)).foregroundStyle(Palette.ink)
-                                    Text(dib.items.isEmpty ? "Take-home Masala Dose kit · coming soon" : dib.preorder?.next.map { "Order by \($0.orderByLabel) · pickup \($0.pickupLabel)" } ?? "Next pickup day coming soon")
-                                        .font(Typeface.body(13)).foregroundStyle(Palette.muted)
-                                        .multilineTextAlignment(.leading)
-                                }
-                                Spacer(minLength: 0)
-                                Image(systemName: "chevron.right").font(.system(size: 15, weight: .medium)).foregroundStyle(Palette.ink)
-                            }
-                            .padding(12)
-                            .background(Palette.surface2, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        NavigationLink(value: Route.catering) {
-                            HomeTile(title: "Catering Items", subtitle: "Trays for your gathering", icon: "takeoutbag.and.cup.and.straw.fill")
-                        }
-                        NavigationLink(value: specials.count == 1 ? Route.section(specials[0].id) : Route.specials) {
-                            HomeTile(title: specials.count == 1 ? specials[0].title : "Chef's Weekly Specials", subtitle: specialsSubtitle, icon: "fork.knife")
-                        }
-                        NavigationLink(value: route(.festival, festival)) {
-                            HomeTile(title: "Festival Specials", subtitle: subtitle(festival, filled: "For the festivals coming up"), icon: "sparkles")
-                        }
-                        NavigationLink(value: route(.dry, dry)) {
-                            HomeTile(title: "Dry Products", subtitle: subtitle(dry, filled: "Chef's masala powders and more"), icon: "basket.fill")
-                        }
-                        NavigationLink(value: Route.availability) {
-                            HomeTile(title: "Chef's Availability", subtitle: "Open dates and times", icon: "calendar")
-                        }
-                        Button { model.selectedTab = .account } label: {
-                            HomeTile(title: "My Account", subtitle: model.isSignedIn ? (model.profile?.firstName ?? "Signed in") : "Sign in with your phone", icon: "person.crop.circle")
-                        }
-                        Button { showCustom = true } label: {
-                            HomeTile(title: "Custom Quote", subtitle: "Tell Chef what you need", icon: "square.and.pencil")
-                        }
-                        Button { showFeedback = true } label: {
-                            HomeTile(title: "Comments & Ideas", subtitle: "Tell us how we did", icon: "text.bubble.fill")
-                        }
-                        Button { comingSoon = "At-Home Chef!" } label: {
-                            HomeTile(title: "At-Home Chef!", subtitle: "Coming soon", icon: "house.fill", soon: true)
-                        }
-                        Button { comingSoon = "Supper Club" } label: {
-                            HomeTile(title: "Supper Club", subtitle: "Coming soon", icon: "wineglass.fill", soon: true)
+                    } else {
+                        VStack(spacing: 18) {
+                            headerRow
+                            // Flagship first, full width.
+                            flagshipCard(tall: false)
+                            dibCard
+                            tilesGrid
                         }
                     }
-                    .buttonStyle(.plain)
                 }
                 .padding(16)
                 .padding(.bottom, model.cart.isEmpty ? 8 : 80)
@@ -191,6 +103,129 @@ struct HomeView: View {
                 Text("Coming soon. Ask Chef about it with a custom quote, or call \(model.config?.phoneDisplay ?? "us").")
             }
         }
+    }
+
+    // MARK: Home pieces (shared by the phone and wide layouts)
+
+    private var headerRow: some View {
+            HStack {
+                FTRHeader()
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 2)
+    }
+
+    private func flagshipCard(tall: Bool) -> some View {
+            Button { showLiveDose = true } label: {
+                VStack(alignment: .leading, spacing: 0) {
+                    ZStack(alignment: .topLeading) {
+                        Color.clear
+                            .aspectRatio(tall ? 1.0 : 4.0 / 3.0, contentMode: .fit)
+                            .overlay(
+                                Image("FlagshipDose")
+                                    .resizable()
+                                    .scaledToFill()
+                                    .accessibilityLabel("Chef cooking Mysore Masala Dose on the griddle at a party")
+                            )
+                            .clipped()
+                        Text("OUR FLAGSHIP")
+                            .font(Typeface.body(11, weight: .bold, relativeTo: .caption))
+                            .kerning(0.8)
+                            .foregroundStyle(Palette.turmericInk)
+                            .padding(.horizontal, 10).padding(.vertical, 5)
+                            .background(Palette.turmericSoft, in: Capsule())
+                            .padding(12)
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("THE OG MYSORE MASALA DOSE")
+                            .font(Typeface.display(28, relativeTo: .title))
+                            .foregroundStyle(Palette.ink)
+                            .multilineTextAlignment(.leading)
+                        Text(lds?.open == false ? "No LIVE Dose dates open right now" : "Cooked live at your party by Chef's crew. 100% vegetarian.")
+                            .font(Typeface.body(14))
+                            .foregroundStyle(Palette.muted)
+                            .multilineTextAlignment(.leading)
+                        Text("Book the LIVE Dose Station")
+                            .font(Typeface.body(14, weight: .bold))
+                            .foregroundStyle(Palette.leafInk)
+                            .padding(.horizontal, 18).padding(.vertical, 12)
+                            .background(Palette.leaf, in: Capsule())
+                            .padding(.top, 4)
+                    }
+                    .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 18)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Palette.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.line))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(lds == nil)
+    }
+
+    @ViewBuilder private var dibCard: some View {
+            if let dib {
+                NavigationLink(value: Route.section(dib.id)) {
+                    HStack(spacing: 14) {
+                        ZStack {
+                            Palette.photo
+                            Image(systemName: "shippingbox").font(.system(size: 28, weight: .light)).foregroundStyle(Palette.muted)
+                        }
+                        .frame(width: 86, height: 86)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("TAKE-HOME · SERVES 4").font(Typeface.body(11, weight: .bold, relativeTo: .caption)).kerning(1).foregroundStyle(Palette.red)
+                            Text(dib.title.uppercased()).font(Typeface.display(22, relativeTo: .title2)).foregroundStyle(Palette.ink)
+                            Text(dib.items.isEmpty ? "Take-home Masala Dose kit · coming soon" : dib.preorder?.next.map { "Order by \($0.orderByLabel) · pickup \($0.pickupLabel)" } ?? "Next pickup day coming soon")
+                                .font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                                .multilineTextAlignment(.leading)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right").font(.system(size: 15, weight: .medium)).foregroundStyle(Palette.ink)
+                    }
+                    .padding(12)
+                    .background(Palette.surface2, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+    }
+
+    private var tilesGrid: some View {
+            LazyVGrid(columns: columns, spacing: 12) {
+                NavigationLink(value: Route.catering) {
+                    HomeTile(title: "Catering Items", subtitle: "Trays for your gathering", icon: "takeoutbag.and.cup.and.straw.fill")
+                }
+                NavigationLink(value: specials.count == 1 ? Route.section(specials[0].id) : Route.specials) {
+                    HomeTile(title: specials.count == 1 ? specials[0].title : "Chef's Weekly Specials", subtitle: specialsSubtitle, icon: "fork.knife")
+                }
+                NavigationLink(value: route(.festival, festival)) {
+                    HomeTile(title: "Festival Specials", subtitle: subtitle(festival, filled: "For the festivals coming up"), icon: "sparkles")
+                }
+                NavigationLink(value: route(.dry, dry)) {
+                    HomeTile(title: "Dry Products", subtitle: subtitle(dry, filled: "Chef's masala powders and more"), icon: "basket.fill")
+                }
+                NavigationLink(value: Route.availability) {
+                    HomeTile(title: "Chef's Availability", subtitle: "Open dates and times", icon: "calendar")
+                }
+                Button { model.selectedTab = .account } label: {
+                    HomeTile(title: "My Account", subtitle: model.isSignedIn ? (model.profile?.firstName ?? "Signed in") : "Sign in with your phone", icon: "person.crop.circle")
+                }
+                Button { showCustom = true } label: {
+                    HomeTile(title: "Custom Quote", subtitle: "Tell Chef what you need", icon: "square.and.pencil")
+                }
+                Button { showFeedback = true } label: {
+                    HomeTile(title: "Comments & Ideas", subtitle: "Tell us how we did", icon: "text.bubble.fill")
+                }
+                Button { comingSoon = "At-Home Chef!" } label: {
+                    HomeTile(title: "At-Home Chef!", subtitle: "Coming soon", icon: "house.fill", soon: true)
+                }
+                Button { comingSoon = "Supper Club" } label: {
+                    HomeTile(title: "Supper Club", subtitle: "Coming soon", icon: "wineglass.fill", soon: true)
+                }
+            }
+            .buttonStyle(.plain)
     }
 }
 
@@ -283,13 +318,70 @@ enum MenuGroup: Hashable {
 /// South Indian, Asian Fusion, Chaats & Snacks... - the menu sections from /admin.
 struct CateringSectionsView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.ftrWide) private var wide
     @State private var showCart = false
+    @State private var selectedId: String?
     var group: MenuGroup = .catering
     private var specialsOnly: Bool { group == .specials }
 
     private var sections: [MenuCategory] { group.sections(in: model.categories) }
 
     var body: some View {
+        Group {
+            if wide { wideBody } else { phoneBody }
+        }
+        .screenBackground()
+        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) { if !model.cart.isEmpty && !wide { CartBar { showCart = true } } }
+        .sheet(isPresented: $showCart) { CartView() }
+    }
+
+    /// Wide screens: the list of sections on the left, the chosen section's dishes beside it.
+    private var wideBody: some View {
+        HStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(group.title.uppercased())
+                        .font(Typeface.display(24))
+                        .foregroundStyle(Palette.ink)
+                        .padding(.horizontal, 6).padding(.bottom, 10)
+                    ForEach(sections) { c in
+                        let on = c.id == (selectedId ?? sections.first?.id)
+                        Button { selectedId = c.id } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(c.title).font(Typeface.body(15, weight: on ? .bold : .regular))
+                                if let p = c.preorder {
+                                    Text(p.next.map { "Pickup \($0.pickupLabel)" } ?? "Next pickup coming soon")
+                                        .font(Typeface.body(12)).opacity(0.8)
+                                }
+                            }
+                            .foregroundStyle(on ? Palette.chipOnInk : Palette.ink)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 14).padding(.vertical, 11)
+                            .background(on ? Palette.chipOn : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                    }
+                    if sections.isEmpty {
+                        Text(group.empty).font(Typeface.body(14)).foregroundStyle(Palette.muted).padding(6)
+                    }
+                }
+                .padding(.horizontal, 10).padding(.vertical, 12)
+            }
+            .frame(width: 230)
+            .overlay(alignment: .trailing) { Rectangle().fill(Palette.line).frame(width: 1) }
+
+            if let id = selectedId ?? sections.first?.id {
+                CategoryDishesView(categoryId: id).id(id)
+            } else {
+                Spacer()
+            }
+        }
+    }
+
+    private var phoneBody: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 Text(group.title).font(Typeface.display(30)).foregroundStyle(Palette.red)
@@ -337,16 +429,13 @@ struct CateringSectionsView: View {
             .padding(16)
             .padding(.bottom, model.cart.isEmpty ? 8 : 80)
         }
-        .screenBackground()
-        .navigationBarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .bottom) { if !model.cart.isEmpty { CartBar { showCart = true } } }
-        .sheet(isPresented: $showCart) { CartView() }
     }
 }
 
 /// One section's dishes, to add to the order (one at a time or several at once).
 struct CategoryDishesView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.ftrWide) private var wide
     let categoryId: String
     @State private var selectedDish: Dish?
     @State private var showCart = false
@@ -358,6 +447,7 @@ struct CategoryDishesView: View {
     private var cat: MenuCategory? { model.categories.first { $0.id == categoryId } }
 
     var body: some View {
+        HStack(spacing: 0) {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if let cat {
@@ -387,31 +477,32 @@ struct CategoryDishesView: View {
                         Notice(tone: .warn, icon: "calendar.badge.exclamationmark", text: "Chef has no catering dates open right now. You can still browse, or ask for a custom quote.")
                             .padding(.horizontal, 20).padding(.bottom, 8)
                     }
-                    ForEach(filtered(cat)) { dish in
-                        Button {
-                            if selecting { toggle(dish) } else { selectedDish = dish }
-                        } label: {
-                            HStack(spacing: 0) {
-                                if selecting {
-                                    Image(systemName: picked.contains(dish.id) ? "checkmark.circle.fill" : "circle")
-                                        .font(.system(size: 22))
-                                        .foregroundStyle(picked.contains(dish.id) ? Palette.leaf : Palette.muted)
-                                        .padding(.leading, 18)
-                                        .transition(.move(edge: .leading).combined(with: .opacity))
-                                }
-                                DishRow(dish: dish, inCart: inCart(dish))
+                    if wide {
+                        // Wide screens: dishes as cards, two across.
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                            ForEach(filtered(cat)) { dish in
+                                dishButton(dish, cat)
+                                    .frame(maxHeight: .infinity, alignment: .top)
+                                    .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.line))
                             }
                         }
-                        .buttonStyle(.plain)
-                        .disabled(selecting && !cat.open)
-                        .accessibilityAddTraits(selecting && picked.contains(dish.id) ? .isSelected : [])
-                        Divider().overlay(Palette.line).padding(.leading, 20)
+                        .padding(.horizontal, 16)
+                    } else {
+                        ForEach(filtered(cat)) { dish in
+                            dishButton(dish, cat)
+                            Divider().overlay(Palette.line).padding(.leading, 20)
+                        }
                     }
                 } else {
                     Text("This section isn't on the menu any more.").font(Typeface.body(15)).foregroundStyle(Palette.muted).padding(20)
                 }
             }
-            .padding(.bottom, model.cart.isEmpty && !selecting ? 24 : 96)
+            .padding(.bottom, (model.cart.isEmpty || wide) && !selecting ? 24 : 96)
+        }
+            if wide && !model.cart.isEmpty && !selecting {
+                OrderSidePanel { showCart = true }
+            }
         }
         .screenBackground()
         .searchable(text: $search, prompt: "Search \(cat?.title ?? "dishes")")
@@ -426,13 +517,33 @@ struct CategoryDishesView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if selecting { selectBar } else if !model.cart.isEmpty { CartBar { showCart = true } }
+            if selecting { selectBar } else if !model.cart.isEmpty && !wide { CartBar { showCart = true } }
         }
         .sheet(isPresented: $showMultiAdd) {
             MultiAddSheet(dishes: picked.compactMap { model.dish($0) }) { selecting = false; picked = [] }
         }
         .sheet(item: $selectedDish) { DishSheet(dish: $0, category: cat) }
         .sheet(isPresented: $showCart) { CartView() }
+    }
+
+    private func dishButton(_ dish: Dish, _ cat: MenuCategory) -> some View {
+        Button {
+            if selecting { toggle(dish) } else { selectedDish = dish }
+        } label: {
+            HStack(spacing: 0) {
+                if selecting {
+                    Image(systemName: picked.contains(dish.id) ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 22))
+                        .foregroundStyle(picked.contains(dish.id) ? Palette.leaf : Palette.muted)
+                        .padding(.leading, 18)
+                        .transition(.move(edge: .leading).combined(with: .opacity))
+                }
+                DishRow(dish: dish, inCart: inCart(dish))
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(selecting && !cat.open)
+        .accessibilityAddTraits(selecting && picked.contains(dish.id) ? .isSelected : [])
     }
 
     private func filtered(_ cat: MenuCategory) -> [Dish] {

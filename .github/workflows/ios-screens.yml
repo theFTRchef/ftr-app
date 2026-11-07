@@ -44,6 +44,27 @@ jobs:
           xcrun simctl io "$DEV" screenshot shots/welcome-dark.png
           xcrun simctl terminate "$DEV" "$BID"; xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome; sleep 8
           xcrun simctl io "$DEV" screenshot shots/home-dark.png
+      - name: iPad-size screenshots (wide layout check, test build only)
+        run: |
+          set -x
+          xcodebuild build -project ios/FTR.xcodeproj -scheme FTR -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath dd-wide \
+            CODE_SIGNING_ALLOWED=NO TARGETED_DEVICE_FAMILY="1,2" | grep -E "error:|\*\* BUILD" || true
+          IPAD=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for r in sorted(d, reverse=True) if 'iOS' in r for x in d[r] if x['name'].startswith('iPad Air') or x['name'].startswith('iPad Pro')))")
+          xcrun simctl boot "$IPAD"; xcrun simctl bootstatus "$IPAD" -b
+          xcrun simctl ui "$IPAD" appearance light
+          APP=$(find dd-wide/Build/Products -name "FTR.app" -maxdepth 3 | head -1)
+          xcrun simctl install "$IPAD" "$APP"
+          BID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
+          sleep 4
+          xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome; sleep 9
+          xcrun simctl io "$IPAD" screenshot shots/wide-home.png
+          xcrun simctl terminate "$IPAD" "$BID"
+          xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome -ftrOpenCatering; sleep 9
+          xcrun simctl io "$IPAD" screenshot shots/wide-catering.png
+          xcrun simctl terminate "$IPAD" "$BID"
+          xcrun simctl launch "$IPAD" "$BID"; sleep 8
+          xcrun simctl io "$IPAD" screenshot shots/wide-welcome.png
       - name: Save the screenshots to the ci-screens-ios branch
         if: always()
         run: |

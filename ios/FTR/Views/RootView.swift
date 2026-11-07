@@ -3,31 +3,22 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var sizeClass
     /// The welcome screen shows until the customer taps Enter FTR.
     /// (Screenshot runs pass -ftrSkipWelcome to land on Home.)
     @State private var entered = ProcessInfo.processInfo.arguments.contains("-ftrSkipWelcome")
 
     var body: some View {
-        @Bindable var model = model
         Group {
             if !entered {
                 WelcomeView { withAnimation(.easeOut(duration: 0.25)) { entered = true } }
             } else {
-                TabView(selection: $model.selectedTab) {
-                    HomeView()
-                        .tabItem { Label("Home", systemImage: "house") }
-                        .tag(AppModel.Tab.menu)
-                    OrdersView()
-                        .tabItem { Label("Orders", systemImage: "takeoutbag.and.cup.and.straw") }
-                        .tag(AppModel.Tab.orders)
-                        .badge(model.orders.filter(\.needsCustomerAction).count)
-                    InboxView()
-                        .tabItem { Label("Notifications", systemImage: "bell") }
-                        .tag(AppModel.Tab.messages)
-                        .badge(model.unread)
-                    AccountView()
-                        .tabItem { Label("Account", systemImage: "person.crop.circle") }
-                        .tag(AppModel.Tab.account)
+                GeometryReader { geo in
+                    let wide = WideLayout.isWide(width: geo.size.width, sizeClass: sizeClass)
+                    Group {
+                        if wide { wideLayout } else { tabLayout }
+                    }
+                    .environment(\.ftrWide, wide)
                 }
             }
         }
@@ -57,6 +48,54 @@ struct RootView: View {
                 }
             }
         }
+    }
+
+    /// Phones (and the Duo when closed): the regular bottom tab bar.
+    private var tabLayout: some View {
+        @Bindable var bindableModel = model
+        return TabView(selection: $bindableModel.selectedTab) {
+            HomeView()
+                .tabItem { Label("Home", systemImage: "house") }
+                .tag(AppModel.Tab.menu)
+            OrdersView()
+                .tabItem { Label("Orders", systemImage: "takeoutbag.and.cup.and.straw") }
+                .tag(AppModel.Tab.orders)
+                .badge(model.orders.filter(\.needsCustomerAction).count)
+            InboxView()
+                .tabItem { Label("Notifications", systemImage: "bell") }
+                .tag(AppModel.Tab.messages)
+                .badge(model.unread)
+            AccountView()
+                .tabItem { Label("Account", systemImage: "person.crop.circle") }
+                .tag(AppModel.Tab.account)
+        }
+    }
+
+    /// Wide screens (Duo open, iPad-size windows): side rail plus the selected screen.
+    /// All four screens stay alive so each keeps its place when you switch.
+    private var wideLayout: some View {
+        HStack(spacing: 0) {
+            SideRail()
+            GeometryReader { geo in
+                // Lists and forms read best at about phone-and-a-half width, centered.
+                let side = max(0, (geo.size.width - 680) / 2)
+                ZStack {
+                    screen(.menu) { HomeView() }
+                    screen(.orders) { OrdersView().safeAreaPadding(.horizontal, side) }
+                    screen(.messages) { InboxView().safeAreaPadding(.horizontal, side) }
+                    screen(.account) { AccountView().safeAreaPadding(.horizontal, side) }
+                }
+            }
+        }
+        .background(Palette.bg)
+    }
+
+    private func screen<V: View>(_ tab: AppModel.Tab, @ViewBuilder _ content: () -> V) -> some View {
+        let on = model.selectedTab == tab
+        return content()
+            .opacity(on ? 1 : 0)
+            .allowsHitTesting(on)
+            .accessibilityHidden(!on)
     }
 }
 
