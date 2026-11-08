@@ -27,7 +27,8 @@ jobs:
           mkdir -p shots
           xcrun simctl help 2>&1 | grep -iE "fold|posture|hinge|state" > shots/simctl-fold-help.txt || true
           xcrun simctl ui help > shots/simctl-ui-help.txt 2>&1 || true
-          RT=$(xcrun simctl list runtimes -j | python3 -c "import json,sys; r=[x for x in json.load(sys.stdin)['runtimes'] if x['platform']=='iOS' and x['isAvailable']]; print(r[-1]['identifier'])")
+          # The Duo has its own iOS runtime; pick the one that lists it as supported.
+          RT=$(xcrun simctl list runtimes -j | python3 -c "import json,sys; r=[x for x in json.load(sys.stdin)['runtimes'] if x['isAvailable'] and any('iPhone-Duo' in d.get('identifier','') for d in x.get('supportedDeviceTypes',[]))]; print(r[-1]['identifier'])")
           DEV=$(xcrun simctl create "FTR Duo" com.apple.CoreSimulator.SimDeviceType.iPhone-Duo "$RT")
           echo "$DEV" > .duo-device
           xcrun simctl boot "$DEV"; xcrun simctl bootstatus "$DEV" -b
