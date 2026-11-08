@@ -1,0 +1,603 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild build -project ios/FTR.xcodeproj -scheme FTR -configuration Debug -destination "generic/platform=iOS Simulator" -derivedDataPath dd ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO
+
+Build settings from command line:
+    ARCHS = arm64
+    CODE_SIGNING_ALLOWED = NO
+    ONLY_ACTIVE_ARCH = NO
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'FTR' in project 'FTR' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 67b11f19f8274a5cdc062b61c9c7227c
+Build description path: /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/XCBuildData/67b11f19f8274a5cdc062b61c9c7227c.xcbuilddata
+CreateBuildDirectory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/CompilationCache.noindex
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/CompilationCache.noindex
+
+CreateBuildDirectory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/ModuleCache.noindex
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/ModuleCache.noindex
+
+CreateBuildDirectory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules
+
+CreateBuildDirectory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products
+
+CreateBuildDirectory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex
+
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator27.2-24B8118-cc78df9d8a9de6526dea716b1c70fd8e.sdkstatcache
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -o /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator27.2-24B8118-cc78df9d8a9de6526dea716b1c70fd8e.sdkstatcache
+
+CreateBuildDirectory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator
+
+CreateBuildDirectory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+CreateBuildDirectory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/PrecompiledHeaders
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/PrecompiledHeaders
+
+CreateBuildDirectory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/ExplicitPrecompiledModules
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+CreateBuildDirectory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    builtin-create-build-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR-c26e65d36ba7818df74aa1971aa85023-VFS-iphonesimulator/all-product-headers.yaml
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR.xcodeproj
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR-c26e65d36ba7818df74aa1971aa85023-VFS-iphonesimulator/all-product-headers.yaml
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.hmap
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyStaticMetadataFileList (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-OutputFileMap.json (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.LinkFileList (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.LinkFileList
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_const_extract_protocols.json (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftConstValuesFileList (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyMetadataFileList (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-non-framework-target-headers.hmap (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibPath-normal-arm64.txt (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibPath-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibInstallName-normal-arm64.txt (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    write-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibInstallName-normal-arm64.txt
+
+MkDir /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    /bin/mkdir -p /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+Ld /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/__preview.dylib normal (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -install_name @rpath/FTR.debug.dylib -Xlinker -dead_strip -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_dependency_info.dat -o /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/__preview.dylib
+
+MkDir /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    /bin/mkdir -p /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned
+
+MkDir /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/unthinned (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    /bin/mkdir -p /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/unthinned
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/RobotoSlab-ExtraBold.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/RobotoSlab-ExtraBold.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/RobotoSlab-ExtraBold.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+GenerateAssetSymbols /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets --compile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app --output-format human-readable-text --notices --warnings --export-dependency-info /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_dependencies --output-partial-info-plist /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist --app-icon AppIcon --accent-color AccentColor --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --minimum-deployment-target 17.0 --platform iphonesimulator --bundle-identifier com.franklintiffinroom.app --generate-swift-asset-symbols /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.swift --generate-objc-asset-symbols /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.h --generate-asset-symbol-index /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/* com.apple.actool.compilation-results */
+/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.h
+/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.swift
+
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/RobotoSlab-Bold.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/RobotoSlab-Bold.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/RobotoSlab-Bold.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/PrivacyInfo.xcprivacy /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/PrivacyInfo.xcprivacy (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/PrivacyInfo.xcprivacy /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Oswald-Medium.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Oswald-Medium.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Oswald-Medium.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/OFL-LICENSE.txt /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/OFL-LICENSE.txt (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/OFL-LICENSE.txt /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/OFL-Fraunces.txt /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/OFL-Fraunces.txt (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/OFL-Fraunces.txt /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/JosefinSans-SemiBold.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/JosefinSans-SemiBold.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/JosefinSans-SemiBold.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/JosefinSans-Bold.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/JosefinSans-Bold.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/JosefinSans-Bold.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Fraunces-MediumItalic.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Fraunces-MediumItalic.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Fraunces-MediumItalic.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Archivo-SemiBold.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-SemiBold.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-SemiBold.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Archivo-Regular.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-Regular.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-Regular.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CpResource /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Archivo-Medium.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-Medium.ttf (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Fonts/Archivo-Medium.ttf /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+CompileAssetCatalogVariant thinned /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets --compile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_dependencies_thinned --output-partial-info-plist /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --accent-color AccentColor --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --minimum-deployment-target 17.0 --platform iphonesimulator
+/* com.apple.actool.compilation-results */
+/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist_thinned
+/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned/AppIcon60x60@2x.png
+/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned/AppIcon76x76@2x~ipad.png
+/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned/Assets.car
+
+
+SwiftDriver FTR normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FTR -Onone @/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64 -c -j8 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator27.2-24B8118-cc78df9d8a9de6526dea716b1c70fd8e.sdkstatcache -output-file-map /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/ModuleCache.noindex -sdk-module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_const_extract_protocols.json -Xcc -iquote -Xcc /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap -Xcc -iquote -Xcc /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources-normal/arm64 -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/arm64 -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-Swift.h -working-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios -experimental-emit-module-separately -disable-cmo
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/SwiftShims-2LOHAI42CACF8IDTAFB246OTP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_SwiftConcurrencyShims-BN7R70PTO4UUWPXMM3KGR0969.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_Builtin_float-2VUTWVPI3BIWMWQAS72K8EQH7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_Builtin_stdarg-4HDA43KZE8FMHP24KL38LQB4V.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/ptrauth-E9AZOC0XGZNRDQY3W3CICJ06W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_AvailabilityInternal-DRK2O4EXK93F9II1JX40XY6ER.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/ptrcheck-9U378QMG2A216P0FSG7TQX61Q.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/DeveloperToolsSupport-4LZYZWBALCKDSDNYH5PX4XG4V.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_Builtin_stdbool-17G9I98MFGN0Y5KK5UVMCET73.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_Builtin_stddef-1OT18G8Y89VAMVXF707YT41UZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_DarwinFoundation1-CL0K5U3UDVZZHTZZ8UD6YGEZ6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_Builtin_limits-DUN6V2YRFDDBTNVJ3TR8WNOKB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/ExtensionFoundation-6IVEAPTRZU2JNXWP82WI573JH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_DarwinFoundation2-E5H5SA5HY0BQ01S7BXJGZ5FKK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/string_h-A7MVHN3A1614KRQ61ORUA6JNB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_Builtin_tgmath-1O4D3V4ELYVOQ4UHLFCKYJ68N.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_Builtin_stdint-1G58C06O3E0PHX0BJ9JHPW3I8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/sys_types-X1U5X4HDH4VGAGV6YU1DNRMG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_Builtin_stdatomic-7077JZDOMGT2YBIEHU0F2NLWZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_DarwinFoundation3-9SNQ8946LAYMFW6HLNE55N1DP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_Builtin_intrinsics-873O5YV9J7WNQ0Z97JC72YJ40.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_Builtin_inttypes-BFPIXPGJETZS6U7CH61IGXMCK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/Darwin-8WYV7Y9R84X66OZUBCJBCO1KV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/simd-3SODT0QYKAE93RDAJP2IJC7WJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/MachO-8DLK5DMKLL8R752RF8SU8KZ13.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/ObjectiveC-A1VKXS41BTVK9O99JMCPAUOAL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/os_object-AMF71DPT6T1VABDBFI1CQY9ZQ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/os_workgroup-CDQKTGSWONYM1BK315EAA9DA4.pcm
+
+LinkAssetCatalog /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Resources/Assets.xcassets (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-linkAssetCatalog --thinned /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/thinned --thinned-dependencies /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist_thinned --unthinned /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_output/unthinned --unthinned-dependencies /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist_unthinned --output /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app --plist-output /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist
+note: Emplaced /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/AppIcon60x60@2x.png (in target 'FTR' from project 'FTR')
+note: Emplaced /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Assets.car (in target 'FTR' from project 'FTR')
+note: Emplaced /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/AppIcon76x76@2x~ipad.png (in target 'FTR' from project 'FTR')
+
+ProcessInfoPlistFile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Info.plist /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/Config/Info.plist (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-infoPlistUtility /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/Config/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/assetcatalog_generated_info.plist -o /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Info.plist
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/Spatial-1NEG2URMYOKBAVYTKBW9W3596.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/Dispatch-CC3HSSJFR9RUGE5UD4C0M72SE.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreFoundation-BBIAK2BAYZNPI4T4G2ZQZP421.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/dnssd-8ITWW1HBON9UAGSZJKBFATILJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/XPC-54K8Q4JMZ23DAP2YZLKYVY4BZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/os-3IE9CS2NEMKLIWHFJY4B2TSA8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/Security-3Z5PF9OEIMZ6EDD9EOWLKOOVM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreGraphics-D4I6VO3FUE59STXKQY0014J6M.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CFNetwork-41DZ9IE1O20RXURKPB3EXA5E1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreAudioTypes-1URB6HS1N0MVJKA27EASBII4F.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreAudio-ANLKU97DUWJPJNGUKMMKSTVES.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/Foundation-BQE7UGI8N5DWRK1Z8T4M2704F.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/ImageIO-A8E2GRHBAVMQWW4H7QVGIJVIJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreText-ADQSZYSZOGY26RM1FTC1FQWXR.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/Accessibility-2QT8BUJSV203B71JNS48UN4OK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/Symbols-8TKGRULZQH8TB4P4TYZBQ6TD4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreTransferable-2L88PEUZMY67CBB4IZR6X0Q4S.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/_LocationEssentials-CW2VBANEKFQLITCRMIATIS7BT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/UIUtilities-170X8CSY7I9VNT4G7AJ7HYDD4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/DataDetection-CG5I04FFBPB8S9PMGCYJD4FRM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreData-959OK6Y6Q847G3I2XW8ND44OC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/OSLog-7AS9EYWM34B0N3RX9E3T1KDGC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/UniformTypeIdentifiers-4CGD7YQA9ICGZPOTXJ5VRRZ96.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/FileProvider-E373N9FR03CJJKDNL37K2SSEW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreMIDI-4G1F8WW5QFX9VOBNT97P3ZSQY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/Network-RF0FNHJWF2TEFJJRXU6V98HG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreLocation-543Q2BL5RAZPENW4YZ76M88JT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/UserNotifications-F4NTJ5VYV7BZH2I73K4F6PGRQ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/OpenGLES-7Q8XK04NPN8DT67CRBMLLWOZ6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/IOSurface-1424JSYO07ODQVR85QYN91PNH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/AudioToolbox-89JOHW3VCBBNB7KPN4WWQUXAR.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CloudKit-81OHQRG1IOND6P0ASVHTFO8SV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreMotion-LCJSQOH9Z5YITXOA7QL5MXOU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/AVRouting-A6AMZV8H7HQADZ5HLN8EC80GO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/Metal-8EY0KVZ888TR8YBVNYUI5BP58.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreVideo-3UCJDYR8TKKVYUEDBPUCQG9NW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/QuartzCore-2Z08UBGBEFCBLXYZ03D3CX2VD.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreMedia-OMU9V9P32EHBAXCG6V0X6HXP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/CoreImage-A82P600VV7RG6IKRWA4SCQ6D0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/SwiftUICore-2E8L9OQNW3EE06YK4JBF4O1ZU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/UIKit-F3A0QZSDVCMFNWGI9E2MFC45P.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/MediaToolbox-3DRZOEJVWLM2TRAOD01G0HJ9K.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/AVFAudio-CSLZBCTWP8DQESVIP8082SEJM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/VideoToolbox-9FNI86IRPHYVTHE0F9BTZJ4UL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/AVFoundation-E2BFSHTT3A8YR2F2NV10IEXID.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/Photos-5ABYZAZ1GQ49E6YF9XOQLL81Y.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/WebKit-7Q1DP457K2PGREXAVGPTK9UX9.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/SwiftUI-34EBKQRAFPYVMPC9M9JHLC2AG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules/PhotosUI-CB2VIMIS0B6CUDF5WDB19DNQH.pcm
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ FTR (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    
+
+SwiftCompile normal arm64 Compiling\ WideLayout.swift,\ APIClient.swift,\ AppModel.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Components/WideLayout.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Core/APIClient.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Core/AppModel.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Components/WideLayout.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile WideLayout.swift
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Core/APIClient.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile APIClient.swift
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Core/AppModel.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile AppModel.swift
+
+SwiftCompile normal arm64 Compiling\ WelcomeView.swift,\ GeneratedAssetSymbols.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/WelcomeView.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/WelcomeView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile WelcomeView.swift
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile GeneratedAssetSymbols.swift
+
+SwiftCompile normal arm64 Compiling\ FTRApp.swift,\ Theme.swift,\ TiffinProgress.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/App/FTRApp.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Components/Theme.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Components/TiffinProgress.swift (in target 'FTR' from project 'FTR')
+/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/App/FTRApp.swift:62:25: warning: result of call to 'run(resultType:body:)' is unused [#NoUsage]
+60 |     // Banner while the app is open, and refresh what's on screen.
+61 |     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+62 |         await MainActor.run { Task { await self.model?.refreshAccountData() } }
+   |                         `- warning: result of call to 'run(resultType:body:)' is unused [#NoUsage]
+63 |         return [.banner, .sound, .badge]
+64 |     }
+
+[#NoUsage]: <https://docs.swift.org/compiler/documentation/diagnostics/no-usage>
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/App/FTRApp.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile FTRApp.swift
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Components/Theme.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile Theme.swift
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Components/TiffinProgress.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile TiffinProgress.swift
+
+SwiftCompile normal arm64 Compiling\ KitchenView.swift,\ LiveDoseView.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/KitchenView.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/LiveDoseView.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/KitchenView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile KitchenView.swift
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/LiveDoseView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile LiveDoseView.swift
+
+SwiftCompile normal arm64 Compiling\ DishSheet.swift,\ InboxView.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/DishSheet.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/InboxView.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/DishSheet.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile DishSheet.swift
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/InboxView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile InboxView.swift
+
+SwiftCompile normal arm64 Compiling\ Models.swift,\ AccountView.swift,\ CartView.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Core/Models.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/AccountView.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/CartView.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Core/Models.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile Models.swift
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/AccountView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile AccountView.swift
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/CartView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile CartView.swift
+
+SwiftCompile normal arm64 Compiling\ MenuView.swift,\ OrdersView.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/MenuView.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/OrdersView.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/MenuView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile MenuView.swift
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/OrdersView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile OrdersView.swift
+
+SwiftCompile normal arm64 Compiling\ RootView.swift,\ SignInView.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/RootView.swift /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/SignInView.swift (in target 'FTR' from project 'FTR')
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/RootView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile RootView.swift
+
+SwiftCompile normal arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios/FTR/Views/SignInView.swift (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-SwiftPerFileCompile SignInView.swift
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for FTR (in target 'FTR' from project 'FTR')
+
+SwiftDriver\ Compilation\ Requirements FTR normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FTR -Onone @/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64 -c -j8 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator27.2-24B8118-cc78df9d8a9de6526dea716b1c70fd8e.sdkstatcache -output-file-map /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/ModuleCache.noindex -sdk-module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_const_extract_protocols.json -Xcc -iquote -Xcc /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap -Xcc -iquote -Xcc /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources-normal/arm64 -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/arm64 -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-Swift.h -working-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling DishSheet.swift, InboxView.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriverJobDiscovery normal arm64 Compiling WideLayout.swift, APIClient.swift, AppModel.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriverJobDiscovery normal arm64 Compiling FTRApp.swift, Theme.swift, TiffinProgress.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriverJobDiscovery normal arm64 Compiling WelcomeView.swift, GeneratedAssetSymbols.swift (in target 'FTR' from project 'FTR')
+
+SwiftMergeGeneratedHeaders /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/FTR-Swift.h /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-Swift.h (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-swiftHeaderTool -arch arm64 /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-Swift.h -o /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/FTR-Swift.h
+
+Copy /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.abi.json /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.abi.json (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.abi.json /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.swiftmodule /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.swiftdoc /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftdoc (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftdoc /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftsourceinfo (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftsourceinfo /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+SwiftDriverJobDiscovery normal arm64 Compiling KitchenView.swift, LiveDoseView.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriverJobDiscovery normal arm64 Compiling RootView.swift, SignInView.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriverJobDiscovery normal arm64 Compiling MenuView.swift, OrdersView.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriverJobDiscovery normal arm64 Compiling Models.swift, AccountView.swift, CartView.swift (in target 'FTR' from project 'FTR')
+
+SwiftDriver\ Compilation FTR normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-Swift-Compilation -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FTR -Onone @/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64 -c -j8 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKStatCaches.noindex/iphonesimulator27.2-24B8118-cc78df9d8a9de6526dea716b1c70fd8e.sdkstatcache -output-file-map /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/ModuleCache.noindex -sdk-module-cache-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_const_extract_protocols.json -Xcc -iquote -Xcc /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-generated-files.hmap -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-own-target-headers.hmap -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-all-target-headers.hmap -Xcc -iquote -Xcc /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-project-headers.hmap -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources-normal/arm64 -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources/arm64 -Xcc -I/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR-Swift.h -working-directory /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios -experimental-emit-module-separately -disable-cmo
+
+Ld /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR.debug.dylib normal (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -filelist /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.LinkFileList -install_name @rpath/FTR.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.swiftmodule -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -o /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR.debug.dylib
+
+ConstructStubExecutorLinkFileList /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-ExecutorLinkFileList-normal-arm64.txt (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    construct-stub-executor-link-file-list /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR.debug.dylib /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'FTR' from project 'FTR')
+
+Ld /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR normal (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -F/Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR-ExecutorLinkFileList-normal-arm64.txt /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR.debug.dylib -o /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR
+
+ExtractAppIntentsMetadata (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name FTR --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk --xcode-version 27B52 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.franklintiffinroom.app --output /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app --target-triple arm64-apple-ios17.0-simulator --binary-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR --dependency-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR_dependency_info.dat --stringsdata-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftFileList --metadata-file-list /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyMetadataFileList --static-metadata-file-list /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyStaticMetadataFileList --swift-const-vals-list /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/Objects-normal/arm64/FTR.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --no-app-shortcuts-localization
+2026-11-07 23:18:27.351 appintentsmetadataprocessor[51989:26332711] Starting App Intents metadata extraction
+2026-11-07 23:18:27.362 appintentsmetadataprocessor[51989:26332711] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+CopySwiftLibs /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/FTR.debug.dylib --scan-folder /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Frameworks --scan-folder /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/PlugIns --scan-folder /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/SystemExtensions --scan-folder /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+Ignoring --strip-bitcode because --sign was not passed
+
+AppIntentsSSUTraining (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Info.plist --temp-dir-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/ssu --bundle-id com.franklintiffinroom.app --product-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app --extracted-metadata-path /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Metadata.appintents --metadata-file-list /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/FTR.build/Debug-iphonesimulator/FTR.build/FTR.DependencyMetadataFileList --source-file /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app/Info.plist --archive-ssu-assets
+2026-11-07 23:18:27.392 appintentsnltrainingprocessor[51990:26332712] Parsing options for appintentsnltrainingprocessor
+2026-11-07 23:18:27.392 appintentsnltrainingprocessor[51990:26332712] Starting AppIntents SSU YAML Generation
+2026-11-07 23:18:27.395 appintentsnltrainingprocessor[51990:26332712] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-RegisterExecutionPolicyException /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+Validate /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    builtin-validationUtility /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app (in target 'FTR' from project 'FTR')
+    cd /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/ios
+    /usr/bin/touch -c /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Products/Debug-iphonesimulator/FTR.app
+
+PruneExplicitPrecompiledModules /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /Users/vivek1583/actions-runner/_work/ftr-app/ftr-app/dd/SDKExplicitPrecompiledModules
+
+** BUILD SUCCEEDED **
+
