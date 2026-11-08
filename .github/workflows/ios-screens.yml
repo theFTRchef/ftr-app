@@ -57,6 +57,8 @@ jobs:
           xcrun simctl install "$IPAD" "$APP"
           BID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
           sleep 4
+          # Warm-up launch: the first network request after boot often fails.
+          xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome; sleep 15; xcrun simctl terminate "$IPAD" "$BID"; sleep 2
           xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome; sleep 25
           xcrun simctl io "$IPAD" screenshot shots/wide-home.png
           xcrun simctl terminate "$IPAD" "$BID"
