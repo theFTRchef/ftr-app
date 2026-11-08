@@ -1,0 +1,14 @@
+name: Probe server
+
+# Checks the live bot server answers from outside (run by hand).
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for u in healthz api/v1/config api/v1/menu app; do
+            echo "== /$u"; curl -s -o /tmp/out -w "%{http_code} %{time_total}s\n" -A "Mozilla/5.0 (Windows NT 10.0)" https://bot.franklintiffinroom.com/$u; head -c 300 /tmp/out; echo
+          done
