@@ -30,6 +30,10 @@ struct RootView: View {
         .sheet(isPresented: Binding(get: { model.profile?.needsName == true && !model.signInOpen }, set: { _ in })) {
             EditNameView().interactiveDismissDisabled()
         }
+        // (Screenshot runs pass -ftrTabAlerts to open on the Alerts tab.)
+        .onAppear {
+            if ProcessInfo.processInfo.arguments.contains("-ftrTabAlerts") { model.selectedTab = .messages }
+        }
         // While the app is open, pick up admin-page changes every 2 minutes
         // (menu items, prices, open dates, Setup switches).
         .task {

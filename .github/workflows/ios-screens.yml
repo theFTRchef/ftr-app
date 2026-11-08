@@ -65,6 +65,11 @@ jobs:
           xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome -ftrOpenCatering; sleep 25
           xcrun simctl io "$IPAD" screenshot shots/wide-catering.png
           xcrun simctl terminate "$IPAD" "$BID"
+          xcrun simctl ui "$IPAD" appearance dark
+          xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome -ftrTabAlerts; sleep 12
+          xcrun simctl io "$IPAD" screenshot shots/wide-alerts-dark.png
+          xcrun simctl terminate "$IPAD" "$BID"
+          xcrun simctl ui "$IPAD" appearance light
           xcrun simctl launch "$IPAD" "$BID"; sleep 8
           xcrun simctl io "$IPAD" screenshot shots/wide-welcome.png
       - name: Save the screenshots to the ci-screens-ios branch
