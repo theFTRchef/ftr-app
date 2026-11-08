@@ -57,10 +57,10 @@ jobs:
           xcrun simctl install "$IPAD" "$APP"
           BID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
           sleep 4
-          xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome; sleep 9
+          xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome; sleep 25
           xcrun simctl io "$IPAD" screenshot shots/wide-home.png
           xcrun simctl terminate "$IPAD" "$BID"
-          xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome -ftrOpenCatering; sleep 9
+          xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome -ftrOpenCatering; sleep 25
           xcrun simctl io "$IPAD" screenshot shots/wide-catering.png
           xcrun simctl terminate "$IPAD" "$BID"
           xcrun simctl launch "$IPAD" "$BID"; sleep 8
