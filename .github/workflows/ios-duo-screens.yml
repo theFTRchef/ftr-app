@@ -37,7 +37,10 @@ jobs:
           APP=$(find dd/Build/Products -name "FTR.app" -maxdepth 3 | head -1)
           xcrun simctl install "$DEV" "$APP"
           BID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
-          shoot() { xcrun simctl io "$DEV" screenshot "shots/$1.png"; sips -g pixelWidth -g pixelHeight "shots/$1.png" | tail -2 >> shots/sizes.txt; echo "$1" >> shots/sizes.txt; }
+          # The Duo simulator has two screens (inner and outer): capture both.
+          DISPLAYS=$(xcrun simctl io "$DEV" screenshot /tmp/probe.png 2>&1 | grep -oE -- "--display=[0-9]+" | cut -d= -f2 || true)
+          echo "displays: $DISPLAYS" >> shots/sizes.txt
+          shoot() { for d in ${DISPLAYS:-0}; do xcrun simctl io "$DEV" screenshot --display="$d" "shots/$1-d$d.png" || true; done; }
           xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome; sleep 15; xcrun simctl terminate "$DEV" "$BID"; sleep 2
           xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome; sleep 20; shoot duo-home
           xcrun simctl terminate "$DEV" "$BID"
