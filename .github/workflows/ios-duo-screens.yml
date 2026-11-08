@@ -12,9 +12,6 @@ jobs:
   screens:
     runs-on: [self-hosted, macOS, xcode27]
     timeout-minutes: 45
-    defaults:
-      run:
-        shell: arch -arm64 /bin/bash -e {0}
     steps:
       - uses: actions/checkout@v4
       - name: Build for the simulator
@@ -22,7 +19,7 @@ jobs:
           xcodebuild -version
           xcodebuild build -project ios/FTR.xcodeproj -scheme FTR -configuration Debug \
             -destination 'generic/platform=iOS Simulator' -derivedDataPath dd \
-            CODE_SIGNING_ALLOWED=NO | tee build.log | grep -E "error:|\*\* BUILD" || true
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO | tee build.log | grep -E "error:|\*\* BUILD" || true
           grep -q "\*\* BUILD SUCCEEDED \*\*" build.log
       - name: Run on iPhone Duo and take screenshots
         run: |

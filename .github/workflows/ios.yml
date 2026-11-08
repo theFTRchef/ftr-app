@@ -54,10 +54,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.testflight
     # Chef's Mac has Xcode 27 (the iPhone Duo needs it); the Mac must be on and awake.
     runs-on: ${{ inputs.runner == 'cloud' && 'macos-15-intel' || fromJSON('["self-hosted","macOS","xcode27"]') }}
-    defaults:
-      run:
-        # The runner app runs under Rosetta on Chef's M1; build natively.
-        shell: ${{ inputs.runner == 'cloud' && 'bash -e {0}' || 'arch -arm64 /bin/bash -e {0}' }}
     steps:
       - uses: actions/checkout@v4
       - uses: maxim-lobanov/setup-xcode@v1
