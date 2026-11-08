@@ -1,0 +1,20 @@
+name: Mac check
+
+# Checks Chef's Mac build machine: macOS, Xcode versions and iPhone simulators (run by hand).
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: [self-hosted, macOS, xcode27]
+    timeout-minutes: 10
+    steps:
+      - run: |
+          sw_vers; uname -m
+          ls -d /Applications/Xcode*.app 2>/dev/null || echo "NO XCODE IN /Applications"
+          xcode-select -p || true
+          xcodebuild -version 2>&1 | head -3
+          xcodebuild -showsdks 2>&1 | grep -iE "iphone|error" | head -5
+          xcrun simctl list runtimes 2>&1 | grep -i ios | head -5
+          xcrun simctl list devicetypes 2>&1 | grep -iE "duo|iphone 1[78]" | head -10
+          df -h / | tail -1
