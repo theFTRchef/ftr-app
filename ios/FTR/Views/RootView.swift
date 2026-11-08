@@ -181,6 +181,7 @@ struct SignedInGate<Content: View>: View {
                 Button("Sign in with your phone number") { showSignIn = true }
                     .buttonStyle(PrimaryButtonStyle())
                     .padding(.horizontal, 32)
+                    .frame(maxWidth: 460)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .screenBackground()
