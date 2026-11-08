@@ -28,6 +28,9 @@ OLD=$(cat "$STATE" 2>/dev/null || true)
 [ "$NEW" = "$OLD" ] && exit 0
 git -C "$WORK" reset -q --hard "$NEW"
 S=$WORK/server
+if [ -f "$WORK/deploy/autodeploy.sh" ] && ! cmp -s "$WORK/deploy/autodeploy.sh" "$0"; then
+  cp "$WORK/deploy/autodeploy.sh" "$0.new" && chmod +x "$0.new" && mv "$0.new" "$0" && log "auto-update script refreshed"
+fi
 log "new version $NEW (was ${OLD:-none})"
 
 # 1. Syntax check before touching anything live.
@@ -54,7 +57,13 @@ fi
 
 # 3. Restart and check; roll back if it doesn't come up.
 healthy() { for i in $(seq 1 15); do sleep 2; [ "$(curl -s -m 3 localhost:3000/healthz)" = "ok" ] && return 0; done; return 1; }
-sudo -n systemctl restart ftrbot
+started() { systemctl show ftrbot -p ActiveEnterTimestampMonotonic --value; }
+BEFORE=$(started)
+if ! sudo -n systemctl restart ftrbot 2>>"$LOG" || [ "$(started)" = "$BEFORE" ]; then
+  # Code is copied but the old bot is still running: say so, and try again next run.
+  log "NOT LIVE YET: couldn't restart the bot (needs the sudo rule from install-autodeploy.sh). Will retry."
+  exit 1
+fi
 if healthy; then
   echo "$NEW" > "$STATE"; log "LIVE: $NEW (backup in $B)"
   ls -1dt "$HOME_DIR"/backups/* | tail -n +11 | xargs -r rm -rf   # keep the last 10 backups

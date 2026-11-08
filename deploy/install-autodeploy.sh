@@ -3,8 +3,12 @@
 set -euo pipefail
 U=$(whoami); H=$HOME/ftrbot
 [ -d "$H/dose-in-a-box-bot" ] || { echo "Can't find $H/dose-in-a-box-bot"; exit 1; }
-sudo -n true 2>/dev/null || { echo "This account needs password-free sudo to restart the bot."; exit 1; }
 command -v git >/dev/null || sudo apt-get install -y -q git
+# Let the auto-update restart the bot (and nothing else) without a password.
+SC=$(command -v systemctl)
+echo "$U ALL=(root) NOPASSWD: $SC restart ftrbot" | sudo tee /etc/sudoers.d/ftr-autodeploy >/dev/null
+sudo chmod 440 /etc/sudoers.d/ftr-autodeploy
+sudo visudo -cf /etc/sudoers.d/ftr-autodeploy >/dev/null || { sudo rm -f /etc/sudoers.d/ftr-autodeploy; echo "Could not add the restart rule"; exit 1; }
 NODE=$(command -v node); NPM=$(command -v npm)
 curl -fsSL https://raw.githubusercontent.com/theFTRchef/ftr-app/main/deploy/autodeploy.sh -o "$H/autodeploy.sh"
 chmod +x "$H/autodeploy.sh"
@@ -29,6 +33,7 @@ WantedBy=timers.target
 UNIT
 sudo systemctl daemon-reload
 sudo systemctl enable --now ftr-autodeploy.timer
+rm -f "$H/.deployed-commit"   # re-apply the current version so the bot restarts on it
 echo "Checking for an update now..."
 sudo systemctl start ftr-autodeploy.service || true
 tail -n 5 "$H/autodeploy.log" 2>/dev/null
