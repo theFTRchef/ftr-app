@@ -1,0 +1,70 @@
+name: iOS Duo screens
+
+# Runs the app in the iPhone Duo simulator on Chef's Mac (Xcode 27) and saves
+# screenshots to the ci-screens-duo branch. Run by hand; the Mac must be awake.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  screens:
+    runs-on: [self-hosted, macOS, xcode27]
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: arch -arm64 /bin/bash -e {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for the simulator
+        run: |
+          xcodebuild -version
+          xcodebuild build -project ios/FTR.xcodeproj -scheme FTR -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath dd \
+            CODE_SIGNING_ALLOWED=NO | tee build.log | grep -E "error:|\*\* BUILD" || true
+          grep -q "\*\* BUILD SUCCEEDED \*\*" build.log
+      - name: Run on iPhone Duo and take screenshots
+        run: |
+          set -x
+          mkdir -p shots
+          xcrun simctl help 2>&1 | grep -iE "fold|posture|hinge|state" > shots/simctl-fold-help.txt || true
+          xcrun simctl ui help > shots/simctl-ui-help.txt 2>&1 || true
+          RT=$(xcrun simctl list runtimes -j | python3 -c "import json,sys; r=[x for x in json.load(sys.stdin)['runtimes'] if x['platform']=='iOS' and x['isAvailable']]; print(r[-1]['identifier'])")
+          DEV=$(xcrun simctl create "FTR Duo" com.apple.CoreSimulator.SimDeviceType.iPhone-Duo "$RT")
+          echo "$DEV" > .duo-device
+          xcrun simctl boot "$DEV"; xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl ui "$DEV" appearance light
+          xcrun simctl status_bar "$DEV" override --time 9:41 || true
+          APP=$(find dd/Build/Products -name "FTR.app" -maxdepth 3 | head -1)
+          xcrun simctl install "$DEV" "$APP"
+          BID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
+          shoot() { xcrun simctl io "$DEV" screenshot "shots/$1.png"; sips -g pixelWidth -g pixelHeight "shots/$1.png" | tail -2 >> shots/sizes.txt; echo "$1" >> shots/sizes.txt; }
+          xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome; sleep 15; xcrun simctl terminate "$DEV" "$BID"; sleep 2
+          xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome; sleep 20; shoot duo-home
+          xcrun simctl terminate "$DEV" "$BID"
+          xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome -ftrOpenCatering; sleep 20; shoot duo-catering
+          xcrun simctl terminate "$DEV" "$BID"
+          xcrun simctl launch "$DEV" "$BID"; sleep 8; shoot duo-welcome
+          xcrun simctl terminate "$DEV" "$BID"
+          # Try the other posture (folded / unfolded), if this simulator supports switching it.
+          for cmd in "ui $DEV fold" "ui $DEV posture closed" "ui $DEV posture folded"; do
+            if xcrun simctl $cmd 2>>shots/fold-tries.txt; then echo "worked: $cmd" >> shots/fold-tries.txt; sleep 3
+              xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome; sleep 15; shoot duo-other-home; break; fi
+          done
+      - name: Save the screenshots to the ci-screens-duo branch
+        if: always()
+        run: |
+          cp build.log shots/ 2>/dev/null || true
+          cd shots
+          git init -q -b ci-screens-duo
+          git config user.name "FTR CI"
+          git config user.email "ci@franklintiffinroom.com"
+          git add -A
+          git commit -qm "Duo screens run ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" ci-screens-duo
+      - name: Tidy up the Mac
+        if: always()
+        run: |
+          [ -f .duo-device ] && { xcrun simctl shutdown "$(cat .duo-device)" || true; xcrun simctl delete "$(cat .duo-device)" || true; }
+          rm -rf dd shots
