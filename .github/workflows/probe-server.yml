@@ -10,5 +10,5 @@ jobs:
     steps:
       - run: |
           for u in healthz api/v1/config api/v1/menu app; do
-            echo "== /$u"; curl -s -o /tmp/out -w "%{http_code} %{time_total}s\n" -A "Mozilla/5.0 (Windows NT 10.0)" https://bot.franklintiffinroom.com/$u; head -c 300 /tmp/out; echo
+            echo "== /$u"; curl -s -o /tmp/out -w "%{http_code} %{time_total}s\n" -A "Mozilla/5.0 (Windows NT 10.0)" https://bot.franklintiffinroom.com/$u; head -c 300 /tmp/out | tr "\n" " "; echo; curl -sI https://bot.franklintiffinroom.com/$u | grep -iE "^server|^x-powered-by"
           done
