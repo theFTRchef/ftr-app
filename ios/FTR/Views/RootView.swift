@@ -81,9 +81,10 @@ struct RootView: View {
                 let side = max(0, (geo.size.width - 680) / 2)
                 ZStack {
                     screen(.menu) { HomeView() }
-                    screen(.orders) { OrdersView().safeAreaPadding(.horizontal, side) }
-                    screen(.messages) { InboxView().safeAreaPadding(.horizontal, side) }
-                    screen(.account) { AccountView().safeAreaPadding(.horizontal, side) }
+                    // Content margins (not safe-area padding) so the sand background still fills the width.
+                    screen(.orders) { OrdersView().contentMargins(.horizontal, side, for: .scrollContent) }
+                    screen(.messages) { InboxView().contentMargins(.horizontal, side, for: .scrollContent) }
+                    screen(.account) { AccountView().contentMargins(.horizontal, side, for: .scrollContent) }
                 }
             }
         }
