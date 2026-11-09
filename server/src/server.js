@@ -516,6 +516,8 @@ app.get("/healthz", (req, res) => res.status(200).send("ok"));
 
 // Public: one "get the app" link for flyers and QR codes.
 require("./appLink").register(app);
+// Public: single-use gift QR codes on product packets (recipe + survey).
+require("./giftCodes").register(app, requireAdminAuth);
 
 const port = process.env.PORT || 3000;
 payments.startSweeper();
