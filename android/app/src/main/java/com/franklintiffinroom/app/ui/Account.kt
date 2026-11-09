@@ -15,6 +15,8 @@ import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.QuestionAnswer
@@ -113,6 +115,8 @@ fun AccountScreen(model: AppModel) {
                     LinkRow(Icons.Outlined.Email, email) { Intents.email(ctx, email) }
                     config?.instagram?.let { ig -> LinkRow(Icons.Outlined.CameraAlt, "@$ig") { Intents.url(ctx, "https://instagram.com/$ig") } }
                     config?.zelle?.let { z -> LinkRow(Icons.Outlined.AttachMoney, "Zelle: ${z.to}" + (z.name?.let { " ($it)" } ?: ""), null) }
+                    LinkRow(Icons.Outlined.HelpOutline, "Help & support") { Intents.url(ctx, "https://bot.franklintiffinroom.com/support") }
+                    LinkRow(Icons.Outlined.PrivacyTip, "Privacy policy") { Intents.url(ctx, "https://bot.franklintiffinroom.com/privacy") }
                 }
             }
 

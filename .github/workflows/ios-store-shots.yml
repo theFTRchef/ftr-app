@@ -1,0 +1,67 @@
+name: iOS store screenshots
+
+# App Store screenshots (6.9-inch iPhone) on Chef's Mac, saved to the
+# ci-store-shots-ios branch. Run by hand; the Mac must be awake.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    runs-on: [self-hosted, macOS, xcode27]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for the simulator
+        run: |
+          xcodebuild build -project ios/FTR.xcodeproj -scheme FTR -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath dd \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO | tee build.log | grep -E "error:|\*\* BUILD" || true
+          grep -q "\*\* BUILD SUCCEEDED \*\*" build.log
+      - name: Take the screenshots
+        run: |
+          set -x
+          mkdir -p shots
+          read RT DT < <(xcrun simctl list -j | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)
+          types=[t for t in d['devicetypes'] if 'Pro Max' in t['name'] and t['name'].startswith('iPhone')]
+          t=types[-1]
+          rts=[r for r in d['runtimes'] if r['isAvailable'] and r['platform']=='iOS' and any(x['identifier']==t['identifier'] for x in r.get('supportedDeviceTypes',[]))]
+          print(rts[-1]['identifier'], t['identifier'])")
+          echo "$DT on $RT" > shots/device.txt
+          DEV=$(xcrun simctl create "FTR Store" "$DT" "$RT"); echo "$DEV" > .store-device
+          xcrun simctl boot "$DEV"; xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl ui "$DEV" appearance light
+          xcrun simctl status_bar "$DEV" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+          APP=$(find dd/Build/Products -name "FTR.app" -maxdepth 3 | head -1)
+          xcrun simctl install "$DEV" "$APP"
+          BID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
+          run() { name=$1; wait=$2; shift 2; xcrun simctl launch "$DEV" "$BID" "$@"; sleep "$wait"; xcrun simctl io "$DEV" screenshot "shots/$name.png"; xcrun simctl terminate "$DEV" "$BID" || true; sleep 2; }
+          run warmup 15 -ftrSkipWelcome
+          run 1-welcome 9
+          run 2-home 15 -ftrSkipWelcome
+          run 3-live-dose 15 -ftrSkipWelcome -ftrOpenLiveDose
+          run 4-catering 15 -ftrSkipWelcome -ftrOpenCatering
+          run 5-dishes 15 -ftrSkipWelcome -ftrOpenSection
+          run 6-dose-in-a-box 15 -ftrSkipWelcome -ftrOpenDIB
+          rm -f shots/warmup.png
+          for f in shots/*.png; do sips -g pixelWidth -g pixelHeight "$f" | tail -2 | tr '\n' ' ' >> shots/sizes.txt; echo "$f" >> shots/sizes.txt; done
+      - name: Save to the ci-store-shots-ios branch
+        if: always()
+        run: |
+          cp build.log shots/ 2>/dev/null || true
+          cd shots
+          git init -q -b ci-store-shots-ios
+          git config user.name "FTR CI"
+          git config user.email "ci@franklintiffinroom.com"
+          git add -A
+          git commit -qm "iOS store shots ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" ci-store-shots-ios
+      - name: Tidy up the Mac
+        if: always()
+        run: |
+          [ -f .store-device ] && { xcrun simctl shutdown "$(cat .store-device)" || true; xcrun simctl delete "$(cat .store-device)" || true; }
+          rm -rf dd shots

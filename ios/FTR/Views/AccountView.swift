@@ -87,6 +87,8 @@ struct AccountView: View {
                         Label("Zelle: \(z.to)" + (z.name.map { " (\($0))" } ?? ""), systemImage: "dollarsign.circle")
                             .foregroundStyle(Palette.ink)
                     }
+                    Link(destination: URL(string: "https://bot.franklintiffinroom.com/support")!) { Label("Help & support", systemImage: "questionmark.circle") }
+                    Link(destination: URL(string: "https://bot.franklintiffinroom.com/privacy")!) { Label("Privacy policy", systemImage: "hand.raised") }
                 }
 
                 if let c = model.config {

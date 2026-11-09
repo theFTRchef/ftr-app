@@ -6,6 +6,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppModel.self) private var model
     @State private var showLiveDose = false
+    @State private var screenshotJumpDone = false
     @State private var showCustom = false
     @State private var showCart = false
     @State private var comingSoon: String?
@@ -94,6 +95,18 @@ struct HomeView: View {
             }
             .safeAreaInset(edge: .bottom) { if !model.cart.isEmpty { CartBar { showCart = true } } }
             .sheet(isPresented: $showLiveDose) { if let cat = lds { LiveDoseView(category: cat) } }
+            // (Store-screenshot runs: -ftrOpenSection / -ftrOpenDIB / -ftrOpenLiveDose.)
+            .onChange(of: model.categories.count, initial: true) { _, n in
+                guard n > 0, !screenshotJumpDone else { return }
+                let args = ProcessInfo.processInfo.arguments
+                if args.contains("-ftrOpenSection"), let first = MenuGroup.catering.sections(in: model.categories).first {
+                    screenshotJumpDone = true; path = [.catering, .section(first.id)]
+                } else if args.contains("-ftrOpenDIB"), let d = dib {
+                    screenshotJumpDone = true; path = [.section(d.id)]
+                } else if args.contains("-ftrOpenLiveDose"), lds != nil {
+                    screenshotJumpDone = true; showLiveDose = true
+                }
+            }
             .sheet(isPresented: $showCustom) { CustomRequestView() }
             .sheet(isPresented: $showFeedback) { FeedbackView() }
             .sheet(isPresented: $showCart) { CartView() }
