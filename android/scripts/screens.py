@@ -20,7 +20,8 @@ def find(text):
     for m in re.finditer(r'<node [^>]*>', xml):
         node = m.group(0)
         t = re.search(r'text="([^"]*)"', node); d = re.search(r'content-desc="([^"]*)"', node)
-        if (t and t.group(1) == text) or (d and d.group(1) == text):
+        want = text.lower()
+        if (t and t.group(1).lower() == want) or (d and d.group(1).lower() == want):
             b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', node)
             if b:
                 x1, y1, x2, y2 = map(int, b.groups())
@@ -63,8 +64,12 @@ swipe_up()
 adb("shell", "input", "swipe", "540", "700", "540", "1800", "400")
 adb("shell", "input", "swipe", "540", "700", "540", "1800", "400")
 time.sleep(1)
-if tap("Live Dose"):
+if tap("The OG Mysore Masala Dose"):
     shot("08-live-dose")
+    back(); time.sleep(2)
+if tap("Dose-in-a-Box"):
+    shot("08b-dose-in-a-box")
+    back(); time.sleep(2)
     back()
 if tap("Orders"): shot("09-orders-signed-out")
 if tap("Account"): shot("10-account")
