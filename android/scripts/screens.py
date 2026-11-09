@@ -70,7 +70,6 @@ if tap("The OG Mysore Masala Dose"):
 if tap("Dose-in-a-Box"):
     shot("08b-dose-in-a-box")
     back(); time.sleep(2)
-    back()
 if tap("Orders"): shot("09-orders-signed-out")
 if tap("Account"): shot("10-account")
 if tap("Notifications"): shot("11-notifications")
