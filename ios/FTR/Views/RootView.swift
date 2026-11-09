@@ -80,19 +80,23 @@ struct RootView: View {
     private var wideLayout: some View {
         HStack(spacing: 0) {
             SideRail()
-            GeometryReader { geo in
-                // Lists and forms read best at about phone-and-a-half width, centered.
-                let side = max(0, (geo.size.width - 680) / 2)
-                ZStack {
-                    screen(.menu) { HomeView() }
-                    // Content margins (not safe-area padding) so the sand background still fills the width.
-                    screen(.orders) { OrdersView().contentMargins(.horizontal, side, for: .scrollContent) }
-                    screen(.messages) { InboxView().contentMargins(.horizontal, side, for: .scrollContent) }
-                    screen(.account) { AccountView().contentMargins(.horizontal, side, for: .scrollContent) }
-                }
+            ZStack {
+                screen(.menu) { HomeView() }
+                // Lists and forms read best at about phone-and-a-half width: the whole
+                // screen becomes a centered column on a sand background.
+                screen(.orders) { column { OrdersView() } }
+                screen(.messages) { column { InboxView() } }
+                screen(.account) { column { AccountView() } }
             }
         }
         .background(Palette.bg)
+    }
+
+    private func column<V: View>(@ViewBuilder _ content: () -> V) -> some View {
+        ZStack {
+            Palette.bg.ignoresSafeArea()
+            content().frame(maxWidth: 720)
+        }
     }
 
     private func screen<V: View>(_ tab: AppModel.Tab, @ViewBuilder _ content: () -> V) -> some View {
