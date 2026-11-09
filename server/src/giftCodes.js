@@ -279,7 +279,7 @@ function giftPage(info, r) {
   const done = surveys().some((s) => s.code === info.code);
   return shell("Your FTR-BBB Powder recipe", `
 <h1>Welcome from FTR!</h1>
-<p class="sub">Thank you for trying our first product, <b>FTR-BBB Powder</b>.<br>Gift no. ${info.n} · ${esc(info.batch.title)}</p>
+<p class="sub">Thank you for trying our first product, <b style="white-space:nowrap">FTR‑BBB Powder</b>.<br>Gift no. ${info.n} · ${esc(info.batch.title)}</p>
 ${welcomeForm(info, r)}
 ${recipeHtml(info.batch.recipe)}
 <h2>How was it?</h2>
