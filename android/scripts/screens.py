@@ -77,6 +77,12 @@ tap("Home")
 adb("shell", "input", "swipe", "540", "1800", "540", "700", "400")
 if tap("Chef's Availability"): shot("12-availability")
 
+# Chef's test recipe (debug builds open it from a launch extra).
+adb("shell", "am", "force-stop", PKG)
+adb("shell", "am", "start", "-n", f"{PKG}/.MainActivity", "--es", "ftrScanCode", "CHEF-TEST")
+time.sleep(8)
+tap("Enter FTR", tries=40); time.sleep(6); shot("13-recipe")
+swipe_up(); shot("14-recipe-method")
 crash = adb("logcat", "-d", "-b", "crash")
 open(f"{OUT}/crash-log.txt", "w").write(crash)
 errs = adb("logcat", "-d", "FTR:W", "AndroidRuntime:E", "*:S")

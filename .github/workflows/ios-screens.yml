@@ -44,6 +44,13 @@ jobs:
           xcrun simctl io "$DEV" screenshot shots/welcome-dark.png
           xcrun simctl terminate "$DEV" "$BID"; xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome; sleep 8
           xcrun simctl io "$DEV" screenshot shots/home-dark.png
+          xcrun simctl terminate "$DEV" "$BID"; xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome -ftrScanToken CHEF-TEST; sleep 9
+          xcrun simctl io "$DEV" screenshot shots/recipe-dark-mode.png
+          xcrun simctl ui "$DEV" appearance light
+          xcrun simctl terminate "$DEV" "$BID"; xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome -ftrScanToken CHEF-TEST; sleep 9
+          xcrun simctl io "$DEV" screenshot shots/recipe.png
+          xcrun simctl terminate "$DEV" "$BID"; xcrun simctl launch "$DEV" "$BID" -ftrSkipWelcome -ftrScanToken CHEF-TEST -ftrOpenSurvey; sleep 10
+          xcrun simctl io "$DEV" screenshot shots/recipe-survey.png
       - name: iPad-size screenshots (wide layout check, test build only)
         run: |
           set -x
@@ -64,6 +71,8 @@ jobs:
           xcrun simctl terminate "$IPAD" "$BID"
           xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome -ftrOpenCatering; sleep 25
           xcrun simctl io "$IPAD" screenshot shots/wide-catering.png
+          xcrun simctl terminate "$IPAD" "$BID"; xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome -ftrScanToken CHEF-TEST; sleep 15
+          xcrun simctl io "$IPAD" screenshot shots/wide-recipe.png
           xcrun simctl terminate "$IPAD" "$BID"
           xcrun simctl ui "$IPAD" appearance dark
           xcrun simctl launch "$IPAD" "$BID" -ftrSkipWelcome -ftrTabAlerts; sleep 12
