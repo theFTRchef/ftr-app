@@ -27,8 +27,10 @@ jobs:
           read RT DT < <(xcrun simctl list -j | python3 -c "
           import json,sys
           d=json.load(sys.stdin)
-          types=[t for t in d['devicetypes'] if 'Pro Max' in t['name'] and t['name'].startswith('iPhone')]
-          t=types[-1]
+          import re
+          # Newest "iPhone NN Pro Max" = the 6.9-inch size App Store Connect asks for.
+          types=[t for t in d['devicetypes'] if re.match(r'iPhone \d+ Pro Max$', t['name'])]
+          t=max(types, key=lambda t: int(re.search(r'\d+', t['name']).group()))
           rts=[r for r in d['runtimes'] if r['isAvailable'] and r['platform']=='iOS' and any(x['identifier']==t['identifier'] for x in r.get('supportedDeviceTypes',[]))]
           print(rts[-1]['identifier'], t['identifier'])")
           echo "$DT on $RT" > shots/device.txt
