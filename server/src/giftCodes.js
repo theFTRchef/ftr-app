@@ -280,7 +280,7 @@ function giftPage(info, r) {
   const done = surveys().some((s) => s.code === info.code);
   return shell("Your FTR Bisi Bele Bhath Pudi recipe", `
 <h1>Welcome from FTR!</h1>
-<p class="sub">Thank you for trying our first product, <b style="white-space:nowrap">FTR Bisi Bele Bhath Pudi</b>.<br>Gift no. ${info.n} · ${esc(info.batch.title)}</p>
+<p class="sub">Thank you for trying our new product, <b style="white-space:nowrap">FTR Bisi Bele Bhath Pudi</b>.<br>Gift no. ${info.n} · ${esc(info.batch.title)}</p>
 ${welcomeForm(info, r)}
 ${recipeHtml(info.batch.recipe)}
 <h2>How was it?</h2>
