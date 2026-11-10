@@ -212,7 +212,7 @@ function esc(s) {
 const CG = { charcoal: "#2E2A26", gold: "#D4A84A", sand: "#F3EAD8", strip: "#E6D3A8", card: "#FFFCF5", cardLine: "#DCCBA6", dots: "#CDBB92", noteLine: "#B9954A", stripInk: "#5A4A2E", cream: "#FBF6EC", creamSoft: "#E8DCC2" };
 const CSS = `:root{color-scheme:light}
 *{box-sizing:border-box}
-body{margin:0;background:${CG.sand};color:${CG.charcoal};font:17px/1.55 Archivo,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{margin:0;background:${CG.sand};color:${CG.charcoal};font:17px/1.55 Archivo,'Noto Sans Kannada',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 main{max-width:640px;margin:0 auto;padding:28px 18px 0}
 main.bare{padding:0}
 main{position:relative;z-index:1}
@@ -260,7 +260,7 @@ a{color:${CG.charcoal}}
 .foot{margin:30px 0 0;padding-bottom:36px;text-align:center;font-size:14px;color:${CG.stripInk}}
 .hi{background:#FFF6E2;border-color:${CG.gold}}`;
 
-const FONTS = `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,500&family=Archivo:wght@400;600;700&display=swap">`;
+const FONTS = `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,500&family=Archivo:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600&display=swap">`;
 
 function shell(title, body, bare = false) {
   if (bare) {
@@ -289,17 +289,17 @@ const RECIPE = {
     subtitle: "FTR Special · made with one 25 g packet of FTR Bisi Bele Bhath Pudi",
     meta: [["Prep", "≈ 15 min"], ["Cook", "≈ 40 min"], ["Serves", "3–4 · ≈ 2 qt"]],
     notes: [
-      "Cut khol rabi and beans into 1\" pieces.",
+      "Cut kohlrabi and beans into 1\" pieces.",
       "Once the rice goes in, never leave it over 20 sec.",
       "Hing should come through a little, not too much.",
       "Final texture should flow, never cake up.",
       "Make the raitha separately; keep it ready."
     ],
     ingredients: [
-      ["FTR Bisi Bele Bhath Pudi", "25 g (1 packet)"], ["Rice, uncooked", "150 g"], ["Toor dal (cook fully ahead)", "100 g"],
+      ["FTR Bisi Bele Bhath Pudi", "25 g (1 packet)"], ["Rice, uncooked", "150 g"], ["Toor dal (ತೊಗರಿ ಬೇಳೆ), cook fully ahead", "100 g"],
       ["Fresh coconut", "25 g"], ["Curry leaves", "4–5, plus a few for tadka"], ["Tamarind", "to taste"],
-      ["Khol rabi, 1\" pieces", "50 g"], ["Green beans, 1\" pieces", "50 g"], ["Carrot", "50 g"],
-      ["Seme badnekai, small pieces", "50 g"], ["Green peas", "50 g"], ["White pumpkin, medium pieces", "100 g"],
+      ["Kohlrabi (ನೂಕೋಲು or ಗೆಡ್ಡೆಕೋಸು), 1\" pieces", "50 g"], ["Green beans, 1\" pieces", "50 g"], ["Carrot", "50 g"],
+      ["Chayote squash (ಸೀಮೆ ಬದನೇಕಾಯಿ), small pieces", "50 g"], ["Green peas", "50 g"], ["Ash gourd (ಬೂದು ಕುಂಬಳಕಾಯಿ), medium pieces", "100 g"],
       ["Bell pepper, diced", "50 g"], ["Tomato, wedges", "½ medium"], ["Onion, chopped", "½ medium"],
       ["Oil", "1 tbsp"], ["Mustard seeds", "½ tsp + a pinch"], ["Ghee", "2 tbsp + more to serve"],
       ["Cashews, fried in ghee", "15 g"], ["Byadgi chillies (tadka)", "2"], ["Ghee or oil (tadka)", "2 tsp"],
@@ -307,8 +307,8 @@ const RECIPE = {
     ],
     steps: [
       ["Paste", "In a blender, add the 25 g FTR Bisi Bele Bhath Pudi, 25 g fresh coconut, tamarind to taste and 4–5 curry leaves with a little water. Blend to a thick paste. Keep it ready with the uncooked rice and cooked toor dal."],
-      ["Tempering", "Heat 1 tbsp oil in a pot and add ½ tsp mustard seeds. Once they splutter, add the onion and sauté till translucent, then the khol rabi and fry 1 min."],
-      ["Vegetables", "Add ¾ glass of water and cook 2 min. Then every 2 min add, in this order: beans, carrot, seme badnekai, peas, white pumpkin, bell pepper and tomato. Add a little more water if needed."],
+      ["Tempering", "Heat 1 tbsp oil in a pot and add ½ tsp mustard seeds. Once they splutter, add the onion and sauté till translucent, then the kohlrabi and fry 1 min."],
+      ["Vegetables", "Add ¾ glass of water and cook 2 min. Then every 2 min add, in this order: beans, carrot, chayote, peas, ash gourd, bell pepper and tomato. Add a little more water if needed."],
       ["Simmer", "Cook 5 min. If the beans are cooked, the rest will be fine."],
       ["Masala", "Add the paste; rinse the blender with ¼ cup water into the pot. Mix well and cook 3 min."],
       ["Rice", "Add the washed rice and ⅔ cup water, flame above medium. From now on stir constantly so the rice does not stick and burn."],
