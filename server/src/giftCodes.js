@@ -1,5 +1,5 @@
 /**
- * Single-use gift QR codes (first batch: 125 packets of FTR-BBB Powder in the
+ * Single-use gift QR codes (first batch: 125 packets of FTR Bisi Bele Bhath Pudi in the
  * Triveni 50th anniversary souvenir bag).
  *
  *   QR on each packet -> https://bot.franklintiffinroom.com/g/T50-017-K7Q2M9XW
@@ -24,7 +24,7 @@ const tabSync = require("./tabSync");
 const adminAuth = require("./adminAuth");
 
 const BATCHES = {
-  T50: { count: 125, title: "Triveni 50th anniversary souvenir bag", product: "FTR-BBB Powder, 25 g", recipe: "bbb25" }
+  T50: { count: 125, firstGift: 4001, title: "Triveni 50th anniversary souvenir bag", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" }
 };
 
 const CODES_FILE = "gift-codes.json";
@@ -47,6 +47,15 @@ function check(batch, n) {
   return out;
 }
 
+/** The number printed on the label ("Gift No. 4001"); the code itself keeps 1..count. */
+function giftNo(batchId, n) {
+  const b = BATCHES[batchId];
+  return (b && b.firstGift ? b.firstGift - 1 : 0) + Number(n);
+}
+function giftNoOf(code, n) {
+  return giftNo(String(code).split("-")[0], n);
+}
+
 function makeCode(batch, n) {
   return `${batch}-${String(n).padStart(3, "0")}-${check(batch, n)}`;
 }
@@ -57,7 +66,7 @@ const TEST_CODE = "CHEF-TEST";
 
 function parse(raw) {
   if (String(raw || "").toUpperCase().trim() === TEST_CODE) {
-    return { code: TEST_CODE, batchId: "TEST", batch: { ...BATCHES.T50, title: "Chef's test code" }, n: 0, test: true };
+    return { code: TEST_CODE, batchId: "TEST", batch: { ...BATCHES.T50, title: "Chef's test code" }, n: 0, gift: 0, test: true };
   }
   const m = /^([A-Z0-9]{2,8})-(\d{1,4})-([0-9A-Z]{8})$/.exec(String(raw || "").toUpperCase().trim());
   if (!m || !secret()) return null;
@@ -66,7 +75,7 @@ function parse(raw) {
   if (!batch || n < 1 || n > batch.count) return null;
   const expect = check(m[1], n);
   if (!crypto.timingSafeEqual(Buffer.from(expect), Buffer.from(m[3]))) return null;
-  return { code: makeCode(m[1], n), batchId: m[1], batch, n };
+  return { code: makeCode(m[1], n), batchId: m[1], batch, n, gift: giftNo(m[1], n) };
 }
 
 function baseUrl() {
@@ -115,7 +124,7 @@ const SURVEY_FIELDS = [
   ["different", "What they would do differently"],
   ["better", "Their BBB secret"],
   ["notes", "Notes for FTR"],
-  ["buyAgain", "Would buy FTR-BBB powder"]
+  ["buyAgain", "Would buy FTR Bisi Bele Bhath Pudi"]
 ];
 
 function syncSheets() {
@@ -128,31 +137,31 @@ function syncSheets() {
         const code = makeCode(id, n);
         const r = all[code] || {};
         rows.push([
-          n, code, r.claimedAt ? "Used" : "Not scanned yet", stamp(r.claimedAt), r.device || "",
+          giftNo(id, n), code, r.claimedAt ? "Used" : "Not scanned yet", stamp(r.claimedAt), r.device || "",
           r.name || "", r.phone || "", r.email || "", r.contactOk ? "Yes" : r.claimedAt ? "No" : "",
           r.scans || 0, r.blocked || 0, sv.has(code) ? "Yes" : ""
         ]);
       }
     }
     return {
-      header: ["Label #", "Code", "Status", "First scan", "Device", "Name", "Phone", "Email", "OK to contact", "Scans (same phone)", "Blocked scans (other phones)", "Survey done"],
+      header: ["Gift #", "Code", "Status", "First scan", "Device", "Name", "Phone", "Email", "OK to contact", "Scans (same phone)", "Blocked scans (other phones)", "Survey done"],
       rows
     };
   });
   tabSync.schedule(process.env.GIFT_SHEET_SCANS_TAB || "BBB Gift Scans", () => {
     const all = codes();
     return {
-      header: ["Time", "Label #", "Code", "Result", "Device", "Name", "Phone"],
+      header: ["Time", "Gift #", "Code", "Result", "Device", "Name", "Phone"],
       rows: scans().map((s) => {
         const r = all[s.code] || {};
         const mine = s.result !== "Blocked: already used";
-        return [stamp(s.at), s.n, s.code, s.result, s.device, mine ? r.name || "" : "", mine ? r.phone || "" : ""];
+        return [stamp(s.at), giftNoOf(s.code, s.n), s.code, s.result, s.device, mine ? r.name || "" : "", mine ? r.phone || "" : ""];
       })
     };
   });
   tabSync.schedule(process.env.GIFT_SHEET_SURVEY_TAB || "BBB Survey", () => ({
-    header: ["Date", "Label #", "Code", "Name", "Phone", ...SURVEY_FIELDS.map((f) => f[1])],
-    rows: surveys().map((s) => [stamp(s.at), s.n, s.code, s.name || "", s.phone || "", ...SURVEY_FIELDS.map((f) => s.answers[f[0]] || "")])
+    header: ["Date", "Gift #", "Code", "Name", "Phone", ...SURVEY_FIELDS.map((f) => f[1])],
+    rows: surveys().map((s) => [stamp(s.at), giftNoOf(s.code, s.n), s.code, s.name || "", s.phone || "", ...SURVEY_FIELDS.map((f) => s.answers[f[0]] || "")])
   }));
 }
 
@@ -189,9 +198,9 @@ function standing(info, dev) {
 function chefNote(info) {
   if (info.test) return "";
   const r = codes()[info.code] || {};
-  if (!r.claimedAt) return `Chef preview: gift no. ${info.n} is not used yet. Your scan doesn't count, so it still works for a customer.`;
+  if (!r.claimedAt) return `Chef preview: gift no. ${info.gift} is not used yet. Your scan doesn't count, so it still works for a customer.`;
   const who = [r.name, r.phone].filter(Boolean).join(", ");
-  return `Chef preview: gift no. ${info.n} was used ${stamp(r.claimedAt)}${who ? ` by ${who}` : ""} on ${r.device || "a phone"}. Your scan doesn't count.`;
+  return `Chef preview: gift no. ${info.gift} was used ${stamp(r.claimedAt)}${who ? ` by ${who}` : ""} on ${r.device || "a phone"}. Your scan doesn't count.`;
 }
 
 // ---------- pages ----------
@@ -206,16 +215,19 @@ const CSS = `:root{color-scheme:light}
 body{margin:0;background:${CG.sand};color:${CG.charcoal};font:17px/1.55 Archivo,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 main{max-width:640px;margin:0 auto;padding:28px 18px 0}
 main.bare{padding:0}
+main{position:relative;z-index:1}
+body::before{content:"";position:fixed;inset:0;background:url(/app/seal.png) center 55%/min(88vw,520px) no-repeat;opacity:.08;filter:grayscale(1);pointer-events:none;z-index:0}
 .seal{display:block;width:120px;height:120px;margin:0 auto 10px}
 h1{font:700 30px/1.12 Fraunces,Georgia,serif;text-align:center;margin:6px 0 4px}
 h2{font:700 21px/1.2 Fraunces,Georgia,serif;margin:26px 0 10px;color:${CG.charcoal}}
 .sub{text-align:center;color:${CG.stripInk};margin:0 0 18px}
-.card{background:${CG.card};border:1px solid ${CG.cardLine};border-radius:12px;padding:16px 18px;margin:14px 0}
-.rc-head{background:${CG.charcoal};color:${CG.cream};padding:22px 20px;display:flex;gap:16px;align-items:center;border-bottom:5px solid ${CG.gold}}
+.card{background:rgba(255,252,245,.72);border:1px solid ${CG.cardLine};border-radius:12px;padding:16px 18px;margin:14px 0}
+.rc-head{background:#7A6248;color:${CG.cream};padding:22px 20px;display:flex;gap:16px;align-items:center;border-bottom:5px solid ${CG.gold}}
 .rc-head img{width:84px;height:84px;flex-shrink:0}
-.rc-kick{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:${CG.gold}}
+.rc-kick{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#F3E3BE}
+.rc-special{font-size:13px;font-weight:700;letter-spacing:4px;color:#F7D58A;margin:2px 0}
 .rc-head h1{color:${CG.cream};text-align:left;margin:2px 0;font-size:32px}
-.rc-subt{font:italic 500 16px/1.3 Fraunces,Georgia,serif;color:${CG.creamSoft}}
+.rc-subt{font:italic 500 16px/1.3 Fraunces,Georgia,serif;color:#F6EEDC}
 .rc-meta{display:flex;justify-content:space-around;gap:8px;background:${CG.strip};padding:12px 14px;text-align:center}
 .rc-meta span{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:${CG.stripInk}}
 .rc-meta b{font:600 17px/1.2 Fraunces,Georgia,serif}
@@ -274,7 +286,7 @@ ${body}
 const RECIPE = {
   bbb25: {
     title: "Bisi Bele Bhath",
-    subtitle: "FTR Special · made with one 25 g packet of FTR-BBB Powder",
+    subtitle: "FTR Special · made with one 25 g packet of FTR Bisi Bele Bhath Pudi",
     meta: [["Prep", "≈ 15 min"], ["Cook", "≈ 40 min"], ["Serves", "3–4 · ≈ 2 qt"]],
     notes: [
       "Cut khol rabi and beans into 1\" pieces.",
@@ -284,7 +296,7 @@ const RECIPE = {
       "Make the raitha separately; keep it ready."
     ],
     ingredients: [
-      ["FTR-BBB Powder", "25 g (1 packet)"], ["Rice, uncooked", "150 g"], ["Toor dal (cook fully ahead)", "100 g"],
+      ["FTR Bisi Bele Bhath Pudi", "25 g (1 packet)"], ["Rice, uncooked", "150 g"], ["Toor dal (cook fully ahead)", "100 g"],
       ["Fresh coconut", "25 g"], ["Curry leaves", "4–5, plus a few for tadka"], ["Tamarind", "to taste"],
       ["Khol rabi, 1\" pieces", "50 g"], ["Green beans, 1\" pieces", "50 g"], ["Carrot", "50 g"],
       ["Seme badnekai, small pieces", "50 g"], ["Green peas", "50 g"], ["White pumpkin, medium pieces", "100 g"],
@@ -294,7 +306,7 @@ const RECIPE = {
       ["Salt, hing, extra chilly powder", "to taste"]
     ],
     steps: [
-      ["Paste", "In a blender, add the 25 g FTR-BBB Powder, 25 g fresh coconut, tamarind to taste and 4–5 curry leaves with a little water. Blend to a thick paste. Keep it ready with the uncooked rice and cooked toor dal."],
+      ["Paste", "In a blender, add the 25 g FTR Bisi Bele Bhath Pudi, 25 g fresh coconut, tamarind to taste and 4–5 curry leaves with a little water. Blend to a thick paste. Keep it ready with the uncooked rice and cooked toor dal."],
       ["Tempering", "Heat 1 tbsp oil in a pot and add ½ tsp mustard seeds. Once they splutter, add the onion and sauté till translucent, then the khol rabi and fry 1 min."],
       ["Vegetables", "Add ¾ glass of water and cook 2 min. Then every 2 min add, in this order: beans, carrot, seme badnekai, peas, white pumpkin, bell pepper and tomato. Add a little more water if needed."],
       ["Simmer", "Cook 5 min. If the beans are cooked, the rest will be fine."],
@@ -309,12 +321,20 @@ const RECIPE = {
   }
 };
 
+/** "FTR Special · …" becomes a ★ FTR SPECIAL ★ line with the rest underneath. */
+function special(sub) {
+  const pre = "FTR Special · ";
+  if (!sub.startsWith(pre)) return `<div class="rc-subt">${esc(sub)}</div>`;
+  const rest = sub.slice(pre.length);
+  return `<div class="rc-special">★ FTR SPECIAL ★</div><div class="rc-subt">${esc(rest[0].toUpperCase() + rest.slice(1))}</div>`;
+}
+
 /** The recipe in Chef's Charcoal & Gold card: header, prep strip, ingredients, notes, method. */
 function recipeHtml(key, kicker) {
   const r = RECIPE[key];
   return `<header class="rc-head"><img src="/app/seal.png" alt="Franklin Tiffin Room seal"><div>
 <div class="rc-kick">${esc(kicker || "Franklin Tiffin Room · Recipe")}</div>
-<h1>${esc(r.title)}</h1><div class="rc-subt">${esc(r.subtitle)}</div></div></header>
+<h1>${esc(r.title)}</h1>${special(r.subtitle)}</div></header>
 <div class="rc-meta">${r.meta.map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>
 <div class="rc-body">
 <div class="card"><h2 style="margin-top:0">Ingredients</h2><ul class="ing">${r.ingredients.map(([n, q]) => `<li><span>${esc(n)}</span><b>${esc(q)}</b></li>`).join("")}</ul></div>
@@ -338,9 +358,9 @@ function welcomeForm(info, r) {
 
 function giftPage(info, r) {
   const done = surveys().some((s) => s.code === info.code);
-  const kicker = info.test ? "Chef's test code · reusable" : info.chef ? `Chef preview · Gift no. ${info.n} · not counted` : `Franklin Tiffin Room · Gift no. ${info.n}`;
+  const kicker = info.test ? "Chef's test code · reusable" : info.chef ? `Chef preview · Gift no. ${info.gift} · not counted` : `Franklin Tiffin Room · Gift no. ${info.gift}`;
   const note = info.chef ? `<p class="card hi" style="margin:14px 0 0">${esc(chefNote(info))}</p>` : "";
-  return shell("Your FTR-BBB Powder recipe", `
+  return shell("Your FTR Bisi Bele Bhath Pudi recipe", `
 ${recipeHtml(info.batch.recipe, kicker)}
 <div class="pad">${note}
 ${welcomeForm(info, r)}
@@ -359,9 +379,9 @@ function surveyPage(info, r, prev) {
   const a = (prev && prev.answers) || {};
   const q = (name, legend, opts) => `<fieldset><legend>${legend}</legend>${radios(name, opts, a[name])}</fieldset>`;
   const t = (name, text) => `<label for="${name}">${text}</label><textarea id="${name}" name="${name}" maxlength="1500">${esc(a[name] || "")}</textarea>`;
-  return shell("FTR-BBB Powder feedback", `
+  return shell("FTR Bisi Bele Bhath Pudi feedback", `
 <h1>How was your BBB?</h1>
-<p class="sub">Gift no. ${info.n} · takes about 2 minutes</p>
+<p class="sub">Gift no. ${info.gift} · takes about 2 minutes</p>
 <form class="card" method="post" action="/g/${esc(info.code)}/survey">
 ${q("verdict", "Was it lip-smacking or just another BBB?", ["Lip-smacking!", "Really good", "Just another BBB", "Not for me"])}
 ${q("taste", "Taste", ["1", "2", "3", "4", "5"])}<p class="note">1 = poor, 5 = excellent</p>
@@ -374,7 +394,7 @@ ${t("emphasis", "Anything we should emphasize more in the recipe?")}
 ${t("different", "Anything you would do differently?")}
 ${t("better", "Is your BBB better than FTR's? Share your secret!")}
 ${t("notes", "Any other notes for FTR")}
-${q("buyAgain", "Would you buy FTR-BBB Powder?", ["Yes", "Maybe", "No"])}
+${q("buyAgain", "Would you buy FTR Bisi Bele Bhath Pudi?", ["Yes", "Maybe", "No"])}
 <label for="sname">Name <span class="note">(optional)</span></label><input id="sname" name="name" type="text" maxlength="80" value="${esc((prev && prev.name) || r.name || "")}">
 <label for="sphone">Phone <span class="note">(optional)</span></label><input id="sphone" name="phone" type="tel" maxlength="20" value="${esc((prev && prev.phone) || r.phone || "")}">
 <button class="btn" type="submit">Send feedback</button>
@@ -416,7 +436,7 @@ function appRecipe(key) {
   return {
     title: r.title,
     subtitle: r.subtitle,
-    powder: "FTR-BBB Powder · 25 g gift",
+    powder: "FTR Bisi Bele Bhath Pudi · 25 g gift",
     meta: r.meta.map(([label, value]) => ({ label, value })),
     serves: "3–4 · ≈ 2 qt",
     ingredients: r.ingredients.map(([n]) => n),
@@ -436,7 +456,7 @@ const APP_QUESTIONS = {
   different: "Anything you would do differently?",
   better: "Is your BBB better than FTR's? Share your secret!",
   notes: "Any other notes for FTR",
-  buyAgain: "Would you buy FTR-BBB Powder?"
+  buyAgain: "Would you buy FTR Bisi Bele Bhath Pudi?"
 };
 
 function appSurveyForm() {
@@ -453,7 +473,7 @@ function appScan(raw, who) {
   if (!info) throw new GiftError(404, secret() ? "We couldn't find this code. Scan the QR code on your FTR packet again." : "Gift codes aren't switched on yet. Please try again later.", "gift_invalid");
   const device = who.device || "App";
   const chef = !!who.chef && !info.test;
-  const base = { code: info.code, label: info.n, title: info.batch.title, product: info.batch.product, test: !!info.test || chef, chef, note: chef ? chefNote(info) : "" };
+  const base = { code: info.code, label: info.gift, title: info.batch.title, product: info.batch.product, test: !!info.test || chef, chef, note: chef ? chefNote(info) : "" };
   if (info.test || chef) {
     // Chef's test code, or Chef's own phone checking a real label: show it, claim nothing, log nothing.
     return { gift: base, recipe: appRecipe(info.batch.recipe), survey: { questions: appSurveyForm(), answers: {}, done: false } };
@@ -620,4 +640,4 @@ function register(app, requireAdminAuth) {
   });
 }
 
-module.exports = { register, makeCode, parse, urlFor, syncSheets, appScan, appSurvey, GiftError, BATCHES, TEST_CODE };
+module.exports = { register, giftNo, makeCode, parse, urlFor, syncSheets, appScan, appSurvey, GiftError, BATCHES, TEST_CODE };
