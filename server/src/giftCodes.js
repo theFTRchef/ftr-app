@@ -23,6 +23,7 @@ const store = require("./jsonFile");
 const tabSync = require("./tabSync");
 
 const BATCHES = {
+  CHEF: { count: 3, firstGift: 9001, test: true, title: "Chef test code", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" },
   T50: { count: 125, firstGift: 4001, title: "Triveni 50th anniversary souvenir bag", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" }
 };
 
@@ -125,6 +126,7 @@ function syncSheets() {
     const sv = new Set(surveys().map((s) => s.code));
     const rows = [];
     for (const [id, b] of Object.entries(BATCHES)) {
+      if (b.test) continue;
       for (let n = 1; n <= b.count; n++) {
         const code = makeCode(id, n);
         const r = all[code] || {};
@@ -391,7 +393,8 @@ function register(app, requireAdminAuth) {
     const device = deviceOf(req.get("user-agent"));
     const all = codes();
     const r = all[info.code] || {};
-    const who = standing(info, dev);
+    // Chef test codes work on any phone, every time, and never lock.
+    const who = info.batch.test && standing(info, dev) === "other" ? "owner" : standing(info, dev);
     if (who === "other") {
       all[info.code] = { ...r, blocked: (r.blocked || 0) + 1 };
       store.write(CODES_FILE, all);
@@ -414,7 +417,7 @@ function register(app, requireAdminAuth) {
   app.post("/g/:code/hello", (req, res) => {
     const info = load(req, res);
     if (!info) return;
-    if (standing(info, readCookie(req)) !== "owner") return res.status(410).type("html").send(usedPage());
+    if (!info.batch.test && standing(info, readCookie(req)) !== "owner") return res.status(410).type("html").send(usedPage());
     const b = req.body || {};
     const all = codes();
     const r = all[info.code];
@@ -434,7 +437,7 @@ function register(app, requireAdminAuth) {
   app.get("/g/:code/survey", (req, res) => {
     const info = load(req, res);
     if (!info) return;
-    if (standing(info, readCookie(req)) !== "owner") return res.status(410).type("html").send(usedPage());
+    if (!info.batch.test && standing(info, readCookie(req)) !== "owner") return res.status(410).type("html").send(usedPage());
     const prev = surveys().find((s) => s.code === info.code);
     res.type("html").send(surveyPage(info, codes()[info.code], prev));
   });
@@ -442,7 +445,7 @@ function register(app, requireAdminAuth) {
   app.post("/g/:code/survey", (req, res) => {
     const info = load(req, res);
     if (!info) return;
-    if (standing(info, readCookie(req)) !== "owner") return res.status(410).type("html").send(usedPage());
+    if (!info.batch.test && standing(info, readCookie(req)) !== "owner") return res.status(410).type("html").send(usedPage());
     const b = req.body || {};
     const answers = {};
     for (const [k] of SURVEY_FIELDS) answers[k] = clean(b[k], 1500);
