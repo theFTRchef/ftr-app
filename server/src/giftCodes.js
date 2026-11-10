@@ -184,12 +184,13 @@ function esc(s) {
 const CSS = `:root{color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:#F7F1E8;color:#2E2A26;font:17px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-main{max-width:560px;margin:0 auto;padding:28px 18px 40px}
+main{max-width:560px;margin:0 auto;padding:28px 18px 40px;position:relative;z-index:1}
+body::before{content:"";position:fixed;inset:0;background:url(/app/seal.png) center 55%/min(88vw,520px) no-repeat;opacity:.08;filter:grayscale(1);pointer-events:none;z-index:0}
 .seal{display:block;width:120px;height:120px;margin:0 auto 10px}
 h1{font:700 28px/1.15 Georgia,serif;text-align:center;margin:6px 0 4px}
 h2{font:700 21px/1.2 Georgia,serif;margin:28px 0 10px;color:#7A3B1E}
 .sub{text-align:center;color:#6E5D55;margin:0 0 18px}
-.card{background:#FFFDF8;border:1px solid #E6DAC6;border-radius:14px;padding:16px 18px;margin:14px 0}
+.card{background:rgba(255,253,248,.72);border:1px solid #E6DAC6;border-radius:14px;padding:16px 18px;margin:14px 0}
 ul.ing{list-style:none;padding:0;margin:0}
 ul.ing li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #EFE6D6}
 ul.ing li b{white-space:nowrap}
