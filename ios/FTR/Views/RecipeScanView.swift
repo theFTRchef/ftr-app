@@ -30,6 +30,9 @@ struct GiftInfo: Decodable, Equatable {
     let title: String
     let product: String
     let test: Bool
+    /// Chef's own phone opened a real label: shown, not counted as used.
+    let chef: Bool?
+    let note: String?
 }
 
 struct SurveyQuestion: Decodable, Equatable, Identifiable {
@@ -310,7 +313,10 @@ struct RecipeView: View {
     private var recipe: Recipe { opened.recipe }
 
     private var kicker: String {
-        if let g = opened.gift { return g.test ? "CHEF'S TEST CODE · REUSABLE" : "FRANKLIN TIFFIN ROOM · GIFT NO. \(g.label)" }
+        if let g = opened.gift {
+            if g.chef == true { return "CHEF PREVIEW · GIFT NO. \(g.label) · NOT COUNTED" }
+            return g.test ? "CHEF'S TEST CODE · REUSABLE" : "FRANKLIN TIFFIN ROOM · GIFT NO. \(g.label)"
+        }
         return "FRANKLIN TIFFIN ROOM · RECIPE"
     }
 
@@ -335,6 +341,19 @@ struct RecipeView: View {
                 VStack(spacing: 0) {
                     header
                     if !meta.isEmpty { metaStrip }
+                    if let note = opened.gift?.note, !note.isEmpty {
+                        Text(note)
+                            .font(Typeface.body(14, weight: .semibold))
+                            .foregroundStyle(CG.charcoal)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(uiColor: UIColor(hex: 0xFFF6E2)), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(CG.gold))
+                            .padding(.horizontal, 18)
+                            .padding(.top, 14)
+                            .frame(maxWidth: 980)
+                    }
                     Group {
                         if wide {
                             HStack(alignment: .top, spacing: 28) {
@@ -567,7 +586,7 @@ struct GiftSurveyView: View {
         NavigationStack {
             Form {
                 if test {
-                    Section { Text("Chef's test code: answers aren't saved.").font(Typeface.body(14)).foregroundStyle(Palette.muted) }
+                    Section { Text("Chef's preview: answers aren't saved.").font(Typeface.body(14)).foregroundStyle(Palette.muted) }
                 }
                 ForEach(survey.questions) { q in
                     Section {

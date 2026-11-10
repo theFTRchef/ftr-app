@@ -189,4 +189,4 @@ function useEntryCode(code) {
   return !!t && t >= Date.now();
 }
 
-module.exports = { requireAdminAuth, mountAuthRoutes, issueSession, configured, newEntryCode, useEntryCode };
+module.exports = { requireAdminAuth, mountAuthRoutes, issueSession, configured, newEntryCode, useEntryCode, validSession };

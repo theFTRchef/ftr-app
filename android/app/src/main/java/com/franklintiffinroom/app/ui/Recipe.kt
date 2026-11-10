@@ -98,7 +98,7 @@ data class Recipe(
 )
 
 @Serializable
-data class GiftInfo(val code: String, val label: Int = 0, val title: String = "", val product: String = "", val test: Boolean = false)
+data class GiftInfo(val code: String, val label: Int = 0, val title: String = "", val product: String = "", val test: Boolean = false, val chef: Boolean = false, val note: String = "")
 
 @Serializable
 data class SurveyQuestion(val key: String, val label: String, val options: List<String>? = null)
@@ -265,7 +265,13 @@ object CG {
 @Composable
 private fun RecipeBody(o: OpenedRecipe, modifier: Modifier, openSurvey: () -> Unit) {
     val r = o.recipe
-    val kicker = o.gift?.let { if (it.test) "CHEF'S TEST CODE · REUSABLE" else "FRANKLIN TIFFIN ROOM · GIFT NO. ${it.label}" } ?: "FRANKLIN TIFFIN ROOM · RECIPE"
+    val kicker = o.gift?.let {
+        when {
+            it.chef -> "CHEF PREVIEW · GIFT NO. ${it.label} · NOT COUNTED"
+            it.test -> "CHEF'S TEST CODE · REUSABLE"
+            else -> "FRANKLIN TIFFIN ROOM · GIFT NO. ${it.label}"
+        }
+    } ?: "FRANKLIN TIFFIN ROOM · RECIPE"
     val meta = r.meta?.takeIf { it.isNotEmpty() } ?: listOfNotNull(
         r.time?.takeIf { it.isNotEmpty() }?.let { RecipeMeta("Time", it) },
         r.serves?.takeIf { it.isNotEmpty() }?.let { RecipeMeta("Serves", it) },
@@ -296,6 +302,14 @@ private fun RecipeBody(o: OpenedRecipe, modifier: Modifier, openSurvey: () -> Un
                         }
                     }
                 }
+            }
+
+            o.gift?.note?.takeIf { it.isNotEmpty() }?.let { note ->
+                Text(
+                    note, style = Type.semi(14.0), color = CG.charcoal,
+                    modifier = Modifier.widthIn(max = 980.dp).fillMaxWidth().padding(start = 18.dp, end = 18.dp, top = 14.dp)
+                        .background(Color(0xFFFFF6E2), RoundedCornerShape(12.dp)).border(1.dp, CG.gold, RoundedCornerShape(12.dp)).padding(12.dp),
+                )
             }
 
             val ingredients: @Composable () -> Unit = {
@@ -419,7 +433,7 @@ private fun SurveySheet(gift: GiftInfo, survey: GiftSurvey, onDismiss: () -> Uni
         else TextButton(onClick = ::send) { Text("Send", style = Type.bold(16.0), color = P.leaf) }
     }) { pad ->
         Column(Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            if (gift.test) Notice("Chef's test code: answers aren't saved.")
+            if (gift.test) Notice("Chef's preview: answers aren't saved.")
             survey.questions.forEach { q ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(q.label, style = Type.semi(15.0), color = P.ink)

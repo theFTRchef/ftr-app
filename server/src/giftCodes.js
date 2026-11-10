@@ -21,6 +21,7 @@
 const crypto = require("crypto");
 const store = require("./jsonFile");
 const tabSync = require("./tabSync");
+const adminAuth = require("./adminAuth");
 
 const BATCHES = {
   T50: { count: 125, title: "Triveni 50th anniversary souvenir bag", product: "FTR-BBB Powder, 25 g", recipe: "bbb25" }
@@ -178,10 +179,19 @@ function deviceId(req, res) {
 
 /** Who is this visitor for this code? "owner", "new" (unclaimed) or "other". */
 function standing(info, dev) {
-  if (info.test) return "owner";
+  if (info.test || info.chef) return "owner";
   const r = codes()[info.code];
   if (!r || !r.claimedAt) return "new";
   return r.device_id === dev ? "owner" : "other";
+}
+
+/** For Chef's preview: whether a customer has used this code yet. */
+function chefNote(info) {
+  if (info.test) return "";
+  const r = codes()[info.code] || {};
+  if (!r.claimedAt) return `Chef preview: gift no. ${info.n} is not used yet. Your scan doesn't count, so it still works for a customer.`;
+  const who = [r.name, r.phone].filter(Boolean).join(", ");
+  return `Chef preview: gift no. ${info.n} was used ${stamp(r.claimedAt)}${who ? ` by ${who}` : ""} on ${r.device || "a phone"}. Your scan doesn't count.`;
 }
 
 // ---------- pages ----------
@@ -328,10 +338,11 @@ function welcomeForm(info, r) {
 
 function giftPage(info, r) {
   const done = surveys().some((s) => s.code === info.code);
-  const kicker = info.test ? "Chef's test code · reusable" : `Franklin Tiffin Room · Gift no. ${info.n}`;
+  const kicker = info.test ? "Chef's test code · reusable" : info.chef ? `Chef preview · Gift no. ${info.n} · not counted` : `Franklin Tiffin Room · Gift no. ${info.n}`;
+  const note = info.chef ? `<p class="card hi" style="margin:14px 0 0">${esc(chefNote(info))}</p>` : "";
   return shell("Your FTR-BBB Powder recipe", `
 ${recipeHtml(info.batch.recipe, kicker)}
-<div class="pad">
+<div class="pad">${note}
 ${welcomeForm(info, r)}
 <h2>How was it?</h2>
 <p>${done ? "Thank you for your feedback! You can update it any time." : "Once you've made it, tell us what was right and what was wrong. Every answer helps FTR get better."}</p>
@@ -441,8 +452,10 @@ function appScan(raw, who) {
   const info = parse(raw);
   if (!info) throw new GiftError(404, secret() ? "We couldn't find this code. Scan the QR code on your FTR packet again." : "Gift codes aren't switched on yet. Please try again later.", "gift_invalid");
   const device = who.device || "App";
-  const base = { code: info.code, label: info.n, title: info.batch.title, product: info.batch.product, test: !!info.test };
-  if (info.test) {
+  const chef = !!who.chef && !info.test;
+  const base = { code: info.code, label: info.n, title: info.batch.title, product: info.batch.product, test: !!info.test || chef, chef, note: chef ? chefNote(info) : "" };
+  if (info.test || chef) {
+    // Chef's test code, or Chef's own phone checking a real label: show it, claim nothing, log nothing.
     return { gift: base, recipe: appRecipe(info.batch.recipe), survey: { questions: appSurveyForm(), answers: {}, done: false } };
   }
   const all = codes();
@@ -472,7 +485,7 @@ function appScan(raw, who) {
 function appSurvey(raw, who, body) {
   const info = parse(raw);
   if (!info) throw new GiftError(404, "We couldn't find this code.", "gift_invalid");
-  if (info.test) return { ok: true, test: true };
+  if (info.test || who.chef) return { ok: true, test: true };
   if (standing(info, who.owner) !== "owner") throw new GiftError(410, "This gift code belongs to another phone.", "gift_used");
   const a = (body && body.answers) || {};
   const answers = {};
@@ -518,6 +531,8 @@ function register(app, requireAdminAuth) {
   function load(req, res) {
     res.set("Cache-Control", "no-store");
     const info = parse(req.params.code);
+    // Chef's phone (signed in to Chef's Kitchen in this browser) can open any label without using it up.
+    if (info && !info.test && adminAuth.validSession(req)) info.chef = true;
     if (!secret() && !(info && info.test)) {
       res.status(503).type("html").send(invalidPage(true));
       return null;
@@ -534,7 +549,7 @@ function register(app, requireAdminAuth) {
     if (!info) return;
     const dev = deviceId(req, res);
     const device = deviceOf(req.get("user-agent"));
-    if (info.test) return res.type("html").send(giftPage(info, { skipped: true }));
+    if (info.test || info.chef) return res.type("html").send(giftPage(info, { skipped: true }));
     const all = codes();
     const r = all[info.code] || {};
     const who = standing(info, dev);
@@ -561,7 +576,7 @@ function register(app, requireAdminAuth) {
     const info = load(req, res);
     if (!info) return;
     if (standing(info, readCookie(req)) !== "owner") return res.status(410).type("html").send(usedPage());
-    if (info.test) return res.redirect(303, `/g/${info.code}`);
+    if (info.test || info.chef) return res.redirect(303, `/g/${info.code}`);
     const b = req.body || {};
     const all = codes();
     const r = all[info.code];
@@ -593,7 +608,7 @@ function register(app, requireAdminAuth) {
     const b = req.body || {};
     const answers = {};
     for (const [k] of SURVEY_FIELDS) answers[k] = clean(b[k], 1500);
-    if (info.test) return res.type("html").send(shell("Thank you!", `<h1>Test feedback received</h1><p class="sub">Chef's test code doesn't save answers.</p><a class="btn alt" href="/g/${TEST_CODE}">Back to the recipe</a>`));
+    if (info.test || info.chef) return res.type("html").send(shell("Thank you!", `<h1>Test feedback received</h1><p class="sub">Chef's previews don't save answers.</p><a class="btn alt" href="/g/${esc(info.code)}">Back to the recipe</a>`));
     const list = surveys().filter((s) => s.code !== info.code);
     list.push({ at: new Date().toISOString(), code: info.code, n: info.n, batchId: info.batchId, name: clean(b.name, 80), phone: clean(b.phone, 20), answers });
     store.write(SURVEY_FILE, list);

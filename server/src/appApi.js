@@ -902,7 +902,7 @@ function router() {
     const install = String(req.get("x-ftr-install") || "");
     const ua = String(req.get("user-agent") || "");
     const device = /okhttp|dalvik|android/i.test(ua) ? "Android app" : /darwin|cfnetwork|iphone|ios/i.test(ua) ? "iPhone app" : "App";
-    if (phone) return { owner: `user:${phone}`, phone, name: flow().nameFor(phone) || "", device };
+    if (phone) return { owner: `user:${phone}`, phone, name: flow().nameFor(phone) || "", device, chef: isAdminPhone(phone) };
     if (!/^[A-Za-z0-9-]{8,64}$/.test(install)) throw new ApiError(400, "Please update the FTR-DOSE app and scan again.");
     return { owner: `app:${install}`, device };
   }
