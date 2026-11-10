@@ -234,7 +234,7 @@ const RECIPE = {
       ["Fresh coconut", "25 g"], ["Curry leaves", "4–5, plus a few for tadka"], ["Tamarind", "to taste"],
       ["Khol rabi, 1\" pieces", "50 g"], ["Green beans, 1\" pieces", "50 g"], ["Carrot", "50 g"],
       ["Seme badnekai, small pieces", "50 g"], ["Green peas", "50 g"], ["White pumpkin, medium pieces", "100 g"],
-      ["Bell pepper, diced", "50 g"], ["Tomato, wedges", "50 g"], ["Onion, chopped", "25 g"],
+      ["Bell pepper, diced", "50 g"], ["Tomato, wedges", "½ medium"], ["Onion, chopped", "½ medium"],
       ["Oil", "1 tbsp"], ["Mustard seeds", "½ tsp + a pinch"], ["Ghee", "2 tbsp + more to serve"],
       ["Cashews, fried in ghee", "15 g"], ["Byadgi chillies (tadka)", "2"], ["Ghee or oil (tadka)", "2 tsp"],
       ["Salt, hing, extra chilly powder", "to taste"]
