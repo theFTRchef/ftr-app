@@ -60,6 +60,10 @@ object Api {
         get() = prefs.getString("token", null)
         set(v) { prefs.edit().apply { if (v == null) remove("token") else putString("token", v) }.apply() }
 
+    /** A random id for this app install, so a single-use gift QR code stays with the phone that scanned it. */
+    val installId: String
+        get() = prefs.getString("install", null) ?: java.util.UUID.randomUUID().toString().also { prefs.edit().putString("install", it).apply() }
+
     /** Absolute URL for a path the server returns (e.g. "/zelle-qr?v=123"). */
     fun absolute(path: String?): String? {
         if (path.isNullOrEmpty()) return null
@@ -98,6 +102,7 @@ object Api {
             .header("Accept", "application/json")
             .header("User-Agent", "FTR-Android/${BuildConfig.VERSION_NAME}")
             .apply { token?.let { header("Authorization", "Bearer $it") } }
+            .header("X-FTR-Install", installId)
             .method(method, body ?: if (method == "POST" || method == "PUT") ByteArray(0).toRequestBody(JSON_TYPE) else null)
             .build()
         val (status, text) = try {

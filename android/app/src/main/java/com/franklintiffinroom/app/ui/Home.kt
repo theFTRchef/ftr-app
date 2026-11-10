@@ -202,6 +202,8 @@ fun HomeScreen(model: AppModel, nav: Nav) {
                     row.forEach { it(Modifier.weight(1f).fillMaxSize()) }
                 }
             }
+
+            ScanRecipeCard()
         }
     }
 

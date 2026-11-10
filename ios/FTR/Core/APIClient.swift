@@ -87,7 +87,17 @@ final class APIClient {
         if let token { req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         req.setValue("FTR-iOS/\(version)", forHTTPHeaderField: "User-Agent")
+        req.setValue(installID, forHTTPHeaderField: "X-FTR-Install")
         return req
+    }
+
+    /// A random id for this app install (kept in the Keychain), so a single-use gift
+    /// QR code stays with the phone that scanned it even when nobody is signed in.
+    var installID: String {
+        if let id = Keychain.read("ftr.install"), !id.isEmpty { return id }
+        let id = UUID().uuidString.lowercased()
+        Keychain.save("ftr.install", id)
+        return id
     }
 
     private func send<T: Decodable, B: Encodable>(_ method: String, _ path: String, query: [String: String] = [:], body: B?) async throws -> T {

@@ -45,9 +45,10 @@ function privacy() {
 <li><b>Delivery or event address</b>, when you choose delivery or book the LIVE Dose Station. We check that it is a real US address.</li>
 <li><b>Payment confirmations</b>: if you send a screenshot of a deposit or payment, we keep it with that order. We do not receive or store card or bank numbers.</li>
 <li><b>Messages</b> between you and Chef, and feedback or quote requests you send.</li>
+<li><b>Gift QR code scans</b>: when you scan the code on an FTR gift packet, we record which code, when, the kind of phone, and your name and number if you are signed in or choose to give them, plus any feedback you send. Each code works on one phone only.</li>
 <li><b>A notification token</b> from your phone, so we can send order updates and (only if you turn them on) announcements of new dishes.</li>
 </ul>
-<p>We do not collect your location, contacts, photos (other than ones you choose to send), or any advertising or tracking identifiers, and the app contains no ads or third-party analytics.</p>
+<p>The app uses the camera only while you scan a QR code; no picture is taken or sent. We do not collect your location, contacts, photos (other than ones you choose to send), or any advertising or tracking identifiers, and the app contains no ads or third-party analytics.</p>
 
 <h2>How we use it</h2>
 <ul>

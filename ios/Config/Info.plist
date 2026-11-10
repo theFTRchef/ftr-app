@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>FTR-DOSE uses the camera only to scan the QR code on your FTR masala packet and show Chef's recipe.</string>
 	<!-- The FTR server's app API. Change this if your bot runs at a different address. -->
 	<key>FTRAPIBaseURL</key>
 	<string>$(FTR_API_BASE_URL)</string>

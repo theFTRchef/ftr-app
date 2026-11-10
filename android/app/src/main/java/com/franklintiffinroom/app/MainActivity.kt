@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity() {
 
     /** Tapping a notification opens the order it's about (or Notifications). */
     private fun handle(intent: Intent?) {
+        // Screenshot runs: adb shell am start ... --es ftrScanCode CHEF-TEST opens that recipe.
+        if (BuildConfig.DEBUG) intent?.getStringExtra("ftrScanCode")?.let { com.franklintiffinroom.app.ui.RecipeCode.pending = it }
         if (intent?.getBooleanExtra(Push.EXTRA_FROM_PUSH, false) == true) {
             model.openFromNotification(intent.getStringExtra("orderId"))
         }

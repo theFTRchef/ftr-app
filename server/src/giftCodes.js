@@ -50,7 +50,14 @@ function makeCode(batch, n) {
   return `${batch}-${String(n).padStart(3, "0")}-${check(batch, n)}`;
 }
 
+// Chef's test code: shows the recipe on any phone, any number of times, claims
+// nothing and stays out of the Sheet. Works even before GIFT_CODE_SECRET is set.
+const TEST_CODE = "CHEF-TEST";
+
 function parse(raw) {
+  if (String(raw || "").toUpperCase().trim() === TEST_CODE) {
+    return { code: TEST_CODE, batchId: "TEST", batch: { ...BATCHES.T50, title: "Chef's test code" }, n: 0, test: true };
+  }
   const m = /^([A-Z0-9]{2,8})-(\d{1,4})-([0-9A-Z]{8})$/.exec(String(raw || "").toUpperCase().trim());
   if (!m || !secret()) return null;
   const batch = BATCHES[m[1]];
@@ -171,6 +178,7 @@ function deviceId(req, res) {
 
 /** Who is this visitor for this code? "owner", "new" (unclaimed) or "other". */
 function standing(info, dev) {
+  if (info.test) return "owner";
   const r = codes()[info.code];
   if (!r || !r.claimedAt) return "new";
   return r.device_id === dev ? "owner" : "other";
@@ -333,6 +341,107 @@ function invalidPage(setup) {
 <a class="btn" href="/app">Get the FTR-DOSE app</a>`);
 }
 
+// ---------- FTR-DOSE app ----------
+// The app scans the same printed codes. A signed-in customer is the owner
+// "user:<phone>"; otherwise the app's install id is ("app:<id>"). Same
+// single-use rule as the web page: whoever opens a code first owns it.
+
+const SURVEY_OPTIONS = {
+  verdict: ["Lip-smacking!", "Really good", "Just another BBB", "Not for me"],
+  taste: ["1", "2", "3", "4", "5"],
+  spice: ["Too mild", "Just right", "Too spicy"],
+  masala: ["Too little", "Just right", "Too much"],
+  consistency: ["Too thick", "Just right", "Too runny"],
+  ease: ["1", "2", "3", "4", "5"],
+  buyAgain: ["Yes", "Maybe", "No"]
+};
+
+function appRecipe(key) {
+  const r = RECIPE[key];
+  return {
+    title: r.title,
+    powder: "FTR-BBB Powder · 25 g gift",
+    intro: "Thank you for trying our first product. Follow these steps to get the same Bisi Bele Bhath we serve.",
+    serves: "3–4 (about 2 qt)",
+    ingredients: r.ingredients.map(([n]) => n),
+    amounts: r.ingredients.map(([, q]) => q),
+    steps: r.steps.map(([t, x]) => `${t}: ${x}`),
+    tip: "BBB is incomplete without ghee: top each plate with another spoon."
+  };
+}
+
+const APP_QUESTIONS = {
+  verdict: "Was it lip-smacking or just another BBB?",
+  taste: "Taste (1 = poor, 5 = excellent)",
+  ease: "How easy was the recipe to follow? (1 = hard, 5 = very easy)",
+  missed: "Were any steps missing or unclear?",
+  emphasis: "Anything we should emphasize more in the recipe?",
+  different: "Anything you would do differently?",
+  better: "Is your BBB better than FTR's? Share your secret!",
+  notes: "Any other notes for FTR",
+  buyAgain: "Would you buy FTR-BBB Powder?"
+};
+
+function appSurveyForm() {
+  return SURVEY_FIELDS.map(([key, label]) => ({ key, label: APP_QUESTIONS[key] || label, options: SURVEY_OPTIONS[key] || null }));
+}
+
+class GiftError extends Error {
+  constructor(status, message, code) { super(message); this.status = status; this.code = code; }
+}
+
+/** A scan from the app. Returns { gift, recipe, survey } or throws GiftError. */
+function appScan(raw, who) {
+  const info = parse(raw);
+  if (!info) throw new GiftError(404, secret() ? "We couldn't find this code. Scan the QR code on your FTR packet again." : "Gift codes aren't switched on yet. Please try again later.", "gift_invalid");
+  const device = who.device || "App";
+  const base = { code: info.code, label: info.n, title: info.batch.title, product: info.batch.product, test: !!info.test };
+  if (info.test) {
+    return { gift: base, recipe: appRecipe(info.batch.recipe), survey: { questions: appSurveyForm(), answers: {}, done: false } };
+  }
+  const all = codes();
+  const r = all[info.code] || {};
+  const st = standing(info, who.owner);
+  if (st === "other") {
+    all[info.code] = { ...r, blocked: (r.blocked || 0) + 1 };
+    store.write(CODES_FILE, all);
+    logScan(info, "Blocked: already used", device);
+    syncSheets();
+    throw new GiftError(410, "This gift code has already been used. Each FTR gift QR code works on one phone only. If this is your packet, call or text 1-234-FTR-DOSE and Chef will send you the recipe.", "gift_used");
+  }
+  if (st === "new") {
+    all[info.code] = { ...r, claimedAt: new Date().toISOString(), device_id: who.owner, device, scans: 1, name: who.name || "", phone: who.phone || "", skipped: !who.phone };
+    logScan(info, "First scan (app)", device);
+  } else {
+    all[info.code] = { ...r, scans: (r.scans || 0) + 1 };
+    logScan(info, "Repeat (app)", device);
+  }
+  store.write(CODES_FILE, all);
+  syncSheets();
+  const prev = surveys().find((s) => s.code === info.code);
+  return { gift: base, recipe: appRecipe(info.batch.recipe), survey: { questions: appSurveyForm(), answers: (prev && prev.answers) || {}, done: !!prev } };
+}
+
+/** Feedback from the app for a code this owner holds. */
+function appSurvey(raw, who, body) {
+  const info = parse(raw);
+  if (!info) throw new GiftError(404, "We couldn't find this code.", "gift_invalid");
+  if (info.test) return { ok: true, test: true };
+  if (standing(info, who.owner) !== "owner") throw new GiftError(410, "This gift code belongs to another phone.", "gift_used");
+  const a = (body && body.answers) || {};
+  const answers = {};
+  for (const [k] of SURVEY_FIELDS) {
+    const v = clean(a[k], 1500);
+    answers[k] = SURVEY_OPTIONS[k] && v && !SURVEY_OPTIONS[k].includes(v) ? "" : v;
+  }
+  const r = codes()[info.code] || {};
+  const list = surveys().filter((s) => s.code !== info.code);
+  list.push({ at: new Date().toISOString(), code: info.code, n: info.n, batchId: info.batchId, name: who.name || r.name || "", phone: who.phone || r.phone || "", answers, via: "app" });
+  store.write(SURVEY_FILE, list);
+  syncSheets();
+  return { ok: true };
+}
+
 // ---------- routes ----------
 function clean(v, max) {
   return String(v || "").replace(/[\u0000-\u001f]/g, " ").trim().slice(0, max);
@@ -362,11 +471,11 @@ function register(app, requireAdminAuth) {
 
   function load(req, res) {
     res.set("Cache-Control", "no-store");
-    if (!secret()) {
+    const info = parse(req.params.code);
+    if (!secret() && !(info && info.test)) {
       res.status(503).type("html").send(invalidPage(true));
       return null;
     }
-    const info = parse(req.params.code);
     if (!info) {
       res.status(404).type("html").send(invalidPage(false));
       return null;
@@ -379,6 +488,7 @@ function register(app, requireAdminAuth) {
     if (!info) return;
     const dev = deviceId(req, res);
     const device = deviceOf(req.get("user-agent"));
+    if (info.test) return res.type("html").send(giftPage(info, { skipped: true }));
     const all = codes();
     const r = all[info.code] || {};
     const who = standing(info, dev);
@@ -405,6 +515,7 @@ function register(app, requireAdminAuth) {
     const info = load(req, res);
     if (!info) return;
     if (standing(info, readCookie(req)) !== "owner") return res.status(410).type("html").send(usedPage());
+    if (info.test) return res.redirect(303, `/g/${info.code}`);
     const b = req.body || {};
     const all = codes();
     const r = all[info.code];
@@ -436,6 +547,7 @@ function register(app, requireAdminAuth) {
     const b = req.body || {};
     const answers = {};
     for (const [k] of SURVEY_FIELDS) answers[k] = clean(b[k], 1500);
+    if (info.test) return res.type("html").send(shell("Thank you!", `<h1>Test feedback received</h1><p class="sub">Chef's test code doesn't save answers.</p><a class="btn alt" href="/g/${TEST_CODE}">Back to the recipe</a>`));
     const list = surveys().filter((s) => s.code !== info.code);
     list.push({ at: new Date().toISOString(), code: info.code, n: info.n, batchId: info.batchId, name: clean(b.name, 80), phone: clean(b.phone, 20), answers });
     store.write(SURVEY_FILE, list);
@@ -447,4 +559,4 @@ function register(app, requireAdminAuth) {
   });
 }
 
-module.exports = { register, makeCode, parse, urlFor, syncSheets, BATCHES };
+module.exports = { register, makeCode, parse, urlFor, syncSheets, appScan, appSurvey, GiftError, BATCHES, TEST_CODE };

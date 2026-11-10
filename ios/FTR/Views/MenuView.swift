@@ -54,6 +54,7 @@ struct HomeView: View {
                                 headerRow
                                 dibCard
                                 tilesGrid
+                                ScanRecipeCard()
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -64,6 +65,7 @@ struct HomeView: View {
                             flagshipCard(tall: false)
                             dibCard
                             tilesGrid
+                            ScanRecipeCard()
                         }
                     }
                 }

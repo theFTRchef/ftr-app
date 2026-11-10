@@ -894,6 +894,29 @@ function router() {
     if (!recipe) return res.status(404).json({ error: "This code isn't an FTR recipe, or it has been turned off." });
     res.json({ recipe });
   }));
+  // Single-use gift codes printed on FTR-BBB Powder packets (see giftCodes.js).
+  const gift = require("./giftCodes");
+  function giftWho(req) {
+    const m = /^Bearer\s+(.+)$/i.exec(req.headers.authorization || "");
+    const phone = m ? appUsers.phoneForToken(m[1].trim()) : null;
+    const install = String(req.get("x-ftr-install") || "");
+    const ua = String(req.get("user-agent") || "");
+    const device = /okhttp|dalvik|android/i.test(ua) ? "Android app" : /darwin|cfnetwork|iphone|ios/i.test(ua) ? "iPhone app" : "App";
+    if (phone) return { owner: `user:${phone}`, phone, name: flow().nameFor(phone) || "", device };
+    if (!/^[A-Za-z0-9-]{8,64}$/.test(install)) throw new ApiError(400, "Please update the FTR-DOSE app and scan again.");
+    return { owner: `app:${install}`, device };
+  }
+  const giftCall = (fn) => wrap((req, res) => {
+    rateLimit(`gift:${ip(req)}`, 60, 15 * 60 * 1000);
+    try {
+      res.json(fn(req));
+    } catch (e) {
+      if (e instanceof gift.GiftError) throw new ApiError(e.status, e.message, e.code);
+      throw e;
+    }
+  });
+  r.get("/gift/:code", giftCall((req) => gift.appScan(req.params.code, giftWho(req))));
+  r.post("/gift/:code/survey", giftCall((req) => gift.appSurvey(req.params.code, giftWho(req), req.body)));
   r.get("/availability", wrap((req, res) => res.json(availabilityPayload(req.query))));
 
   // --- sign in ---
