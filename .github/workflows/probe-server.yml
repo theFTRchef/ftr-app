@@ -16,3 +16,7 @@ jobs:
           B=https://bot.franklintiffinroom.com/api/v1
           curl -s -X POST $B/auth/start -H 'Content-Type: application/json' -d '{"phone":"9085550142"}'; echo
           curl -s -X POST $B/auth/verify -H 'Content-Type: application/json' -d '{"phone":"9085550142","code":"482915","device":"probe"}' | python3 -c "import json,sys; d=json.load(sys.stdin); print('signed in' if d.get('token') else d)"
+          echo "== gift codes"
+          curl -s -o /dev/null -w "/g/CHEF-TEST %{http_code}\n" https://bot.franklintiffinroom.com/g/CHEF-TEST
+          curl -s $B/gift/CHEF-TEST -H 'X-FTR-Install: probe-0000' | head -c 160; echo
+          curl -s $B/gift/T50-001-AAAAAAAA -H 'X-FTR-Install: probe-0000'; echo
