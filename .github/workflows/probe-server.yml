@@ -12,3 +12,7 @@ jobs:
           for u in healthz privacy support app; do
             echo "== /$u"; curl -s -o /tmp/out -w "%{http_code} %{time_total}s\n" -A "Mozilla/5.0 (Windows NT 10.0)" https://bot.franklintiffinroom.com/$u; head -c 300 /tmp/out | tr "\n" " "; echo; curl -sI https://bot.franklintiffinroom.com/$u | grep -iE "^server|^x-powered-by"
           done
+          echo "== reviewer sign-in"
+          B=https://bot.franklintiffinroom.com/api/v1
+          curl -s -X POST $B/auth/start -H 'Content-Type: application/json' -d '{"phone":"9085550142"}'; echo
+          curl -s -X POST $B/auth/verify -H 'Content-Type: application/json' -d '{"phone":"9085550142","code":"482915","device":"probe"}' | python3 -c "import json,sys; d=json.load(sys.stdin); print('signed in' if d.get('token') else d)"
