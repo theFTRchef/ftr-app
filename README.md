@@ -140,3 +140,26 @@ APP_OTP_MODE=log npm start      # sign-in codes appear in the terminal
 Then point the app at `http://<your-mac-ip>:3000/api/v1` (Build Settings ▸ `FTR_API_BASE_URL`). For
 plain http you'd also need an App Transport Security exception, so the simplest approach is to test
 against the real https address.
+
+## Gift QR codes (single use)
+
+`server/src/giftCodes.js` runs the QR codes printed on product packets. First batch: **T50**, 125 packets of FTR-BBB Powder for the Triveni 50th anniversary souvenir bag.
+
+- Each QR opens `https://bot.franklintiffinroom.com/g/T50-<label no>-<check>`. The page shows the 25 g BBB recipe, asks (optionally) for name, phone and email, and links to a feedback survey and the FTR-DOSE app.
+- **Single use:** the first phone to open a code claims it. That phone can come back any time; any other phone sees "already used".
+- Codes are checked with `GIFT_CODE_SECRET`, so no code list is stored in this repo. **Keep the secret private and never change it**, or every printed label stops working.
+- Every scan and survey answer is saved in `data/gift-*.json` and mirrored to three tabs in the order Google Sheet: **BBB Gift Codes**, **BBB Gift Scans** and **BBB Survey**.
+- Admin: `/admin/api/gift` (counts) and `/admin/api/gift/T50/labels.csv` (all codes, for reprinting labels).
+
+Add to `.env`:
+
+```ini
+GIFT_CODE_SECRET=<the secret Chef was given>
+# Optional
+GIFT_BASE_URL=https://bot.franklintiffinroom.com
+GIFT_SHEET_CODES_TAB=BBB Gift Codes
+GIFT_SHEET_SCANS_TAB=BBB Gift Scans
+GIFT_SHEET_SURVEY_TAB=BBB Survey
+```
+
+To add a new batch, add an entry to `BATCHES` in `giftCodes.js` (a new 2–8 letter ID, count, title, recipe).

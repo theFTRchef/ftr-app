@@ -532,6 +532,8 @@ require("./appLink").register(app);
 require("./legalPages").register(app);
 // Recipe QR codes on give-away powder packets: the browser page says "scan in the app".
 app.get("/r/:token", (req, res) => res.type("html").send(require("./recipes").webPage()));
+// Public: single-use gift QR codes on product packets (recipe + survey).
+require("./giftCodes").register(app, requireAdminAuth);
 
 const port = process.env.PORT || 3000;
 payments.startSweeper();
