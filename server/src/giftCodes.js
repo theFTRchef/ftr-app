@@ -228,7 +228,7 @@ ${body}
 const RECIPE = {
   bbb25: {
     title: "FTR Special Bisi Bele Bhath",
-    serves: "Serves 3–4 · about 2.5 qt · made with one 25 g packet",
+    serves: "Serves 3–4 · about 2 qt · made with one 25 g packet",
     ingredients: [
       ["FTR-BBB Powder", "25 g (1 packet)"], ["Rice, uncooked", "150 g"], ["Toor dal (cook fully ahead)", "100 g"],
       ["Fresh coconut", "25 g"], ["Curry leaves", "4–5, plus a few for tadka"], ["Tamarind", "to taste"],
