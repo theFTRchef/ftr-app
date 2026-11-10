@@ -23,7 +23,7 @@ const store = require("./jsonFile");
 const tabSync = require("./tabSync");
 
 const BATCHES = {
-  T50: { count: 125, title: "Triveni 50th anniversary souvenir bag", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" }
+  T50: { count: 125, firstGift: 4001, title: "Triveni 50th anniversary souvenir bag", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" }
 };
 
 const CODES_FILE = "gift-codes.json";
@@ -44,6 +44,15 @@ function check(batch, n) {
   let out = "";
   for (let i = 0; i < 8; i++) out += B32[mac[i] % 32];
   return out;
+}
+
+/** The number printed on the label ("Gift No. 4001"); the code itself keeps 1..count. */
+function giftNo(batchId, n) {
+  const b = BATCHES[batchId];
+  return (b && b.firstGift ? b.firstGift - 1 : 0) + Number(n);
+}
+function giftNoOf(code, n) {
+  return giftNo(String(code).split("-")[0], n);
 }
 
 function makeCode(batch, n) {
@@ -120,31 +129,31 @@ function syncSheets() {
         const code = makeCode(id, n);
         const r = all[code] || {};
         rows.push([
-          n, code, r.claimedAt ? "Used" : "Not scanned yet", stamp(r.claimedAt), r.device || "",
+          giftNo(id, n), code, r.claimedAt ? "Used" : "Not scanned yet", stamp(r.claimedAt), r.device || "",
           r.name || "", r.phone || "", r.email || "", r.contactOk ? "Yes" : r.claimedAt ? "No" : "",
           r.scans || 0, r.blocked || 0, sv.has(code) ? "Yes" : ""
         ]);
       }
     }
     return {
-      header: ["Label #", "Code", "Status", "First scan", "Device", "Name", "Phone", "Email", "OK to contact", "Scans (same phone)", "Blocked scans (other phones)", "Survey done"],
+      header: ["Gift #", "Code", "Status", "First scan", "Device", "Name", "Phone", "Email", "OK to contact", "Scans (same phone)", "Blocked scans (other phones)", "Survey done"],
       rows
     };
   });
   tabSync.schedule(process.env.GIFT_SHEET_SCANS_TAB || "BBB Gift Scans", () => {
     const all = codes();
     return {
-      header: ["Time", "Label #", "Code", "Result", "Device", "Name", "Phone"],
+      header: ["Time", "Gift #", "Code", "Result", "Device", "Name", "Phone"],
       rows: scans().map((s) => {
         const r = all[s.code] || {};
         const mine = s.result !== "Blocked: already used";
-        return [stamp(s.at), s.n, s.code, s.result, s.device, mine ? r.name || "" : "", mine ? r.phone || "" : ""];
+        return [stamp(s.at), giftNoOf(s.code, s.n), s.code, s.result, s.device, mine ? r.name || "" : "", mine ? r.phone || "" : ""];
       })
     };
   });
   tabSync.schedule(process.env.GIFT_SHEET_SURVEY_TAB || "BBB Survey", () => ({
-    header: ["Date", "Label #", "Code", "Name", "Phone", ...SURVEY_FIELDS.map((f) => f[1])],
-    rows: surveys().map((s) => [stamp(s.at), s.n, s.code, s.name || "", s.phone || "", ...SURVEY_FIELDS.map((f) => s.answers[f[0]] || "")])
+    header: ["Date", "Gift #", "Code", "Name", "Phone", ...SURVEY_FIELDS.map((f) => f[1])],
+    rows: surveys().map((s) => [stamp(s.at), giftNoOf(s.code, s.n), s.code, s.name || "", s.phone || "", ...SURVEY_FIELDS.map((f) => s.answers[f[0]] || "")])
   }));
 }
 
@@ -280,7 +289,7 @@ function giftPage(info, r) {
   const done = surveys().some((s) => s.code === info.code);
   return shell("Your FTR Bisi Bele Bhath Pudi recipe", `
 <h1>Welcome from FTR!</h1>
-<p class="sub">Thank you for trying our new product, <b style="white-space:nowrap">FTR Bisi Bele Bhath Pudi</b>.<br>Gift no. ${info.n} · ${esc(info.batch.title)}</p>
+<p class="sub">Thank you for trying our new product, <b style="white-space:nowrap">FTR Bisi Bele Bhath Pudi</b>.<br>Gift no. ${giftNo(info.batchId, info.n)} · ${esc(info.batch.title)}</p>
 ${welcomeForm(info, r)}
 ${recipeHtml(info.batch.recipe)}
 <h2>How was it?</h2>
@@ -299,7 +308,7 @@ function surveyPage(info, r, prev) {
   const t = (name, text) => `<label for="${name}">${text}</label><textarea id="${name}" name="${name}" maxlength="1500">${esc(a[name] || "")}</textarea>`;
   return shell("FTR Bisi Bele Bhath Pudi feedback", `
 <h1>How was your BBB?</h1>
-<p class="sub">Gift no. ${info.n} · takes about 2 minutes</p>
+<p class="sub">Gift no. ${giftNo(info.batchId, info.n)} · takes about 2 minutes</p>
 <form class="card" method="post" action="/g/${esc(info.code)}/survey">
 ${q("verdict", "Was it lip-smacking or just another BBB?", ["Lip-smacking!", "Really good", "Just another BBB", "Not for me"])}
 ${q("taste", "Taste", ["1", "2", "3", "4", "5"])}<p class="note">1 = poor, 5 = excellent</p>
@@ -356,8 +365,8 @@ function register(app, requireAdminAuth) {
     const id = String(req.params.batch).toUpperCase();
     const b = BATCHES[id];
     if (!b || !secret()) return res.status(404).send("Unknown batch or GIFT_CODE_SECRET not set");
-    const lines = ["label,code,url"];
-    for (let n = 1; n <= b.count; n++) lines.push(`${n},${makeCode(id, n)},${urlFor(makeCode(id, n))}`);
+    const lines = ["label,gift_no,code,url"];
+    for (let n = 1; n <= b.count; n++) lines.push(`${n},${giftNo(id, n)},${makeCode(id, n)},${urlFor(makeCode(id, n))}`);
     res.type("text/csv").set("Content-Disposition", `attachment; filename="${id}-labels.csv"`).send(lines.join("\n") + "\n");
   });
 
@@ -448,4 +457,4 @@ function register(app, requireAdminAuth) {
   });
 }
 
-module.exports = { register, makeCode, parse, urlFor, syncSheets, BATCHES };
+module.exports = { register, makeCode, parse, urlFor, giftNo, syncSheets, BATCHES };
