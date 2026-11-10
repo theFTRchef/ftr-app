@@ -54,6 +54,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.testflight
     # Chef's Mac has Xcode 27 (the iPhone Duo needs it); the Mac must be on and awake.
     runs-on: ${{ inputs.runner == 'cloud' && 'macos-15-intel' || fromJSON('["self-hosted","macOS","xcode27"]') }}
+    outputs:
+      uploaded: ${{ steps.upload.outputs.uploaded }}
     steps:
       - uses: actions/checkout@v4
       - uses: maxim-lobanov/setup-xcode@v1
@@ -106,13 +108,49 @@ jobs:
           codesign -d --entitlements - build/ipa/Payload/*.app 2>&1 | head -40
           codesign -d --entitlements - build/ipa/Payload/*.app 2>&1 | grep -q aps-environment \
             || { echo "::warning::Push notifications (aps-environment) missing from the signed app"; }
+      - name: Keep the signed app (for the cloud upload if this Mac's upload fails)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ftr-ipa
+          path: build/export/*.ipa
+          retention-days: 3
       - name: Upload to TestFlight
+        id: upload
         env:
           KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ISSUER: ${{ secrets.ASC_ISSUER_ID }}
         run: |
-          xcrun altool --upload-app -f build/export/*.ipa -t ios \
-            --apiKey "$KEY_ID" --apiIssuer "$ISSUER"
+          # The upload tool in Xcode 27 sometimes fails with "Defaults.properties
+          # couldn't be opened". Then the cloud-upload job below sends the same file.
+          if timeout 900 xcrun altool --upload-app -f build/export/*.ipa -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER"; then
+            echo "uploaded=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Upload from this Mac failed; GitHub's cloud Mac will upload the same app."
+            echo "uploaded=no" >> "$GITHUB_OUTPUT"
+          fi
       - name: Remove the App Store Connect key from this Mac
         if: always()
         run: rm -rf ~/private_keys build
+
+  upload-cloud:
+    # Only when the upload from the build Mac failed: sends the same signed app
+    # (built with Xcode 27, so it keeps iPhone Duo support) from GitHub's cloud Mac.
+    needs: testflight
+    if: needs.testflight.outputs.uploaded == 'no'
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ftr-ipa
+          path: ipa
+      - name: Upload to TestFlight
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s' "$ASC_KEY_P8" > ~/private_keys/AuthKey_${KEY_ID}.p8
+          ls -la ipa
+          xcrun altool --upload-app -f ipa/*.ipa -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER"
+          rm -rf ~/private_keys
