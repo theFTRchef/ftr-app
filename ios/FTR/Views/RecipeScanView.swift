@@ -421,12 +421,20 @@ struct GiftSurveyView: View {
                 ForEach(survey.questions) { q in
                     Section {
                         if let opts = q.options {
-                            Picker(q.label, selection: binding(q.key)) {
-                                Text("Choose").tag("")
-                                ForEach(opts, id: \.self) { Text($0).tag($0) }
+                            if opts.allSatisfy({ $0.count <= 2 }) {
+                                Picker(q.label, selection: binding(q.key)) {
+                                    ForEach(opts, id: \.self) { o in Text(o).tag(o) }
+                                }
+                                .pickerStyle(.segmented)
+                                .labelsHidden()
+                            } else {
+                                Picker(q.label, selection: binding(q.key)) {
+                                    Text("Choose").tag("")
+                                    ForEach(opts, id: \.self) { o in Text(o).tag(o) }
+                                }
+                                .pickerStyle(.menu)
+                                .labelsHidden()
                             }
-                            .pickerStyle(opts.count <= 5 && opts.allSatisfy { $0.count <= 2 } ? .segmented : .menu)
-                            .labelsHidden()
                         } else {
                             TextField("Your answer", text: binding(q.key), axis: .vertical)
                                 .lineLimit(2...6)

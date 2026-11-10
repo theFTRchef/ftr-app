@@ -77,4 +77,6 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     // Google's code scanner (QR codes on FTR masala packets). Runs in Play services: no camera permission needed.
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+    // The scanner pulls in an old Fragment; activity-result APIs need 1.3+.
+    implementation("androidx.fragment:fragment-ktx:1.8.6")
 }
