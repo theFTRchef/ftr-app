@@ -1,0 +1,6 @@
+  pixelWidth: 1320   pixelHeight: 2868 shots/1-welcome.png
+  pixelWidth: 1320   pixelHeight: 2868 shots/2-home.png
+  pixelWidth: 1320   pixelHeight: 2868 shots/3-live-dose.png
+  pixelWidth: 1320   pixelHeight: 2868 shots/4-catering.png
+  pixelWidth: 1320   pixelHeight: 2868 shots/5-dishes.png
+  pixelWidth: 1320   pixelHeight: 2868 shots/6-dose-in-a-box.png
