@@ -414,8 +414,8 @@ app.get("/admin/api/broadcasts/preview", requireAdminAuth, (req, res) => {
 });
 app.post("/admin/api/broadcasts", requireAdminAuth, async (req, res) => {
   try {
-    const { title, text, audience } = req.body || {};
-    res.json(await require("./broadcasts").send({ title, text, audience }));
+    const { title, text, audience, kind } = req.body || {};
+    res.json(await require("./broadcasts").send({ title, text, audience, kind }));
   } catch (err) {
     res.status(400).send(err.message);
   }

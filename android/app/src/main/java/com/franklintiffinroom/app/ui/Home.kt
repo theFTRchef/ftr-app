@@ -159,6 +159,8 @@ fun HomeScreen(model: AppModel, nav: Nav) {
                 }
             }
 
+            ChefPicksCard(model) { nav.push(Screen.Category(it)) }
+
             if (dib != null) {
                 Row(
                     Modifier.fillMaxWidth().background(P.surface2, RoundedCornerShape(22.dp)).clip(RoundedCornerShape(22.dp))
@@ -366,6 +368,7 @@ fun DishRow(dish: Dish, inCart: Double, modifier: Modifier = Modifier) {
     Row(modifier.padding(horizontal = 20.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(dish.title, style = Type.display(19), color = P.ink)
+            if (dish.promoted || dish.limited) DishTags(dish)
             if (dish.meta.isNotEmpty()) MutedText(dish.meta)
             if (dish.description.isNotEmpty()) Text(dish.description, style = Type.body(14.0), color = P.muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }

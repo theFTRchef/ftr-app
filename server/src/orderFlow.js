@@ -490,10 +490,13 @@ async function sendCategoryItems(to, category, intro = "", page = 0) {
   const rowFor = (i) => {
     const size = i.size ? `${i.size} - ` : "";
     const serves = servingsLabel(i);
+    // Chef's picks and limited dishes say so first, so it isn't cut off.
+    const { promoActive } = require("./menuStore");
+    const tag = [promoActive(i) ? "⭐ Chef's pick" : "", i.limited ? "Limited" : ""].filter(Boolean).join(" · ");
     return {
       id: `item:${i.id}`,
       title: i.title.slice(0, 24),
-      description: `$${i.price.toFixed(2)} - ${size}${serves}`.slice(0, 72)
+      description: `${tag ? tag + " - " : ""}$${i.price.toFixed(2)} - ${size}${serves}`.slice(0, 72)
     };
   };
   // One list at a time (WhatsApp lists hold 10 rows): 9 dishes plus a

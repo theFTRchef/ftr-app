@@ -1288,7 +1288,11 @@ function dayEditor(e, pt) {
 // ---------------------------------------------------------------- MENU
 function viewMenu() {
   const s = S.menu.settings;
+  const picks = activePicks();
   return '<div><h2 class="h-page">Menu</h2><p class="sub">Tap a dish to change its price, servings or order limits.</p></div>' +
+    '<div class="card pad row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div class="grow"><b>Chef\'s picks</b><div class="small muted">' +
+      (picks.length ? esc(picks.map((p) => p.it.title).join(", ")) + " · shown at the top of the app's Home screen" : "Promote dishes to the top of the app's Home screen and tell customers about them.") + "</div></div>" +
+      '<button class="btn primary" data-act="promote">Promote dishes</button></div>' +
     S.menu.categories.map((c, ci) => {
       if (c.type === "live-dose-station") {
         const l = c.liveDoseStation || {};
@@ -1303,7 +1307,7 @@ function viewMenu() {
         (c.type === "preorder" ? '<p class="small muted" style="margin:-4px 0 8px">Single orders, picked up on your pre-order days (Setup › Pre-order pickups). Quantities are whole portions.' + (c.items.some((i) => !(Number(i.price) > 0)) ? ' <b style="color:var(--turmeric-ink)">Dishes with no price are hidden from customers.</b>' : "") + "</p>" : "") +
         '<div class="card list">' + (c.items.length ? c.items.map((it, ii) =>
           '<button class="li" data-act="edit-item" data-ci="' + ci + '" data-ii="' + ii + '">' +
-            '<div class="grow"><div class="t">' + esc(it.title || "Untitled dish") + (it.requiresNote ? ' <span class="pill p-info">asks a question</span>' : "") + "</div>" +
+            '<div class="grow"><div class="t">' + esc(it.title || "Untitled dish") + (it.requiresNote ? ' <span class="pill p-info">asks a question</span>' : "") + (promoOn(it) ? ' <span class="pill p-wait">★ Chef\'s pick</span>' : "") + (it.limited ? ' <span class="pill p-ff">Limited</span>' : "") + "</div>" +
             '<div class="d num">' + [it.size, servesText(it), "max " + (it.maxQty || s.maxOrderQtyPerItem || 4) + " per order"].filter(Boolean).map(esc).join(" · ") + "</div></div>" +
             '<span class="price">' + money(it.price) + "</span>" +
             '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>').join("")
@@ -1336,10 +1340,17 @@ function itemSheet(ci, ii) {
       '<label class="field"><span>Description</span><textarea id="f-desc" placeholder="Shown when a customer types &quot;describe&quot;">' + esc(it.description || "") + "</textarea></label>" +
       '<label class="switch"><input type="checkbox" id="f-req"' + (it.requiresNote ? " checked" : "") + ' /><span><b>Ask the customer a question</b><small>For dishes where price depends on their choice, like Palya</small></span></label>' +
       '<label class="field" id="f-promptWrap"' + (it.requiresNote ? "" : " hidden") + '><span>Question to ask</span><input id="f-prompt" value="' + esc(it.notePrompt || "") + '" placeholder="Which vegetable would you like?" /></label>' +
+      '<label class="switch"><input type="checkbox" id="f-promo"' + (it.promoted ? " checked" : "") + ' /><span><b>Chef\'s pick</b><small>Shown at the top of the app\'s Home screen and marked in the menu and on WhatsApp. To also tell customers, use Menu › Promote dishes.</small></span></label>' +
+      '<div class="grid2" id="f-promoWrap"' + (it.promoted ? "" : " hidden") + '><label class="field"><span>Pick note (optional)</span><input id="f-pnote" maxlength="80" value="' + esc(it.promoNote || "") + '" placeholder="e.g. Perfect for Diwali parties" /></label>' +
+        '<label class="field"><span>Until (optional)</span><input id="f-puntil" type="date" value="' + esc(it.promoUntil || "") + '" /><span class="hint">Stops showing after this day.</span></label></div>' +
+      '<label class="switch"><input type="checkbox" id="f-lim"' + (it.limited ? " checked" : "") + ' /><span><b>Limited availability</b><small>Customers see a "Limited" tag so they order early.</small></span></label>' +
+      '<label class="field" id="f-limWrap"' + (it.limited ? "" : " hidden") + '><span>What to tell customers (optional)</span><input id="f-lnote" maxlength="60" value="' + esc(it.limitedNote || "") + '" placeholder="e.g. Only 10 trays this weekend" /></label>' +
       '<p class="small" id="f-err" style="color:var(--bad);margin:0" hidden></p>',
     foot: (isNew ? "" : '<button class="btn danger left" id="f-del">Delete dish</button>') + '<button class="btn" data-close>Cancel</button><button class="btn primary" id="f-ok">' + (isNew ? "Add dish" : "Done") + "</button>",
     onMount: (el) => {
       el.querySelector("#f-req").addEventListener("change", (e) => { el.querySelector("#f-promptWrap").hidden = !e.target.checked; });
+      el.querySelector("#f-promo").addEventListener("change", (e) => { el.querySelector("#f-promoWrap").hidden = !e.target.checked; });
+      el.querySelector("#f-lim").addEventListener("change", (e) => { el.querySelector("#f-limWrap").hidden = !e.target.checked; });
       el.querySelector("#f-ok").addEventListener("click", () => {
         const v = (id) => el.querySelector(id).value.trim();
         const err = el.querySelector("#f-err");
@@ -1357,7 +1368,9 @@ function itemSheet(ci, ii) {
         Object.assign(target, {
           title: v("#f-title"), price, size: v("#f-size"), servesMin: smin, servesMax: smax,
           minQty: parseInt(v("#f-minq")) || 1, maxQty: parseInt(v("#f-maxq")) || null,
-          description: v("#f-desc"), requiresNote: el.querySelector("#f-req").checked, notePrompt: v("#f-prompt")
+          description: v("#f-desc"), requiresNote: el.querySelector("#f-req").checked, notePrompt: v("#f-prompt"),
+          promoted: el.querySelector("#f-promo").checked, promoNote: v("#f-pnote"), promoUntil: v("#f-puntil"),
+          limited: el.querySelector("#f-lim").checked, limitedNote: v("#f-lnote")
         });
         if (isNew) cat.items.push(target);
         closeSheet(); render();
@@ -1689,6 +1702,98 @@ function viewCustomers() {
       : '<div class="card empty"><b>' + (list.length ? "No matches" : "No customers yet") + "</b>" + (list.length ? "Try a different search." : "Customers appear here after they message the bot.") + "</div>");
 }
 
+// ---------------------------------------------------------------- CHEF'S PICKS
+function njToday() { return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }
+function promoOn(it) { return !!(it && it.promoted && (!it.promoUntil || it.promoUntil >= njToday())); }
+function allDishes() {
+  const out = [];
+  S.menu.categories.forEach((c, ci) => { if (c.type !== "live-dose-station") (c.items || []).forEach((it, ii) => out.push({ c, ci, it, ii })); });
+  return out;
+}
+function activePicks() { return allDishes().filter((d) => promoOn(d.it)); }
+function promoMessage(rows, note) {
+  const lines = rows.map((d) => "• " + d.it.title + (d.limited ? " (limited" + (d.lnote ? ": " + d.lnote : "") + ")" : ""));
+  return (note ? note + "\n\n" : "") + lines.join("\n") + "\n\nOrder in the FTR app, or reply here on WhatsApp.";
+}
+/** Pick dishes to promote (and mark limited), save the menu, and optionally tell customers. */
+function promoteSheet() {
+  const dishes = allDishes();
+  const until0 = (activePicks()[0] || {}).it?.promoUntil || "";
+  const note0 = (activePicks()[0] || {}).it?.promoNote || "";
+  openSheet({
+    title: "Promote dishes",
+    body:
+      '<p class="small muted" style="margin:0">Ticked dishes show as Chef\'s picks at the top of the app\'s Home screen, marked in the menu and on WhatsApp. Untick a dish to stop promoting it.</p>' +
+      '<div class="card list" id="p-list">' + dishes.map((d, k) =>
+        '<div class="li" style="flex-wrap:wrap;gap:6px 12px">' +
+          '<label class="row grow" style="gap:10px;min-height:44px"><input type="checkbox" data-pk="' + k + '"' + (promoOn(d.it) ? " checked" : "") + ' style="width:22px;height:22px" /><span><span class="t">' + esc(d.it.title || "Untitled dish") + '</span><span class="d" style="display:block">' + esc(d.c.title) + " · " + money(d.it.price) + "</span></span></label>" +
+          '<label class="row small" style="gap:8px;min-height:44px"><input type="checkbox" data-lk="' + k + '"' + (d.it.limited ? " checked" : "") + ' style="width:20px;height:20px" />Limited</label>' +
+          '<input data-ln="' + k + '" maxlength="60" placeholder="Limited note, e.g. Only 10 trays" value="' + esc(d.it.limitedNote || "") + '"' + (d.it.limited ? "" : " hidden") + ' style="flex-basis:100%" />' +
+        "</div>").join("") + "</div>" +
+      '<div class="grid2"><label class="field"><span>Pick note (optional)</span><input id="p-note" maxlength="80" value="' + esc(note0) + '" placeholder="e.g. Perfect for Diwali parties" /><span class="hint">Shown with the picks in the app.</span></label>' +
+        '<label class="field"><span>Promote until (optional)</span><input id="p-until" type="date" value="' + esc(until0) + '" /><span class="hint">Picks stop showing after this day.</span></label></div>' +
+      '<label class="switch"><input type="checkbox" id="p-notify" checked /><span><b>Tell customers now</b><small>Sends a "Chef\'s pick" notification: in the app (a phone alert if they turned on announcements) and on WhatsApp to anyone who messaged in the last 24 hours.</small></span></label>' +
+      '<div id="p-msgWrap" class="stack">' +
+        '<label class="field"><span>Title</span><input id="p-title" maxlength="60" value="Chef\'s picks this week" /></label>' +
+        '<label class="field"><span>Message</span><textarea id="p-text" maxlength="1500" rows="6"></textarea><span class="hint">Filled in from your picks. Edit it as you like.</span></label>' +
+        '<label class="field"><span>Send to</span><select id="p-aud">' + Object.entries(AUDIENCE_LABELS).map(([k, l]) => '<option value="' + k + '">' + esc(l) + "</option>").join("") + "</select></label>" +
+        '<p class="small" id="p-reach" style="margin:0"></p>' +
+      "</div>" +
+      '<p class="small" id="p-err" style="color:var(--bad);margin:0" hidden></p>',
+    foot: '<button class="btn" data-close>Cancel</button><button class="btn primary" id="p-ok">Save picks</button>',
+    onMount: (el) => {
+      let edited = false;
+      const picked = () => dishes.map((d, k) => ({ ...d, on: el.querySelector('[data-pk="' + k + '"]').checked, limited: el.querySelector('[data-lk="' + k + '"]').checked, lnote: el.querySelector('[data-ln="' + k + '"]').value.trim() }));
+      const notify = () => el.querySelector("#p-notify").checked;
+      const refresh = () => {
+        const rows = picked().filter((d) => d.on);
+        el.querySelector("#p-msgWrap").hidden = !notify();
+        el.querySelector("#p-ok").textContent = notify() && rows.length ? "Save and notify" : "Save picks";
+        if (!edited) el.querySelector("#p-text").value = rows.length ? promoMessage(rows, el.querySelector("#p-note").value.trim()) : "";
+      };
+      const reach = async () => {
+        const aud = el.querySelector("#p-aud").value;
+        let r = null;
+        if (S.mode === "live") r = await api("GET", "/admin/api/broadcasts/preview?audience=" + encodeURIComponent(aud)).catch(() => null);
+        else { const n = (S.customers || []).length; r = { total: n, app: Math.ceil(n / 2), alerts: Math.ceil(n / 4), whatsapp: Math.floor(n / 4), unreachable: 0 }; }
+        el.querySelector("#p-reach").innerHTML = r ? "<b>" + r.total + " customer" + (r.total === 1 ? "" : "s") + ".</b> " + r.app + " in the FTR app (" + r.alerts + " with a phone alert), " + r.whatsapp + " on WhatsApp." + (r.unreachable ? ' <span class="muted">' + r.unreachable + " can't be reached right now.</span>" : "") : "Couldn't check who this reaches.";
+      };
+      el.querySelectorAll("[data-lk]").forEach((cb) => cb.addEventListener("change", () => { el.querySelector('[data-ln="' + cb.dataset.lk + '"]').hidden = !cb.checked; refresh(); }));
+      el.querySelectorAll("[data-pk], [data-ln], #p-note").forEach((x) => x.addEventListener("input", refresh));
+      el.querySelectorAll("[data-pk]").forEach((x) => x.addEventListener("change", refresh));
+      el.querySelector("#p-text").addEventListener("input", () => { edited = true; });
+      el.querySelector("#p-notify").addEventListener("change", refresh);
+      el.querySelector("#p-aud").addEventListener("change", reach);
+      refresh(); reach();
+      el.querySelector("#p-ok").addEventListener("click", async (ev) => {
+        const err = el.querySelector("#p-err");
+        const rows = picked();
+        const on = rows.filter((d) => d.on);
+        const note = el.querySelector("#p-note").value.trim(), until = el.querySelector("#p-until").value;
+        if (until && until < njToday()) { err.textContent = "\"Promote until\" is in the past."; err.hidden = false; return; }
+        const title = el.querySelector("#p-title").value.trim(), text = el.querySelector("#p-text").value.trim(), audience = el.querySelector("#p-aud").value;
+        if (notify() && on.length && (!title || !text)) { err.textContent = "Give the notification a title and message, or untick Tell customers now."; err.hidden = false; return; }
+        for (const d of rows) {
+          Object.assign(d.it, { promoted: d.on, limited: d.limited, limitedNote: d.limited ? d.lnote : "" });
+          if (d.on) Object.assign(d.it, { promoNote: note, promoUntil: until });
+        }
+        ev.target.disabled = true;
+        closeSheet();
+        await save();
+        if (isDirty()) return; // save failed; its message is showing
+        if (notify() && on.length) {
+          try {
+            let entry;
+            if (S.mode === "live") { entry = await api("POST", "/admin/api/broadcasts", { title, text, audience, kind: "promo" }); await annRefresh(); }
+            else { entry = { counts: { app: 0, whatsapp: 0 } }; }
+            toast("Picks saved. Sent to " + entry.counts.app + " in the app and " + entry.counts.whatsapp + " on WhatsApp");
+          } catch (e) { toast("Picks saved, but the notification didn't send: " + e.message, true); }
+        }
+      });
+    }
+  });
+}
+
 // ---------------------------------------------------------------- ANNOUNCEMENTS
 const AUDIENCE_LABELS = { all: "Everyone", family: "Friends & family", others: "Everyone except friends & family", ordered: "Customers who have ordered", top: "4 stars and up", new: "New (no orders yet)" };
 function demoBroadcasts() {
@@ -1714,7 +1819,7 @@ function viewAnnouncements() {
     ((b.history || []).length
       ? '<div class="stack">' + b.history.map((h) => {
           const c = h.counts || {};
-          return '<article class="card order"><div class="o-top"><div class="grow"><div class="o-name">' + esc(h.title) + '</div><div class="o-meta">' + esc(annWhen(h.at)) + " · " + esc(h.audienceLabel || AUDIENCE_LABELS[h.audience] || "Everyone") + "</div></div>" + (h.auto ? '<span class="pill p-info">New dishes</span>' : "") + "</div>" +
+          return '<article class="card order"><div class="o-top"><div class="grow"><div class="o-name">' + esc(h.title) + '</div><div class="o-meta">' + esc(annWhen(h.at)) + " · " + esc(h.audienceLabel || AUDIENCE_LABELS[h.audience] || "Everyone") + "</div></div>" + (h.auto ? '<span class="pill p-info">New dishes</span>' : h.kind === "promo" ? '<span class="pill p-wait">Chef\'s pick</span>' : "") + "</div>" +
             '<div class="o-items" style="white-space:pre-line">' + esc(h.text) + "</div>" +
             '<div class="small muted num">' + c.app + " in the app (" + c.alerts + " with phone alerts) · " + c.whatsapp + " on WhatsApp" + (c.unreachable ? " · " + c.unreachable + " couldn't be reached" : "") + (c.failed ? " · " + c.failed + " WhatsApp failed" : "") + "</div></article>";
         }).join("") + "</div>"
@@ -2164,6 +2269,7 @@ document.addEventListener("click", (e) => {
     case "add-item": itemSheet(+el.dataset.ci, null); break;
     case "edit-cat": catSheet(+el.dataset.ci); break;
     case "add-cat": catSheet(null); break;
+    case "promote": promoteSheet(); break;
     case "edit-lds": ldsSheet(+el.dataset.ci); break;
     case "cancel-order": {
       const o = S.orders.find((x) => x.orderId === el.dataset.id) || {};

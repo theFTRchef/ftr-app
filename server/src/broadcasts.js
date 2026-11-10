@@ -101,7 +101,7 @@ function clean(s, max) {
  * Send one announcement. Returns the history entry with counts.
  * `deps` lets tests swap the WhatsApp sender.
  */
-async function send({ title, text, audience: key = "all", auto = false }, deps = {}) {
+async function send({ title, text, audience: key = "all", auto = false, kind = "" }, deps = {}) {
   title = clean(title, 60);
   text = clean(text, 1500);
   if (!title) throw new Error("Give the announcement a title.");
@@ -115,7 +115,7 @@ async function send({ title, text, audience: key = "all", auto = false }, deps =
     counts.total += 1;
     const r = reachOf(c.phone);
     if (r.app) {
-      const item = appInbox.add(c.phone, { header: title, text, tag: "announcement", tagLabel: auto ? "New on the menu" : "Announcement" });
+      const item = appInbox.add(c.phone, { header: title, text, tag: "announcement", tagLabel: auto ? "New on the menu" : kind === "promo" ? "Chef's pick" : "Announcement" });
       counts.app += 1;
       if (r.alert) {
         counts.alerts += 1;
@@ -141,6 +141,7 @@ async function send({ title, text, audience: key = "all", auto = false }, deps =
     audience: key,
     audienceLabel: AUDIENCES[key],
     auto,
+    kind: kind === "promo" ? "promo" : "",
     counts
   };
   store.write(HISTORY, [entry, ...history()].slice(0, KEEP));

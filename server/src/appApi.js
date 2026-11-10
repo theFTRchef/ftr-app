@@ -10,6 +10,7 @@
  * text are all worked out here on the server with the bot's own functions,
  * never trusted from the phone.
  */
+const { promoActive } = require("./menuStore");
 const express = require("express");
 const menuStore = require("./menuStore");
 const customerStore = require("./customerStore");
@@ -289,7 +290,12 @@ function menuPayload() {
           maxQty: f.effectiveMaxQty(menu, i),
           qtyStep: half && !isPre ? 0.5 : 1,
           requiresNote: !!i.requiresNote,
-          notePrompt: i.notePrompt || null
+          notePrompt: i.notePrompt || null,
+          // Chef's picks and limited availability (older app versions ignore these).
+          promoted: promoActive(i),
+          promoNote: promoActive(i) && i.promoNote ? i.promoNote : null,
+          limited: !!i.limited,
+          limitedNote: i.limited && i.limitedNote ? i.limitedNote : null
         }))
       };
     })

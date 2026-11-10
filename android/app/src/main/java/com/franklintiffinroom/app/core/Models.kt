@@ -109,6 +109,11 @@ data class Dish(
     val qtyStep: Double = 1.0,
     val requiresNote: Boolean = false,
     val notePrompt: String? = null,
+    /** Chef's pick (promoted by Chef) and limited availability. */
+    val promoted: Boolean = false,
+    val promoNote: String? = null,
+    val limited: Boolean = false,
+    val limitedNote: String? = null,
 ) {
     val servesText: String?
         get() {

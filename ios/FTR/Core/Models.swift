@@ -113,6 +113,14 @@ struct Dish: Decodable, Identifiable, Hashable {
     let qtyStep: Double
     let requiresNote: Bool
     let notePrompt: String?
+    /// Chef's pick (promoted by Chef) and limited availability. Optional: older servers don't send them.
+    let promoted: Bool?
+    let promoNote: String?
+    let limited: Bool?
+    let limitedNote: String?
+
+    var isPick: Bool { promoted == true }
+    var isLimited: Bool { limited == true }
 
     var servesText: String? {
         guard let lo = servesMin, lo > 1 else { return nil }

@@ -195,6 +195,16 @@ function saveMenu(menu) {
     if (!ok) delete c.section;
   }
   menu.settings.announceNewItems = menu.settings.announceNewItems !== false;
+  // Chef's picks (promoted dishes) and "Limited availability" tags.
+  for (const c of menu.categories) {
+    for (const i of c.items || []) {
+      i.promoted = i.promoted === true;
+      i.promoNote = String(i.promoNote || "").trim().slice(0, 80);
+      i.promoUntil = /^\d{4}-\d{2}-\d{2}$/.test(i.promoUntil || "") ? i.promoUntil : "";
+      i.limited = i.limited === true;
+      i.limitedNote = String(i.limitedNote || "").trim().slice(0, 60);
+    }
+  }
   // Pre-order pickup days (Dose-in-a-Box and weekly takeout).
   menu.availability.preorders = require("./preorders").clean(menu.availability.preorders || []);
   for (const c of menu.categories) {
@@ -246,4 +256,14 @@ function saveMenu(menu) {
   return menu;
 }
 
-module.exports = { dedupeItemIds, getMenu, saveMenu, isWeekend, dayOfWeekUTC };
+/** Today's date in New Jersey, "YYYY-MM-DD". */
+function njToday(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
+/** A Chef's pick shows until the end of its "until" day (New Jersey time), or until Chef turns it off. */
+function promoActive(item, today = njToday()) {
+  return !!(item && item.promoted && (!item.promoUntil || item.promoUntil >= today));
+}
+
+module.exports = { dedupeItemIds, getMenu, saveMenu, isWeekend, dayOfWeekUTC, promoActive, njToday };

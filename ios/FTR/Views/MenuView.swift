@@ -52,6 +52,7 @@ struct HomeView: View {
                                 .frame(maxWidth: .infinity)
                             VStack(spacing: 16) {
                                 headerRow
+                                ChefPicksCard { path.append(.section($0)) }
                                 dibCard
                                 tilesGrid
                                 ScanRecipeCard()
@@ -63,6 +64,7 @@ struct HomeView: View {
                             headerRow
                             // Flagship first, full width.
                             flagshipCard(tall: false)
+                            ChefPicksCard { path.append(.section($0)) }
                             dibCard
                             tilesGrid
                             ScanRecipeCard()
@@ -686,6 +688,7 @@ struct DishRow: View {
                     .font(Typeface.display(19, relativeTo: .headline))
                     .foregroundStyle(Palette.ink)
                     .multilineTextAlignment(.leading)
+                if dish.isPick || dish.isLimited { DishTags(dish: dish) }
                 if !meta.isEmpty {
                     Text(meta).font(Typeface.body(14)).foregroundStyle(Palette.muted)
                 }
