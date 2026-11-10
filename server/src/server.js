@@ -392,6 +392,19 @@ app.post("/admin/api/customers/:phone/family", requireAdminAuth, (req, res) => {
 });
 
 // --- Announcements to customers ---
+// --- Recipes (QR codes on give-away masala packets) ---
+app.get("/admin/api/recipes", requireAdminAuth, (req, res) => res.json({ recipes: require("./recipes").list() }));
+app.post("/admin/api/recipes", requireAdminAuth, (req, res) => res.json(require("./recipes").create(req.body || {})));
+app.put("/admin/api/recipes/:id", requireAdminAuth, (req, res) => {
+  const r = require("./recipes").update(req.params.id, req.body || {});
+  if (!r) return res.status(404).json({ error: "Recipe not found" });
+  res.json(r);
+});
+app.delete("/admin/api/recipes/:id", requireAdminAuth, (req, res) => {
+  if (!require("./recipes").remove(req.params.id)) return res.status(404).json({ error: "Recipe not found" });
+  res.json({ ok: true });
+});
+
 app.get("/admin/api/broadcasts", requireAdminAuth, (req, res) => {
   const b = require("./broadcasts");
   res.json({ history: b.history(), pending: b.pending(), audiences: b.AUDIENCES });
@@ -517,6 +530,8 @@ app.get("/healthz", (req, res) => res.status(200).send("ok"));
 // Public: one "get the app" link for flyers and QR codes.
 require("./appLink").register(app);
 require("./legalPages").register(app);
+// Recipe QR codes on give-away powder packets: the browser page says "scan in the app".
+app.get("/r/:token", (req, res) => res.type("html").send(require("./recipes").webPage()));
 
 const port = process.env.PORT || 3000;
 payments.startSweeper();

@@ -888,6 +888,12 @@ function router() {
 
   r.get("/config", wrap((req, res) => res.json(configPayload())));
   r.get("/menu", wrap((req, res) => res.json(menuPayload())));
+  // A recipe from a packet's QR code. Only the scanned code's recipe is returned; there is no list.
+  r.get("/recipes/scan/:token", wrap((req, res) => {
+    const recipe = require("./recipes").scan(req.params.token);
+    if (!recipe) return res.status(404).json({ error: "This code isn't an FTR recipe, or it has been turned off." });
+    res.json({ recipe });
+  }));
   r.get("/availability", wrap((req, res) => res.json(availabilityPayload(req.query))));
 
   // --- sign in ---

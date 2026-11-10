@@ -794,6 +794,7 @@ async function boot() {
     S.feedback = await api("GET", "/admin/api/feedback").catch(() => []);
     S.preorders = await api("GET", "/admin/api/preorders").catch(() => []);
     S.broadcasts = await api("GET", "/admin/api/broadcasts").catch(() => ({ history: [], pending: null }));
+    S.recipes = (await api("GET", "/admin/api/recipes").catch(() => ({ recipes: [] }))).recipes;
   } catch (e) {
     S.mode = "demo";
     S.menu = demoMenu();
@@ -805,6 +806,7 @@ async function boot() {
     S.customers.slice(0, 1).forEach((c) => { c.family = true; });
     S.feedback = demoFeedback();
     S.broadcasts = demoBroadcasts();
+    S.recipes = demoRecipes();
     S.rangeReqs = [{ phone: "12155550147", name: "Deepa Murthy", address: "1200 Delaware Ave, Wilmington, DE 19806", miles: 54.2, limit: 40, eventDate: demoWeekends(8, 1, 1)[0], plates: 150 }];
     $("#previewBanner").hidden = false;
   }
@@ -1640,9 +1642,13 @@ function viewCustomers() {
   const when = (iso) => iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: TZ }) : "–";
   const fbNew = (S.feedback || []).filter((f) => !f.read).length;
   const tabs = '<div class="chips wrap" role="group" aria-label="Customers, comments or announcements">' +
-    '<button class="chip" data-act="fb-tab" data-t="list" aria-pressed="' + (S.custTab !== "comments") + '">Customers<span class="c num">' + list.length + "</span></button>" +
+    '<button class="chip" data-act="fb-tab" data-t="list" aria-pressed="' + !["comments", "announce", "recipes"].includes(S.custTab) + '">Customers<span class="c num">' + list.length + "</span></button>" +
     '<button class="chip" data-act="fb-tab" data-t="comments" aria-pressed="' + (S.custTab === "comments") + '">Comments' + '<span class="c num">' + (fbNew ? fbNew + " new" : (S.feedback || []).length) + "</span></button>" +
-    '<button class="chip" data-act="fb-tab" data-t="announce" aria-pressed="' + (S.custTab === "announce") + '">Announcements' + ((S.broadcasts || {}).pending ? '<span class="c num">1 waiting</span>' : "") + "</button></div>";
+    '<button class="chip" data-act="fb-tab" data-t="announce" aria-pressed="' + (S.custTab === "announce") + '">Announcements' + ((S.broadcasts || {}).pending ? '<span class="c num">1 waiting</span>' : "") + "</button>" +
+    '<button class="chip" data-act="fb-tab" data-t="recipes" aria-pressed="' + (S.custTab === "recipes") + '">Recipe QR codes<span class="c num">' + (S.recipes || []).length + "</span></button></div>";
+  if (S.custTab === "recipes") {
+    return '<div><h2 class="h-page">Customers</h2><p class="sub">Recipes for your give-away masala packets. Print a recipe\'s QR code on the packet: customers scan it with the Scan button in the FTR-DOSE app, and only then see the recipe.</p></div>' + tabs + viewRecipes();
+  }
   if (S.custTab === "announce") {
     return '<div><h2 class="h-page">Customers</h2><p class="sub">Tell customers about new dishes, festival menus and new ideas. It goes to their FTR app notifications, and on WhatsApp to anyone who messaged in the last 24 hours.</p></div>' + tabs + viewAnnouncements();
   }
@@ -1750,6 +1756,108 @@ function announceSheet() {
           if (S.mode === "live") { entry = await api("POST", "/admin/api/broadcasts", { title, text, audience }); await annRefresh(); }
           else { entry = { id: "ANN-DEMO" + Date.now(), at: new Date().toISOString(), title, text, audience, audienceLabel: AUDIENCE_LABELS[audience], counts: { total: 0, app: 0, alerts: 0, whatsapp: 0, unreachable: 0 } }; S.broadcasts.history.unshift(entry); }
           closeSheet(); toast("Announcement sent to " + entry.counts.app + " in the app and " + entry.counts.whatsapp + " on WhatsApp"); render();
+        } catch (e) { err.textContent = e.message; err.hidden = false; ev.target.disabled = false; }
+      });
+    }
+  });
+}
+
+
+// ---------------------------------------------------------------- RECIPE QR CODES
+function demoRecipes() {
+  return [{ id: "r-test", token: "chef-test", url: "https://bot.franklintiffinroom.com/r/chef-test", active: true, title: "Chef's test recipe", powder: "FTR test masala", intro: "Chef's test QR code.", serves: "4", time: "20 min", ingredients: ["2 tbsp FTR masala powder", "2 cups cooked rice"], steps: ["Warm the ghee.", "Stir in the powder and rice."], tip: "", scans: 3, createdAt: new Date().toISOString() }];
+}
+let qrLib = null;
+function loadQrLib() {
+  if (window.qrcode) return Promise.resolve(window.qrcode);
+  if (!qrLib) qrLib = new Promise((ok, bad) => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js";
+    sc.onload = () => ok(window.qrcode); sc.onerror = () => { qrLib = null; bad(new Error("Couldn't load the QR code maker. Check the internet connection.")); };
+    document.head.appendChild(sc);
+  });
+  return qrLib;
+}
+async function qrSvg(url, size) {
+  const make = await loadQrLib();
+  const q = make(0, "M"); q.addData(url); q.make();
+  const n = q.getModuleCount(), m = 2, cell = size / (n + m * 2);
+  let d = "";
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += "M" + (c + m) + " " + (r + m) + "h1v1h-1z";
+  return '<svg role="img" aria-label="QR code" width="' + size + '" height="' + size + '" viewBox="0 0 ' + (n + m * 2) + " " + (n + m * 2) + '" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="' + d + '" fill="#2E2A26"/></svg>';
+}
+/** A print-ready PNG: QR code with the recipe name and "Scan in the FTR-DOSE app" under it. */
+async function qrPng(r) {
+  const make = await loadQrLib();
+  const q = make(0, "M"); q.addData(r.url); q.make();
+  const n = q.getModuleCount(), cell = 24, m = 4, w = (n + m * 2) * cell, h = w + 170;
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const g = cv.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.fillStyle = "#2E2A26";
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) g.fillRect((x + m) * cell, (y + m) * cell, cell, cell);
+  g.textAlign = "center";
+  g.font = "600 46px -apple-system, Segoe UI, Roboto, sans-serif"; g.fillText((r.powder || r.title).slice(0, 34), w / 2, w + 40);
+  g.font = "36px -apple-system, Segoe UI, Roboto, sans-serif"; g.fillStyle = "#6E5D55"; g.fillText("Scan in the FTR-DOSE app for Chef's recipe", w / 2, w + 100);
+  return cv.toDataURL("image/png");
+}
+function viewRecipes() {
+  const list = S.recipes || [];
+  setTimeout(() => {
+    document.querySelectorAll("[data-qr]").forEach(async (el) => {
+      try { el.innerHTML = await qrSvg(el.dataset.qr, 132); } catch (e) { el.textContent = e.message; }
+    });
+  }, 0);
+  return '<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><span class="small muted">Each code only opens its own recipe, and only inside the app. Turn a recipe off to stop its code working.</span>' +
+      '<button class="btn primary" data-act="rec-new">New recipe</button></div>' +
+    (list.length
+      ? '<div class="stack">' + list.map((r) =>
+          '<article class="card order"><div class="row" style="gap:16px;align-items:flex-start;flex-wrap:wrap">' +
+            '<div data-qr="' + esc(r.url) + '" style="width:132px;height:132px;flex:none" class="small muted">Making QR code…</div>' +
+            '<div class="grow" style="min-width:200px"><div class="o-name">' + esc(r.title) + "</div>" +
+              '<div class="o-meta">' + esc(r.powder || "") + (r.powder ? " · " : "") + (r.scans || 0) + " scan" + (r.scans === 1 ? "" : "s") + (r.active ? "" : ' · <span class="pill p-wait">Off</span>') + "</div>" +
+              '<div class="small muted num" style="word-break:break-all;margin-top:6px">' + esc(r.url) + "</div>" +
+              '<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:10px">' +
+                '<button class="btn sm primary" data-act="rec-png" data-id="' + esc(r.id) + '">Download QR for printing</button>' +
+                '<button class="btn sm ghost" data-act="rec-edit" data-id="' + esc(r.id) + '">Edit</button>' +
+                '<button class="btn sm danger" data-act="rec-del" data-id="' + esc(r.id) + '">Delete</button>' +
+              "</div></div></div></article>").join("") + "</div>"
+      : '<div class="card empty"><b>No recipes yet</b>Tap New recipe to add the recipe for a masala packet.</div>');
+}
+function recipeSheet(r) {
+  const v = (k) => esc(Array.isArray(r && r[k]) ? r[k].join("\n") : (r && r[k]) || "");
+  openSheet({
+    title: r ? "Edit recipe" : "New recipe",
+    body:
+      '<label class="field"><span>Recipe name</span><input id="rc-title" maxlength="80" value="' + v("title") + '" placeholder="e.g. Bisi Bele Bhath" /></label>' +
+      '<label class="field"><span>Powder on the packet</span><input id="rc-powder" maxlength="80" value="' + v("powder") + '" placeholder="e.g. FTR Bisi Bele Bhath Powder" /></label>' +
+      '<label class="field"><span>A line from Chef (optional)</span><textarea id="rc-intro" rows="2" maxlength="600">' + v("intro") + "</textarea></label>" +
+      '<div class="row" style="gap:10px"><label class="field grow"><span>Serves</span><input id="rc-serves" maxlength="20" value="' + v("serves") + '" placeholder="4" /></label>' +
+      '<label class="field grow"><span>Time</span><input id="rc-time" maxlength="20" value="' + v("time") + '" placeholder="40 min" /></label></div>' +
+      '<label class="field"><span>Ingredients</span><textarea id="rc-ing" rows="6" placeholder="One per line">' + v("ingredients") + '</textarea><span class="hint">One ingredient per line.</span></label>' +
+      '<label class="field"><span>Steps</span><textarea id="rc-steps" rows="7" placeholder="One step per line">' + v("steps") + '</textarea><span class="hint">One step per line; the app numbers them.</span></label>' +
+      '<label class="field"><span>Chef\'s tip (optional)</span><textarea id="rc-tip" rows="2" maxlength="400">' + v("tip") + "</textarea></label>" +
+      '<label class="row small" style="gap:8px"><input type="checkbox" id="rc-active"' + (!r || r.active ? " checked" : "") + " /> Code works (turn off to stop this QR code opening the recipe)</label>" +
+      '<p class="small" id="rc-err" style="color:var(--bad);margin:0" hidden></p>',
+    foot: '<button class="btn" data-close>Cancel</button><button class="btn primary" id="rc-ok">' + (r ? "Save recipe" : "Create recipe and QR code") + "</button>",
+    onMount: (el) => {
+      el.querySelector("#rc-ok").addEventListener("click", async (ev) => {
+        const q = (id) => el.querySelector(id).value;
+        const body = { title: q("#rc-title").trim(), powder: q("#rc-powder"), intro: q("#rc-intro"), serves: q("#rc-serves"), time: q("#rc-time"), ingredients: q("#rc-ing"), steps: q("#rc-steps"), tip: q("#rc-tip"), active: el.querySelector("#rc-active").checked };
+        const err = el.querySelector("#rc-err");
+        if (!body.title) { err.textContent = "Give the recipe a name."; err.hidden = false; return; }
+        if (!body.steps.trim()) { err.textContent = "Add at least one step."; err.hidden = false; return; }
+        ev.target.disabled = true;
+        try {
+          if (S.mode === "live") {
+            if (r) await api("PUT", "/admin/api/recipes/" + encodeURIComponent(r.id), body); else await api("POST", "/admin/api/recipes", body);
+            S.recipes = (await api("GET", "/admin/api/recipes")).recipes;
+          } else {
+            const lines = (t) => t.split("\n").map((x) => x.trim()).filter(Boolean);
+            const rec = Object.assign({}, r || { id: "r-demo" + Date.now(), token: "demo" + Date.now(), scans: 0 }, body, { ingredients: lines(body.ingredients), steps: lines(body.steps) });
+            rec.url = "https://bot.franklintiffinroom.com/r/" + rec.token;
+            S.recipes = r ? S.recipes.map((x) => (x.id === r.id ? rec : x)) : S.recipes.concat([rec]);
+          }
+          closeSheet(); toast(r ? "Recipe saved" : "Recipe created. Download its QR code to print."); render();
         } catch (e) { err.textContent = e.message; err.hidden = false; ev.target.disabled = false; }
       });
     }
@@ -2098,6 +2206,27 @@ document.addEventListener("click", (e) => {
       break;
     }
     case "ann-new": announceSheet(); break;
+    case "rec-new": recipeSheet(null); break;
+    case "rec-edit": recipeSheet((S.recipes || []).find((x) => x.id === el.dataset.id)); break;
+    case "rec-png": {
+      const r = (S.recipes || []).find((x) => x.id === el.dataset.id);
+      qrPng(r).then((href) => { const a = document.createElement("a"); a.href = href; a.download = "FTR-recipe-QR-" + (r.title || "recipe").replace(/[^a-z0-9]+/gi, "-") + ".png"; a.click(); }).catch((e) => toast(e.message));
+      break;
+    }
+    case "rec-del": {
+      const r = (S.recipes || []).find((x) => x.id === el.dataset.id);
+      if (!r) break;
+      confirmSheet({
+        title: "Delete " + r.title + "?",
+        text: "Its QR code will stop working, including on packets you've already given out. To pause it instead, use Edit and turn the code off.",
+        confirmLabel: "Delete recipe", danger: true,
+        onConfirm: async () => {
+          if (S.mode === "live") await api("DELETE", "/admin/api/recipes/" + encodeURIComponent(r.id));
+          S.recipes = S.recipes.filter((x) => x.id !== r.id); toast("Recipe deleted"); render();
+        }
+      });
+      break;
+    }
     case "ann-skip":
       (async () => {
         try { if (S.mode === "live") { await api("POST", "/admin/api/broadcasts/pending/skip", {}); await annRefresh(); } else S.broadcasts.pending = null; toast("New dishes won't be announced"); render(); }
