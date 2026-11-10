@@ -1,5 +1,5 @@
 /**
- * Single-use gift QR codes (first batch: 125 packets of Bisi Bele Bhath Pudi in the
+ * Single-use gift QR codes (first batch: 125 packets of FTR Bisi Bele Bhath Pudi in the
  * Triveni 50th anniversary souvenir bag).
  *
  *   QR on each packet -> https://bot.franklintiffinroom.com/g/T50-017-K7Q2M9XW
@@ -23,7 +23,7 @@ const store = require("./jsonFile");
 const tabSync = require("./tabSync");
 
 const BATCHES = {
-  T50: { count: 125, title: "Triveni 50th anniversary souvenir bag", product: "Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" }
+  T50: { count: 125, title: "Triveni 50th anniversary souvenir bag", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" }
 };
 
 const CODES_FILE = "gift-codes.json";
@@ -107,7 +107,7 @@ const SURVEY_FIELDS = [
   ["different", "What they would do differently"],
   ["better", "Their BBB secret"],
   ["notes", "Notes for FTR"],
-  ["buyAgain", "Would buy Bisi Bele Bhath Pudi"]
+  ["buyAgain", "Would buy FTR Bisi Bele Bhath Pudi"]
 ];
 
 function syncSheets() {
@@ -231,7 +231,7 @@ const RECIPE = {
     title: "FTR Special Bisi Bele Bhath",
     serves: "Serves 3–4 · about 2 qt · made with one 25 g packet",
     ingredients: [
-      ["Bisi Bele Bhath Pudi", "25 g (1 packet)"], ["Rice, uncooked", "150 g"], ["Toor dal (cook fully ahead)", "100 g"],
+      ["FTR Bisi Bele Bhath Pudi", "25 g (1 packet)"], ["Rice, uncooked", "150 g"], ["Toor dal (cook fully ahead)", "100 g"],
       ["Fresh coconut", "25 g"], ["Curry leaves", "4–5, plus a few for tadka"], ["Tamarind", "to taste"],
       ["Khol rabi, 1\" pieces", "50 g"], ["Green beans, 1\" pieces", "50 g"], ["Carrot", "50 g"],
       ["Seme badnekai, small pieces", "50 g"], ["Green peas", "50 g"], ["White pumpkin, medium pieces", "100 g"],
@@ -241,7 +241,7 @@ const RECIPE = {
       ["Salt, hing, extra chilly powder", "to taste"]
     ],
     steps: [
-      ["Paste", "In a blender, add the 25 g Bisi Bele Bhath Pudi, 25 g fresh coconut, tamarind to taste and 4–5 curry leaves with a little water. Blend to a thick paste. Keep it ready with the uncooked rice and cooked toor dal."],
+      ["Paste", "In a blender, add the 25 g FTR Bisi Bele Bhath Pudi, 25 g fresh coconut, tamarind to taste and 4–5 curry leaves with a little water. Blend to a thick paste. Keep it ready with the uncooked rice and cooked toor dal."],
       ["Tempering", "Heat 1 tbsp oil in a pot and add ½ tsp mustard seeds. Once they splutter, add the onion and sauté till translucent, then the khol rabi and fry 1 min."],
       ["Vegetables", "Add ¾ glass of water and cook 2 min. Then every 2 min add, in this order: beans, carrot, seme badnekai, peas, white pumpkin, bell pepper and tomato. Add a little more water if needed."],
       ["Simmer", "Cook 5 min. If the beans are cooked, the rest will be fine."],
@@ -278,9 +278,9 @@ function welcomeForm(info, r) {
 
 function giftPage(info, r) {
   const done = surveys().some((s) => s.code === info.code);
-  return shell("Your Bisi Bele Bhath Pudi recipe", `
+  return shell("Your FTR Bisi Bele Bhath Pudi recipe", `
 <h1>Welcome from FTR!</h1>
-<p class="sub">Thank you for trying our first product, <b style="white-space:nowrap">Bisi Bele Bhath Pudi</b>.<br>Gift no. ${info.n} · ${esc(info.batch.title)}</p>
+<p class="sub">Thank you for trying our first product, <b style="white-space:nowrap">FTR Bisi Bele Bhath Pudi</b>.<br>Gift no. ${info.n} · ${esc(info.batch.title)}</p>
 ${welcomeForm(info, r)}
 ${recipeHtml(info.batch.recipe)}
 <h2>How was it?</h2>
@@ -297,7 +297,7 @@ function surveyPage(info, r, prev) {
   const a = (prev && prev.answers) || {};
   const q = (name, legend, opts) => `<fieldset><legend>${legend}</legend>${radios(name, opts, a[name])}</fieldset>`;
   const t = (name, text) => `<label for="${name}">${text}</label><textarea id="${name}" name="${name}" maxlength="1500">${esc(a[name] || "")}</textarea>`;
-  return shell("Bisi Bele Bhath Pudi feedback", `
+  return shell("FTR Bisi Bele Bhath Pudi feedback", `
 <h1>How was your BBB?</h1>
 <p class="sub">Gift no. ${info.n} · takes about 2 minutes</p>
 <form class="card" method="post" action="/g/${esc(info.code)}/survey">
@@ -312,7 +312,7 @@ ${t("emphasis", "Anything we should emphasize more in the recipe?")}
 ${t("different", "Anything you would do differently?")}
 ${t("better", "Is your BBB better than FTR's? Share your secret!")}
 ${t("notes", "Any other notes for FTR")}
-${q("buyAgain", "Would you buy Bisi Bele Bhath Pudi?", ["Yes", "Maybe", "No"])}
+${q("buyAgain", "Would you buy FTR Bisi Bele Bhath Pudi?", ["Yes", "Maybe", "No"])}
 <label for="sname">Name <span class="note">(optional)</span></label><input id="sname" name="name" type="text" maxlength="80" value="${esc((prev && prev.name) || r.name || "")}">
 <label for="sphone">Phone <span class="note">(optional)</span></label><input id="sphone" name="phone" type="tel" maxlength="20" value="${esc((prev && prev.phone) || r.phone || "")}">
 <button class="btn" type="submit">Send feedback</button>
