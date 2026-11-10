@@ -93,6 +93,9 @@ val P: FtrColors @Composable get() = LocalFtr.current
 object Type {
     val oswald = FontFamily(Font(R.font.oswald_medium, FontWeight.Medium))
     val fraunces = FontFamily(Font(R.font.fraunces_mediumitalic, FontWeight.Medium, FontStyle.Italic))
+    /** Fraunces upright, for Chef's Charcoal & Gold recipe cards. */
+    val serif = FontFamily(Font(R.font.fraunces_semibold, FontWeight.SemiBold), Font(R.font.fraunces_bold, FontWeight.Bold))
+    fun serif(size: Int, bold: Boolean = true) = TextStyle(fontFamily = serif, fontWeight = if (bold) FontWeight.Bold else FontWeight.SemiBold, fontSize = size.sp, lineHeight = (size * 1.15).sp)
     /** Softer than before: Bold maps to Archivo SemiBold, SemiBold to Archivo Medium. */
     val archivo = FontFamily(
         Font(R.font.archivo_regular, FontWeight.Normal), Font(R.font.archivo_medium, FontWeight.Medium),

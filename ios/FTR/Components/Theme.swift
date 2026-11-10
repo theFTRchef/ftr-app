@@ -54,6 +54,10 @@ enum Typeface {
     static func tagline(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
         .custom("Fraunces-MediumItalic", size: size, relativeTo: style)
     }
+    /// Fraunces upright, for Chef's Charcoal & Gold recipe cards.
+    static func serif(_ size: CGFloat, bold: Bool = true, relativeTo style: Font.TextStyle = .title) -> Font {
+        .custom(bold ? "Fraunces-Bold" : "Fraunces-SemiBold", size: size, relativeTo: style)
+    }
     static func logo(_ size: CGFloat, bold: Bool = false, relativeTo style: Font.TextStyle = .title) -> Font {
         .custom(bold ? "JosefinSans-Bold" : "JosefinSans-SemiBold", size: size, relativeTo: style)
     }

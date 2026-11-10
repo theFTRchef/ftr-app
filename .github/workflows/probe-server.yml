@@ -20,3 +20,6 @@ jobs:
           curl -s -o /dev/null -w "/g/CHEF-TEST %{http_code}\n" https://bot.franklintiffinroom.com/g/CHEF-TEST
           curl -s $B/gift/CHEF-TEST -H 'X-FTR-Install: probe-0000' | head -c 160; echo
           curl -s $B/gift/T50-001-AAAAAAAA -H 'X-FTR-Install: probe-0000'; echo
+          echo "== Chef's test code is reusable (three different phones)"
+          for d in probe-aaaa1111 probe-bbbb2222 probe-cccc3333; do curl -s -o /dev/null -w "$d %{http_code}\n" $B/gift/CHEF-TEST -H "X-FTR-Install: $d"; done
+          curl -s -o /dev/null -w "web, new browser %{http_code}\n" https://bot.franklintiffinroom.com/g/CHEF-TEST

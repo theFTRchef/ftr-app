@@ -189,43 +189,71 @@ function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+// Charcoal & Gold: Chef's standard customer recipe-card template (FTR Recipe Cards).
+const CG = { charcoal: "#2E2A26", gold: "#D4A84A", sand: "#F3EAD8", strip: "#E6D3A8", card: "#FFFCF5", cardLine: "#DCCBA6", dots: "#CDBB92", noteLine: "#B9954A", stripInk: "#5A4A2E", cream: "#FBF6EC", creamSoft: "#E8DCC2" };
 const CSS = `:root{color-scheme:light}
 *{box-sizing:border-box}
-body{margin:0;background:#F7F1E8;color:#2E2A26;font:17px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-main{max-width:560px;margin:0 auto;padding:28px 18px 40px}
+body{margin:0;background:${CG.sand};color:${CG.charcoal};font:17px/1.55 Archivo,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:28px 18px 0}
+main.bare{padding:0}
 .seal{display:block;width:120px;height:120px;margin:0 auto 10px}
-h1{font:700 28px/1.15 Georgia,serif;text-align:center;margin:6px 0 4px}
-h2{font:700 21px/1.2 Georgia,serif;margin:28px 0 10px;color:#7A3B1E}
-.sub{text-align:center;color:#6E5D55;margin:0 0 18px}
-.card{background:#FFFDF8;border:1px solid #E6DAC6;border-radius:14px;padding:16px 18px;margin:14px 0}
+h1{font:700 30px/1.12 Fraunces,Georgia,serif;text-align:center;margin:6px 0 4px}
+h2{font:700 21px/1.2 Fraunces,Georgia,serif;margin:26px 0 10px;color:${CG.charcoal}}
+.sub{text-align:center;color:${CG.stripInk};margin:0 0 18px}
+.card{background:${CG.card};border:1px solid ${CG.cardLine};border-radius:12px;padding:16px 18px;margin:14px 0}
+.rc-head{background:${CG.charcoal};color:${CG.cream};padding:22px 20px;display:flex;gap:16px;align-items:center;border-bottom:5px solid ${CG.gold}}
+.rc-head img{width:84px;height:84px;flex-shrink:0}
+.rc-kick{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:${CG.gold}}
+.rc-head h1{color:${CG.cream};text-align:left;margin:2px 0;font-size:32px}
+.rc-subt{font:italic 500 16px/1.3 Fraunces,Georgia,serif;color:${CG.creamSoft}}
+.rc-meta{display:flex;justify-content:space-around;gap:8px;background:${CG.strip};padding:12px 14px;text-align:center}
+.rc-meta span{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:${CG.stripInk}}
+.rc-meta b{font:600 17px/1.2 Fraunces,Georgia,serif}
+.rc-body{padding:4px 18px 8px}
 ul.ing{list-style:none;padding:0;margin:0}
-ul.ing li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #EFE6D6}
-ul.ing li b{white-space:nowrap}
-ol.steps{padding-left:22px;margin:0}
-ol.steps li{margin:0 0 12px}
+ul.ing li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dotted ${CG.dots}}
+ul.ing li b{white-space:nowrap;font-weight:600}
+.notes p{margin:0 0 8px;padding-left:12px;border-left:3px solid ${CG.noteLine};font-size:15.5px}
+ol.steps{list-style:none;padding:0;margin:0;counter-reset:s}
+ol.steps li{display:flex;gap:12px;margin:0 0 12px;counter-increment:s}
+ol.steps li::before{content:counter(s);flex-shrink:0;width:28px;height:28px;border-radius:14px;background:${CG.charcoal};color:${CG.gold};font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.rc-foot{background:${CG.charcoal};color:${CG.cream};padding:14px 20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;align-items:center;font-size:14px;margin-top:30px}
+.rc-foot a{color:${CG.gold};font:700 18px Fraunces,Georgia,serif;text-decoration:none}
+.rc-foot .app{font:600 14px Archivo,sans-serif;color:${CG.cream};text-decoration:underline}
+.pad{padding:0 18px}
 label{display:block;font-weight:600;margin:14px 0 6px}
-input[type=text],input[type=tel],input[type=email],textarea{width:100%;padding:12px;border:1px solid #CDBFA4;border-radius:10px;font:inherit;background:#fff;color:inherit}
+input[type=text],input[type=tel],input[type=email],textarea{width:100%;padding:12px;border:1px solid ${CG.cardLine};border-radius:10px;font:inherit;background:#fff;color:inherit}
 textarea{min-height:84px}
 fieldset{border:0;margin:14px 0 0;padding:0}
 legend{font-weight:600;margin-bottom:6px}
 .opts{display:flex;flex-wrap:wrap;gap:8px}
-.opts label{font-weight:500;margin:0;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #CDBFA4;border-radius:999px;background:#fff;min-height:44px}
+.opts label{font-weight:500;margin:0;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid ${CG.cardLine};border-radius:999px;background:#fff;min-height:44px}
 .check{display:flex;gap:10px;align-items:flex-start;font-weight:500}
 .check input{width:22px;height:22px;margin-top:2px}
-.btn{display:block;width:100%;text-align:center;margin:18px 0 0;padding:15px 18px;border:0;border-radius:999px;background:#7A3B1E;color:#fff;text-decoration:none;font-family:inherit;font-size:17px;font-weight:600;line-height:1.2;cursor:pointer}
-a{color:#7A3B1E}
-.btn.alt{background:#EEE6D8;color:#2E2A26}
-.btn:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #2E2A26;outline-offset:2px}
-.note{font-size:15px;color:#6E5D55}
-.foot{margin-top:30px;text-align:center;font-size:14px;color:#6E5D55}
-.foot a{color:#7A3B1E}
-.hi{background:#FFF4DC;border-color:#E9B44C}`;
+.btn{display:block;width:100%;text-align:center;margin:18px 0 0;padding:15px 18px;border:0;border-radius:999px;background:${CG.charcoal};color:${CG.gold};text-decoration:none;font-family:inherit;font-size:17px;font-weight:700;line-height:1.2;cursor:pointer}
+a{color:${CG.charcoal}}
+.btn.alt{background:${CG.strip};color:${CG.charcoal}}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid ${CG.gold};outline-offset:2px}
+.note{font-size:15px;color:${CG.stripInk}}
+.foot{margin:30px 0 0;padding-bottom:36px;text-align:center;font-size:14px;color:${CG.stripInk}}
+.hi{background:#FFF6E2;border-color:${CG.gold}}`;
 
-function shell(title, body) {
+const FONTS = `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,500&family=Archivo:wght@400;600;700&display=swap">`;
+
+function shell(title, body, bare = false) {
+  if (bare) {
+    return `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>${esc(title)}</title>${FONTS}<style>${CSS}</style></head><body><main class="bare">
+${body}
+<div class="rc-foot"><span>100% vegetarian · Somerset, NJ<br><a class="app" href="/app">Get the FTR-DOSE app</a></span><a href="tel:+12343873673">1-234-FTR-DOSE (387-3673)</a></div>
+</main></body></html>`;
+  }
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>${esc(title)}</title><style>${CSS}</style></head><body><main>
+<title>${esc(title)}</title>${FONTS}<style>${CSS}</style></head><body><main>
 <img class="seal" src="/app/seal.png" alt="Franklin Tiffin Room seal">
 ${body}
 <p class="foot">Franklin Tiffin Room · 100% vegetarian · Somerset, NJ<br>
@@ -235,8 +263,16 @@ ${body}
 
 const RECIPE = {
   bbb25: {
-    title: "FTR Special Bisi Bele Bhath",
-    serves: "Serves 3–4 · about 2 qt · made with one 25 g packet",
+    title: "Bisi Bele Bhath",
+    subtitle: "FTR Special · made with one 25 g packet of FTR-BBB Powder",
+    meta: [["Prep", "≈ 15 min"], ["Cook", "≈ 40 min"], ["Serves", "3–4 · ≈ 2 qt"]],
+    notes: [
+      "Cut khol rabi and beans into 1\" pieces.",
+      "Once the rice goes in, never leave it over 20 sec.",
+      "Hing should come through a little, not too much.",
+      "Final texture should flow, never cake up.",
+      "Make the raitha separately; keep it ready."
+    ],
     ingredients: [
       ["FTR-BBB Powder", "25 g (1 packet)"], ["Rice, uncooked", "150 g"], ["Toor dal (cook fully ahead)", "100 g"],
       ["Fresh coconut", "25 g"], ["Curry leaves", "4–5, plus a few for tadka"], ["Tamarind", "to taste"],
@@ -263,11 +299,18 @@ const RECIPE = {
   }
 };
 
-function recipeHtml(key) {
+/** The recipe in Chef's Charcoal & Gold card: header, prep strip, ingredients, notes, method. */
+function recipeHtml(key, kicker) {
   const r = RECIPE[key];
-  return `<h2>${esc(r.title)}</h2><p class="note">${esc(r.serves)}</p>
-<div class="card"><ul class="ing">${r.ingredients.map(([n, q]) => `<li><span>${esc(n)}</span><b>${esc(q)}</b></li>`).join("")}</ul></div>
-<h2>Method</h2><div class="card"><ol class="steps">${r.steps.map(([t, s]) => `<li><b>${esc(t)}:</b> ${esc(s)}</li>`).join("")}</ol></div>`;
+  return `<header class="rc-head"><img src="/app/seal.png" alt="Franklin Tiffin Room seal"><div>
+<div class="rc-kick">${esc(kicker || "Franklin Tiffin Room · Recipe")}</div>
+<h1>${esc(r.title)}</h1><div class="rc-subt">${esc(r.subtitle)}</div></div></header>
+<div class="rc-meta">${r.meta.map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>
+<div class="rc-body">
+<div class="card"><h2 style="margin-top:0">Ingredients</h2><ul class="ing">${r.ingredients.map(([n, q]) => `<li><span>${esc(n)}</span><b>${esc(q)}</b></li>`).join("")}</ul></div>
+<h2>Chef's notes</h2><div class="notes">${r.notes.map((t) => `<p>${esc(t)}</p>`).join("")}</div>
+<h2>Method</h2><ol class="steps">${r.steps.map(([t, x]) => `<li><span><b>${esc(t)}.</b> ${esc(x)}</span></li>`).join("")}</ol>
+</div>`;
 }
 
 function welcomeForm(info, r) {
@@ -285,15 +328,16 @@ function welcomeForm(info, r) {
 
 function giftPage(info, r) {
   const done = surveys().some((s) => s.code === info.code);
+  const kicker = info.test ? "Chef's test code · reusable" : `Franklin Tiffin Room · Gift no. ${info.n}`;
   return shell("Your FTR-BBB Powder recipe", `
-<h1>Welcome from FTR!</h1>
-<p class="sub">Thank you for trying our first product, <b style="white-space:nowrap">FTR‑BBB Powder</b>.<br>Gift no. ${info.n} · ${esc(info.batch.title)}</p>
+${recipeHtml(info.batch.recipe, kicker)}
+<div class="pad">
 ${welcomeForm(info, r)}
-${recipeHtml(info.batch.recipe)}
 <h2>How was it?</h2>
 <p>${done ? "Thank you for your feedback! You can update it any time." : "Once you've made it, tell us what was right and what was wrong. Every answer helps FTR get better."}</p>
 <a class="btn" href="/g/${esc(info.code)}/survey">${done ? "Update my feedback" : "Share my feedback"}</a>
-<a class="btn alt" href="/app">Get the FTR-DOSE app and comment there</a>`);
+<a class="btn alt" href="/app">Get the FTR-DOSE app and comment there</a>
+</div>`, true);
 }
 
 function radios(name, opts, cur) {
@@ -360,13 +404,15 @@ function appRecipe(key) {
   const r = RECIPE[key];
   return {
     title: r.title,
+    subtitle: r.subtitle,
     powder: "FTR-BBB Powder · 25 g gift",
-    intro: "Thank you for trying our first product. Follow these steps to get the same Bisi Bele Bhath we serve.",
-    serves: "3–4 (about 2 qt)",
+    meta: r.meta.map(([label, value]) => ({ label, value })),
+    serves: "3–4 · ≈ 2 qt",
     ingredients: r.ingredients.map(([n]) => n),
     amounts: r.ingredients.map(([, q]) => q),
+    notes: r.notes,
     steps: r.steps.map(([t, x]) => `${t}: ${x}`),
-    tip: "BBB is incomplete without ghee: top each plate with another spoon."
+    template: "charcoal-gold"
   };
 }
 

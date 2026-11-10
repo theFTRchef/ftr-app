@@ -1,6 +1,21 @@
 package com.franklintiffinroom.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.style.TextAlign
+import com.franklintiffinroom.app.R
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,8 +79,14 @@ import kotlinx.serialization.Serializable
 // Same as the iPhone app (RecipeScanView.swift).
 
 @Serializable
+data class RecipeMeta(val label: String, val value: String)
+
+@Serializable
 data class Recipe(
     val title: String,
+    val subtitle: String? = null,
+    val meta: List<RecipeMeta>? = null,
+    val notes: List<String>? = null,
     val powder: String? = null,
     val intro: String? = null,
     val serves: String? = null,
@@ -223,76 +244,147 @@ private fun RecipeSheet(code: RecipeCode, onScanAnother: () -> Unit, onDismiss: 
     }
 }
 
+/** Chef's standard customer recipe-card template (FTR Recipe Cards): Charcoal & Gold. Fixed colours, like the printed card. */
+object CG {
+    val charcoal = Color(0xFF2E2A26)
+    val gold = Color(0xFFD4A84A)
+    val sand = Color(0xFFF3EAD8)
+    val strip = Color(0xFFE6D3A8)
+    val card = Color(0xFFFFFCF5)
+    val cardLine = Color(0xFFDCCBA6)
+    val dots = Color(0xFFCDBB92)
+    val noteLine = Color(0xFFB9954A)
+    val stripInk = Color(0xFF5A4A2E)
+    val cream = Color(0xFFFBF6EC)
+    val creamSoft = Color(0xFFE8DCC2)
+}
+
 @Composable
 private fun RecipeBody(o: OpenedRecipe, modifier: Modifier, openSurvey: () -> Unit) {
     val r = o.recipe
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(
-            Modifier.widthIn(max = 680.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                val kicker = o.gift?.let { if (it.test) "CHEF'S TEST CODE" else "FTR GIFT NO. ${it.label}" } ?: r.powder?.uppercase()
-                kicker?.takeIf { it.isNotEmpty() }?.let { Text(it, style = Type.bold(11.0).copy(letterSpacing = 1.sp), color = P.red) }
-                Text(r.title.uppercase(), style = Type.display(30), color = P.ink)
-                r.intro?.takeIf { it.isNotEmpty() }?.let { Text(it, style = Type.tagline(16), color = P.muted) }
-                val facts = listOfNotNull(r.serves?.takeIf { it.isNotEmpty() }?.let { "Serves $it" }, r.time?.takeIf { it.isNotEmpty() })
-                if (facts.isNotEmpty()) Text(facts.joinToString("   "), style = Type.semi(14.0), color = P.ink, modifier = Modifier.padding(top = 4.dp))
-            }
+    val kicker = o.gift?.let { if (it.test) "CHEF'S TEST CODE · REUSABLE" else "FRANKLIN TIFFIN ROOM · GIFT NO. ${it.label}" } ?: "FRANKLIN TIFFIN ROOM · RECIPE"
+    val meta = r.meta?.takeIf { it.isNotEmpty() } ?: listOfNotNull(
+        r.time?.takeIf { it.isNotEmpty() }?.let { RecipeMeta("Time", it) },
+        r.serves?.takeIf { it.isNotEmpty() }?.let { RecipeMeta("Serves", it) },
+    )
+    val notes = (r.notes ?: emptyList()) + listOfNotNull(r.tip?.takeIf { it.isNotEmpty() })
 
-            if (r.ingredients.isNotEmpty()) {
-                Column(Modifier.fillMaxWidth().card(P.surface, P.line, RoundedCornerShape(18.dp)).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("INGREDIENTS", style = Type.display(18), color = P.ink)
-                    r.ingredients.forEachIndexed { i, line ->
-                        Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Box(Modifier.padding(top = 9.dp).size(6.dp).background(P.goldLine, CircleShape))
-                            Text(line, style = Type.body(16.0), color = P.ink, modifier = Modifier.weight(1f))
-                            r.amounts?.getOrNull(i)?.takeIf { it.isNotEmpty() }?.let { Text(it, style = Type.semi(15.0), color = P.ink) }
+    BoxWithConstraints(modifier.fillMaxSize().background(CG.sand)) {
+        val wide = maxWidth >= 700.dp
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+            // Header: seal, kicker, title, italic subtitle, gold rule.
+            Column(Modifier.fillMaxWidth().background(CG.charcoal)) {
+                Row(Modifier.fillMaxWidth().padding(20.dp).semantics(mergeDescendants = true) { heading() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Image(painterResource(R.drawable.seal), "Franklin Tiffin Room seal", Modifier.size(80.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(kicker, style = Type.semi(11.0).copy(letterSpacing = 2.5.sp), color = CG.gold)
+                        Text(r.title, style = Type.serif(32), color = CG.cream)
+                        (r.subtitle ?: r.intro)?.takeIf { it.isNotEmpty() }?.let { Text(it, style = Type.tagline(16), color = CG.creamSoft) }
+                    }
+                }
+                Box(Modifier.fillMaxWidth().height(5.dp).background(CG.gold))
+            }
+            if (meta.isNotEmpty()) {
+                Row(Modifier.fillMaxWidth().background(CG.strip).padding(horizontal = 14.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    meta.forEach { m ->
+                        Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(m.label.uppercase(), style = Type.body(11.0).copy(letterSpacing = 2.sp), color = CG.stripInk)
+                            Text(m.value, style = Type.serif(17, bold = false), color = CG.charcoal, textAlign = TextAlign.Center)
                         }
                     }
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("METHOD", style = Type.display(18), color = P.ink)
-                r.steps.forEachIndexed { i, step ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Box(Modifier.size(28.dp).background(P.leaf, CircleShape).semantics { contentDescription = "Step ${i + 1}" }, contentAlignment = Alignment.Center) {
-                            Text("${i + 1}", style = Type.bold(14.0), color = P.leafInk)
+            val ingredients: @Composable () -> Unit = {
+                if (r.ingredients.isNotEmpty()) {
+                    Column(Modifier.fillMaxWidth().background(CG.card, RoundedCornerShape(12.dp)).border(1.dp, CG.cardLine, RoundedCornerShape(12.dp)).padding(horizontal = 16.dp, vertical = 14.dp)) {
+                        Text("Ingredients", style = Type.serif(20), color = CG.charcoal, modifier = Modifier.padding(bottom = 8.dp).semantics { heading() })
+                        r.ingredients.forEachIndexed { i, line ->
+                            Row(
+                                Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.drawBehind {
+                                    drawLine(CG.dots, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(2f, 4f)))
+                                }.padding(vertical = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Text(line, style = Type.body(15.0), color = CG.charcoal, modifier = Modifier.weight(1f))
+                                r.amounts?.getOrNull(i)?.takeIf { it.isNotEmpty() }?.let { Text(it, style = Type.bold(15.0), color = CG.charcoal, textAlign = TextAlign.End) }
+                            }
                         }
-                        val cut = step.indexOf(": ")
+                    }
+                }
+            }
+            val notesBlock: @Composable () -> Unit = {
+                if (notes.isNotEmpty()) {
+                    Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Chef's notes", style = Type.serif(18), color = CG.charcoal, modifier = Modifier.semantics { heading() })
+                        notes.forEach { n ->
+                            Row(Modifier.height(IntrinsicSize.Min)) {
+                                Box(Modifier.width(3.dp).fillMaxHeight().background(CG.noteLine))
+                                Text(n, style = Type.body(15.0), color = CG.charcoal, modifier = Modifier.padding(start = 12.dp))
+                            }
+                        }
+                    }
+                }
+            }
+            val method: @Composable () -> Unit = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Method", style = Type.serif(20), color = CG.charcoal, modifier = Modifier.semantics { heading() })
+                    r.steps.forEachIndexed { i, step ->
+                        Row(Modifier.semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Box(Modifier.size(28.dp).background(CG.charcoal, CircleShape).semantics { contentDescription = "Step ${i + 1}" }, contentAlignment = Alignment.Center) {
+                                Text("${i + 1}", style = Type.bold(14.0), color = CG.gold)
+                            }
+                            val cut = step.indexOf(": ")
+                            Text(
+                                buildAnnotatedString {
+                                    if (cut in 1..24) {
+                                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(step.substring(0, cut) + ". ") }
+                                        append(step.substring(cut + 2))
+                                    } else append(step)
+                                },
+                                style = Type.body(16.0), color = CG.charcoal, modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            }
+            val feedback: @Composable () -> Unit = {
+                o.survey?.let { s ->
+                    Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("How was it?", style = Type.serif(20), color = CG.charcoal, modifier = Modifier.semantics { heading() })
                         Text(
-                            buildAnnotatedString {
-                                if (cut in 1..24) {
-                                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(step.substring(0, cut + 2)) }
-                                    append(step.substring(cut + 2))
-                                } else append(step)
-                            },
-                            style = Type.body(16.0), color = P.ink, modifier = Modifier.weight(1f),
+                            if (s.done) "Thank you for your feedback! You can update it any time."
+                            else "Once you've made it, tell Chef what was right and what was wrong. Every answer helps FTR get better.",
+                            style = Type.body(15.0), color = CG.stripInk,
                         )
+                        androidx.compose.material3.Button(
+                            onClick = openSurvey, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(50),
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = CG.charcoal, contentColor = CG.gold),
+                        ) { Text(if (s.done) "Update my feedback" else "Share my feedback", style = Type.bold(17.0)) }
                     }
                 }
             }
 
-            r.tip?.takeIf { it.isNotEmpty() }?.let { tip ->
-                Column(Modifier.fillMaxWidth().background(P.turmericSoft, RoundedCornerShape(16.dp)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("CHEF'S TIP", style = Type.bold(11.0).copy(letterSpacing = 1.sp), color = P.turmericInk)
-                    Text(tip, style = Type.body(15.0), color = P.ink)
+            Box(Modifier.widthIn(max = 980.dp).fillMaxWidth().padding(horizontal = if (wide) 32.dp else 18.dp, vertical = 22.dp)) {
+                if (wide) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                        Column(Modifier.width(300.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) { ingredients(); notesBlock() }
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(18.dp)) { method(); feedback() }
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(22.dp)) { ingredients(); notesBlock(); method(); feedback() }
                 }
             }
 
-            o.survey?.let { s ->
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("HOW WAS IT?", style = Type.display(18), color = P.ink)
-                    Text(
-                        if (s.done) "Thank you for your feedback! You can update it any time."
-                        else "Once you've made it, tell Chef what was right and what was wrong. Every answer helps FTR get better.",
-                        style = Type.body(15.0), color = P.muted,
-                    )
-                    PrimaryButton(if (s.done) "Update my feedback" else "Share my feedback", Modifier.fillMaxWidth(), onClick = openSurvey)
-                }
+            // Footer: charcoal bar with the phone number in gold.
+            val ctx = LocalContext.current
+            Row(Modifier.fillMaxWidth().background(CG.charcoal).padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("100% vegetarian · Somerset, NJ", style = Type.body(13.0), color = CG.cream, modifier = Modifier.weight(1f))
+                Text(
+                    "1-234-FTR-DOSE", style = Type.serif(17), color = CG.gold,
+                    modifier = Modifier.clickable(onClickLabel = "Call FTR") { Intents.dial(ctx, "+12343873673") }.padding(4.dp),
+                )
             }
-            Spacer(Modifier.size(12.dp))
         }
     }
 }

@@ -9,7 +9,11 @@ import VisionKit
 //  - recipe codes made in Chef's Kitchen: https://bot.franklintiffinroom.com/r/<token>
 
 struct Recipe: Decodable, Equatable {
+    struct Meta: Decodable, Equatable { let label: String; let value: String }
     var title: String
+    var subtitle: String?
+    var meta: [Meta]?
+    var notes: [String]?
     var powder: String?
     var intro: String?
     var serves: String?
@@ -167,9 +171,13 @@ struct RecipeScanFlow: View {
                     scanner
                 }
             }
-            .screenBackground()
+            .background { (opened == nil ? Palette.bg : CG.sand).ignoresSafeArea() }
             .navigationTitle(opened == nil ? "Scan a recipe QR" : "")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(opened == nil ? Palette.bg : CG.charcoal, for: .navigationBar)
+            .toolbarBackground(opened == nil ? .automatic : .visible, for: .navigationBar)
+            .toolbarColorScheme(opened == nil ? nil : .dark, for: .navigationBar)
+            .tint(opened == nil ? Palette.red : CG.gold)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
                 if opened != nil {
@@ -272,107 +280,79 @@ private struct QRScanner: UIViewControllerRepresentable {
     }
 }
 
-/// The recipe, as Chef wrote it.
+// MARK: - Charcoal & Gold
+// Chef's standard customer recipe-card template (from the FTR Recipe Cards work):
+// charcoal header with the seal and a gold rule, gold-on-sand prep strip, ingredients
+// in a cream card, Chef's notes with gold bars, method with charcoal circles and gold
+// numbers, charcoal footer with the phone number. Fixed colours, like the printed card.
+
+enum CG {
+    static let charcoal = Color(uiColor: UIColor(hex: 0x2E2A26))
+    static let gold = Color(uiColor: UIColor(hex: 0xD4A84A))
+    static let sand = Color(uiColor: UIColor(hex: 0xF3EAD8))
+    static let strip = Color(uiColor: UIColor(hex: 0xE6D3A8))
+    static let card = Color(uiColor: UIColor(hex: 0xFFFCF5))
+    static let cardLine = Color(uiColor: UIColor(hex: 0xDCCBA6))
+    static let dots = Color(uiColor: UIColor(hex: 0xCDBB92))
+    static let noteLine = Color(uiColor: UIColor(hex: 0xB9954A))
+    static let stripInk = Color(uiColor: UIColor(hex: 0x5A4A2E))
+    static let cream = Color(uiColor: UIColor(hex: 0xFBF6EC))
+    static let creamSoft = Color(uiColor: UIColor(hex: 0xE8DCC2))
+}
+
+
+/// The recipe, as Chef wrote it, on the Charcoal & Gold card.
 struct RecipeView: View {
     @Binding var opened: OpenedRecipe
     @State private var showSurvey = false
     private var recipe: Recipe { opened.recipe }
 
+    private var kicker: String {
+        if let g = opened.gift { return g.test ? "CHEF'S TEST CODE · REUSABLE" : "FRANKLIN TIFFIN ROOM · GIFT NO. \(g.label)" }
+        return "FRANKLIN TIFFIN ROOM · RECIPE"
+    }
+
+    private var meta: [Recipe.Meta] {
+        if let m = recipe.meta, !m.isEmpty { return m }
+        var out: [Recipe.Meta] = []
+        if let t = recipe.time, !t.isEmpty { out.append(.init(label: "Time", value: t)) }
+        if let s = recipe.serves, !s.isEmpty { out.append(.init(label: "Serves", value: s)) }
+        return out
+    }
+
+    private var notes: [String] {
+        var n = recipe.notes ?? []
+        if let tip = recipe.tip, !tip.isEmpty { n.append(tip) }
+        return n
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    if let g = opened.gift {
-                        Text(g.test ? "CHEF'S TEST CODE" : "FTR GIFT NO. \(g.label)")
-                            .font(Typeface.body(11, weight: .bold, relativeTo: .caption))
-                            .kerning(1)
-                            .foregroundStyle(Palette.red)
-                    } else if let p = recipe.powder, !p.isEmpty {
-                        Text(p.uppercased())
-                            .font(Typeface.body(11, weight: .bold, relativeTo: .caption))
-                            .kerning(1)
-                            .foregroundStyle(Palette.red)
-                    }
-                    Text(recipe.title.uppercased())
-                        .font(Typeface.display(30, relativeTo: .largeTitle))
-                        .foregroundStyle(Palette.ink)
-                    if let intro = recipe.intro, !intro.isEmpty {
-                        Text(intro).font(Typeface.tagline(16)).foregroundStyle(Palette.muted)
-                    }
-                    HStack(spacing: 14) {
-                        if let s = recipe.serves, !s.isEmpty { Label("Serves \(s)", systemImage: "person.2") }
-                        if let t = recipe.time, !t.isEmpty { Label(t, systemImage: "clock") }
-                    }
-                    .font(Typeface.body(14, weight: .semibold))
-                    .foregroundStyle(Palette.ink)
-                    .padding(.top, 4)
-                }
-
-                if !recipe.ingredients.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("INGREDIENTS").font(Typeface.display(18, relativeTo: .title3)).foregroundStyle(Palette.ink)
-                        ForEach(Array(recipe.ingredients.enumerated()), id: \.offset) { i, line in
-                            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                                Circle().fill(Palette.goldLine).frame(width: 6, height: 6).alignmentGuide(.firstTextBaseline) { $0[.bottom] - 1 }
-                                Text(line).font(Typeface.body(16)).foregroundStyle(Palette.ink)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                Spacer(minLength: 8)
-                                if let a = amount(i) {
-                                    Text(a).font(Typeface.body(15, weight: .semibold)).foregroundStyle(Palette.ink)
-                                        .multilineTextAlignment(.trailing)
-                                }
+        GeometryReader { geo in
+            let wide = geo.size.width >= 700
+            ScrollView {
+                VStack(spacing: 0) {
+                    header
+                    if !meta.isEmpty { metaStrip }
+                    Group {
+                        if wide {
+                            HStack(alignment: .top, spacing: 28) {
+                                VStack(alignment: .leading, spacing: 18) { ingredients; notesBlock }
+                                    .frame(width: 300)
+                                VStack(alignment: .leading, spacing: 18) { method; feedback }
                             }
-                            .accessibilityElement(children: .combine)
+                        } else {
+                            VStack(alignment: .leading, spacing: 22) { ingredients; notesBlock; method; feedback }
                         }
                     }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Palette.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Palette.line))
+                    .padding(.horizontal, wide ? 32 : 18)
+                    .padding(.vertical, 22)
+                    .frame(maxWidth: 980)
+                    footer
                 }
-
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("METHOD").font(Typeface.display(18, relativeTo: .title3)).foregroundStyle(Palette.ink)
-                    ForEach(Array(recipe.steps.enumerated()), id: \.offset) { i, step in
-                        HStack(alignment: .top, spacing: 12) {
-                            Text("\(i + 1)")
-                                .font(Typeface.body(14, weight: .bold))
-                                .foregroundStyle(Palette.leafInk)
-                                .frame(width: 28, height: 28)
-                                .background(Palette.leaf, in: Circle())
-                                .accessibilityLabel("Step \(i + 1)")
-                            stepText(step)
-                                .font(Typeface.body(16)).foregroundStyle(Palette.ink)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                }
-
-                if let tip = recipe.tip, !tip.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("CHEF'S TIP").font(Typeface.body(11, weight: .bold, relativeTo: .caption)).kerning(1).foregroundStyle(Palette.turmericInk)
-                        Text(tip).font(Typeface.body(15)).foregroundStyle(Palette.ink)
-                    }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Palette.turmericSoft, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
-
-                if let survey = opened.survey {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("HOW WAS IT?").font(Typeface.display(18, relativeTo: .title3)).foregroundStyle(Palette.ink)
-                        Text(survey.done
-                             ? "Thank you for your feedback! You can update it any time."
-                             : "Once you've made it, tell Chef what was right and what was wrong. Every answer helps FTR get better.")
-                            .font(Typeface.body(15)).foregroundStyle(Palette.muted)
-                        Button(survey.done ? "Update my feedback" : "Share my feedback") { showSurvey = true }
-                            .buttonStyle(PrimaryButtonStyle())
-                    }
-                }
+                .frame(maxWidth: .infinity)
             }
-            .padding(20)
-            .frame(maxWidth: 680)
-            .frame(maxWidth: .infinity)
+            .background(CG.sand)
+            .environment(\.colorScheme, .light)
         }
         .sheet(isPresented: $showSurvey) {
             if let g = opened.gift, let survey = opened.survey {
@@ -387,17 +367,184 @@ struct RecipeView: View {
         }
     }
 
+    private var header: some View {
+        HStack(alignment: .center, spacing: 16) {
+            Image("Seal").resizable().scaledToFit().frame(width: 80, height: 80)
+                .accessibilityLabel("Franklin Tiffin Room seal")
+            VStack(alignment: .leading, spacing: 4) {
+                Text(kicker)
+                    .font(Typeface.body(11, weight: .semibold, relativeTo: .caption))
+                    .kerning(2.5)
+                    .foregroundStyle(CG.gold)
+                Text(recipe.title)
+                    .font(Typeface.serif(32, relativeTo: .largeTitle))
+                    .foregroundStyle(CG.cream)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let sub = recipe.subtitle ?? recipe.intro, !sub.isEmpty {
+                    Text(sub).font(Typeface.tagline(16)).foregroundStyle(CG.creamSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity)
+        .background(CG.charcoal)
+        .overlay(alignment: .bottom) { Rectangle().fill(CG.gold).frame(height: 5) }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private var metaStrip: some View {
+        HStack(spacing: 8) {
+            ForEach(meta, id: \.label) { m in
+                VStack(spacing: 2) {
+                    Text(m.label.uppercased())
+                        .font(Typeface.body(11, relativeTo: .caption2)).kerning(2)
+                        .foregroundStyle(CG.stripInk)
+                    Text(m.value)
+                        .font(Typeface.serif(17, bold: false, relativeTo: .headline))
+                        .foregroundStyle(CG.charcoal)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(CG.strip)
+    }
+
+    @ViewBuilder private var ingredients: some View {
+        if !recipe.ingredients.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Ingredients").font(Typeface.serif(20, relativeTo: .title3)).foregroundStyle(CG.charcoal)
+                    .padding(.bottom, 8)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(Array(recipe.ingredients.enumerated()), id: \.offset) { i, line in
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text(line).font(Typeface.body(15)).foregroundStyle(CG.charcoal)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 8)
+                        if let a = amount(i) {
+                            Text(a).font(Typeface.body(15, weight: .bold)).foregroundStyle(CG.charcoal)
+                                .multilineTextAlignment(.trailing)
+                        }
+                    }
+                    .padding(.vertical, 6)
+                    .overlay(alignment: .bottom) {
+                        DottedRule().stroke(CG.dots, style: StrokeStyle(lineWidth: 1, dash: [1.5, 2.5])).frame(height: 1)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(CG.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(CG.cardLine))
+        }
+    }
+
+    @ViewBuilder private var notesBlock: some View {
+        if !notes.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Chef's notes").font(Typeface.serif(18, relativeTo: .headline)).foregroundStyle(CG.charcoal)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(Array(notes.enumerated()), id: \.offset) { _, n in
+                    Text(n).font(Typeface.body(15)).foregroundStyle(CG.charcoal)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.leading, 12)
+                        .overlay(alignment: .leading) { Rectangle().fill(CG.noteLine).frame(width: 3) }
+                }
+            }
+            .padding(.horizontal, 4)
+        }
+    }
+
+    private var method: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Method").font(Typeface.serif(20, relativeTo: .title3)).foregroundStyle(CG.charcoal)
+                .accessibilityAddTraits(.isHeader)
+            ForEach(Array(recipe.steps.enumerated()), id: \.offset) { i, step in
+                HStack(alignment: .top, spacing: 12) {
+                    Text("\(i + 1)")
+                        .font(Typeface.body(14, weight: .bold))
+                        .foregroundStyle(CG.gold)
+                        .frame(width: 28, height: 28)
+                        .background(CG.charcoal, in: Circle())
+                        .accessibilityLabel("Step \(i + 1)")
+                    stepText(step)
+                        .font(Typeface.body(16)).foregroundStyle(CG.charcoal)
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    @ViewBuilder private var feedback: some View {
+        if let survey = opened.survey {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("How was it?").font(Typeface.serif(20, relativeTo: .title3)).foregroundStyle(CG.charcoal)
+                    .accessibilityAddTraits(.isHeader)
+                Text(survey.done
+                     ? "Thank you for your feedback! You can update it any time."
+                     : "Once you've made it, tell Chef what was right and what was wrong. Every answer helps FTR get better.")
+                    .font(Typeface.body(15)).foregroundStyle(CG.stripInk)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button { showSurvey = true } label: {
+                    Text(survey.done ? "Update my feedback" : "Share my feedback")
+                        .font(Typeface.body(17, weight: .bold))
+                        .foregroundStyle(CG.gold)
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .background(CG.charcoal, in: Capsule())
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    private var footer: some View {
+        HStack(alignment: .center) {
+            Text("100% vegetarian · Somerset, NJ").font(Typeface.body(13)).foregroundStyle(CG.cream)
+            Spacer(minLength: 8)
+            Link("1-234-FTR-DOSE", destination: URL(string: "tel:+12343873673")!)
+                .font(Typeface.serif(17, relativeTo: .headline))
+                .foregroundStyle(CG.gold)
+                .accessibilityLabel("Call FTR, 1-234-387-3673")
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity)
+        .background(CG.charcoal)
+    }
+
     private func amount(_ i: Int) -> String? {
         guard let a = recipe.amounts, i < a.count, !a[i].isEmpty else { return nil }
         return a[i]
     }
 
-    /// "Paste: In a blender…" shows the short title in bold.
+    /// "Paste: In a blender…" shows the step name in bold, like the printed card ("Paste. In a blender…").
     private func stepText(_ step: String) -> Text {
         if let r = step.range(of: ": "), step.distance(from: step.startIndex, to: r.lowerBound) <= 24 {
-            return Text(String(step[..<r.lowerBound]) + ": ").bold() + Text(String(step[r.upperBound...]))
+            return Text(String(step[..<r.lowerBound]) + ". ").bold() + Text(String(step[r.upperBound...]))
         }
         return Text(step)
+    }
+}
+
+private struct DottedRule: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX, y: rect.midY))
+        p.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        return p
     }
 }
 
