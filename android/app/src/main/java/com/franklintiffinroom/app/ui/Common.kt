@@ -62,6 +62,8 @@ fun FullSheet(
     dismissable: Boolean = true,
     actions: @Composable () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
+    barColor: androidx.compose.ui.graphics.Color? = null,
+    barTextColor: androidx.compose.ui.graphics.Color? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     Dialog(
@@ -75,10 +77,10 @@ fun FullSheet(
                     containerColor = P.bg,
                     topBar = {
                         CenterAlignedTopAppBar(
-                            title = { Text(title, style = Type.semi(17.0), color = P.ink) },
-                            navigationIcon = { if (closeLabel != null) TextButton(onClick = onDismiss) { Text(closeLabel, style = Type.semi(16.0), color = P.leaf) } },
+                            title = { Text(title, style = Type.semi(17.0), color = barTextColor ?: P.ink) },
+                            navigationIcon = { if (closeLabel != null) TextButton(onClick = onDismiss) { Text(closeLabel, style = Type.semi(16.0), color = barTextColor ?: P.leaf) } },
                             actions = { actions() },
-                            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = P.bg),
+                            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = barColor ?: P.bg),
                         )
                     },
                     bottomBar = { Box(Modifier.navigationBarsPadding()) { bottomBar() } },

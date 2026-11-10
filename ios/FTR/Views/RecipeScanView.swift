@@ -179,10 +179,12 @@ struct RecipeScanFlow: View {
             .toolbarColorScheme(opened == nil ? nil : .dark, for: .navigationBar)
             .tint(opened == nil ? Palette.red : CG.gold)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { dismiss() } label: { Text("Close").foregroundStyle(opened == nil ? Palette.red : CG.cream) }
+                }
                 if opened != nil {
                     ToolbarItem(placement: .primaryAction) {
-                        Button("Scan another") { opened = nil; error = nil; scanning = true }
+                        Button { opened = nil; error = nil; scanning = true } label: { Text("Scan another").foregroundStyle(CG.cream) }
                     }
                 }
             }
@@ -347,9 +349,10 @@ struct RecipeView: View {
                     .padding(.horizontal, wide ? 32 : 18)
                     .padding(.vertical, 22)
                     .frame(maxWidth: 980)
+                    Spacer(minLength: 0)
                     footer
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height)
             }
             .background(CG.sand)
             .environment(\.colorScheme, .light)
@@ -360,6 +363,7 @@ struct RecipeView: View {
                     opened.survey?.answers = answers
                     opened.survey?.done = true
                 }
+                .tint(CG.charcoal)
             }
         }
         .onAppear {

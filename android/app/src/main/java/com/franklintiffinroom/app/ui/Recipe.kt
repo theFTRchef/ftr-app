@@ -218,9 +218,12 @@ private fun RecipeSheet(code: RecipeCode, onScanAnother: () -> Unit, onDismiss: 
         }
     }
 
+    val card = opened != null
     FullSheet(
         onDismiss, title = if (opened == null) "Scan a recipe QR" else "",
-        actions = { TextButton(onClick = onScanAnother) { Text("Scan another", style = Type.semi(16.0), color = P.leaf) } },
+        actions = { TextButton(onClick = onScanAnother) { Text("Scan another", style = Type.semi(16.0), color = if (card) CG.cream else P.leaf) } },
+        barColor = if (card) CG.charcoal else null,
+        barTextColor = if (card) CG.cream else null,
     ) { pad ->
         val o = opened
         when {
