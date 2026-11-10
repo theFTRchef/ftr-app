@@ -712,8 +712,8 @@ function ensureShape(menu) {
   if (!Array.isArray(menu.availability.preorders)) menu.availability.preorders = [];
   if (Array.isArray(menu.categories) && !menu.categories.some((c) => c.id === "dose-in-a-box")) {
     const at = menu.categories.findIndex((c) => c.type === "live-dose-station");
-    menu.categories.splice(at >= 0 ? at + 1 : 0, 0, { id: "dose-in-a-box", type: "preorder", flagship: true, title: "Dose-in-a-Box", rowTitle: "Dose-in-a-Box", rowDescription: "Take-home Masala Dose kit for 4 - pre-order, pickup only",
-      items: [{ id: "dose-in-a-box", title: "Dose-in-a-Box", description: "A take-home kit for Mysore Masala Dose, prepped and packed. You just make it on your tawa. In the box: dose batter, potato-onion palya, red garlic chutney and green coconut chutney.", price: 0, size: "Kit - serves 4", servesMin: 4, servesMax: 4, minQty: 1, maxQty: 10 }] });
+    menu.categories.splice(at >= 0 ? at + 1 : 0, 0, { id: "dose-in-a-box", type: "preorder", flagship: true, title: "Dose-in-a-Box", rowTitle: "Dose-in-a-Box", rowDescription: "Take-home Masale Dose kit for 4 - pre-order, pickup only",
+      items: [{ id: "dose-in-a-box", title: "Dose-in-a-Box", description: "A take-home kit for Mysore Masale Dose, prepped and packed. You just make it on your tawa. In the box: dose batter, potato-onion palya, red garlic chutney and green coconut chutney.", price: 0, size: "Kit - serves 4", servesMin: 4, servesMax: 4, minQty: 1, maxQty: 10 }] });
   }
   if (!menu.availability.slotLengthMinutes) menu.availability.slotLengthMinutes = 180;
   menu.categories = menu.categories || [];

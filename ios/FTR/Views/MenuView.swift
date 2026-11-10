@@ -142,7 +142,7 @@ struct HomeView: View {
                                 Image("FlagshipDose")
                                     .resizable()
                                     .scaledToFill()
-                                    .accessibilityLabel("Chef cooking Mysore Masala Dose on the griddle at a party")
+                                    .accessibilityLabel("Chef cooking Mysore Masale Dose on the griddle at a party")
                             )
                             .clipped()
                         Text("OUR FLAGSHIP")
@@ -154,7 +154,7 @@ struct HomeView: View {
                             .padding(12)
                     }
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("THE OG MYSORE MASALA DOSE")
+                        Text("THE OG MYSORE MASALE DOSE")
                             .font(Typeface.display(28, relativeTo: .title))
                             .foregroundStyle(Palette.ink)
                             .multilineTextAlignment(.leading)
@@ -194,7 +194,7 @@ struct HomeView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("TAKE-HOME · SERVES 4").font(Typeface.body(11, weight: .bold, relativeTo: .caption)).kerning(1).foregroundStyle(Palette.red)
                             Text(dib.title.uppercased()).font(Typeface.display(22, relativeTo: .title2)).foregroundStyle(Palette.ink)
-                            Text(dib.items.isEmpty ? "Take-home Masala Dose kit · coming soon" : dib.preorder?.next.map { "Order by \($0.orderByLabel) · pickup \($0.pickupLabel)" } ?? "Next pickup day coming soon")
+                            Text(dib.items.isEmpty ? "Take-home Masale Dose kit · coming soon" : dib.preorder?.next.map { "Order by \($0.orderByLabel) · pickup \($0.pickupLabel)" } ?? "Next pickup day coming soon")
                                 .font(Typeface.body(13)).foregroundStyle(Palette.muted)
                                 .multilineTextAlignment(.leading)
                         }
@@ -752,7 +752,7 @@ struct ShareFTRButton: View {
 
     private var message: String {
         let phone = model.config?.phoneDisplay ?? "1-234-FTR-DOSE"
-        return "Franklin Tiffin Room - Karnataka-style vegetarian home catering in Somerset, NJ. The LIVE Masala Dose Station at your party, Dose-in-a-Box to make at home, and catering trays. Order on WhatsApp: https://wa.me/\(model.config?.phoneDial ?? "12343873673")?text=hi or call \(phone)."
+        return "Franklin Tiffin Room - Karnataka-style vegetarian home catering in Somerset, NJ. The LIVE Masale Dose Station at your party, Dose-in-a-Box to make at home, and catering trays. Order on WhatsApp: https://wa.me/\(model.config?.phoneDial ?? "12343873673")?text=hi or call \(phone)."
     }
 
     var body: some View {

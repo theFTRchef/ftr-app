@@ -23,7 +23,7 @@ function page(device) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Get the FTR-DOSE app</title>
 <meta property="og:title" content="Order FTR from your phone">
-<meta property="og:description" content="The FTR-DOSE app, on iPhone and Android. Live on-site Masala Dose, Dose-in-a-Box and catering.">
+<meta property="og:description" content="The FTR-DOSE app, on iPhone and Android. Live on-site Masale Dose, Dose-in-a-Box and catering.">
 <meta property="og:image" content="/app/seal.png">
 <style>
 :root{color-scheme:light}
@@ -43,7 +43,7 @@ h1{font:600 28px/1.1 "Oswald","Arial Narrow",sans-serif;text-transform:uppercase
 <p class="tag">The FTR-DOSE app, on iPhone and Android</p>
 ${first}
 ${wa ? `<a class="alt" href="https://wa.me/${wa}">Or order on WhatsApp</a>` : ""}
-<p class="foot">Live on-site Masala Dose · 100% vegetarian<br>1-234-FTR-DOSE (387-3673)</p>
+<p class="foot">Live on-site Masale Dose · 100% vegetarian<br>1-234-FTR-DOSE (387-3673)</p>
 </main></body></html>`;
 }
 
