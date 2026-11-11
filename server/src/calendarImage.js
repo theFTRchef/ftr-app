@@ -6,7 +6,7 @@
  * WhatsApp can fetch it.
  */
 const crypto = require("crypto");
-const { normalizeDateEntry, offersCatering, offersLiveDose } = require("./availability");
+const { normalizeDateEntry, offersCatering, offersLiveDose, isBooked } = require("./availability");
 
 const TZ = "America/New_York";
 const WINDOW_DAYS = 60;
@@ -24,6 +24,7 @@ const C = {
   closed: "#efe7d8",
   turmeric: "#e3a51a",
   chili: "#a8321e",
+  bookedSoft: "#f6e1da",
   info: "#2d5a8c"
 };
 const path = require("path");
@@ -43,6 +44,14 @@ function dow(iso) {
 }
 function esc(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function bookedMap(menu) {
+  const map = {};
+  (menu.availability?.dates || []).map(normalizeDateEntry).forEach((d) => {
+    if (isBooked(d) && !offersCatering(d) && !offersLiveDose(d)) map[d.date] = d;
+  });
+  return map;
 }
 
 function openMap(menu) {
@@ -72,6 +81,7 @@ function buildSvg(menu) {
   const today = todayLocal();
   const end = addDays(today, WINDOW_DAYS);
   const open = openMap(menu);
+  const booked = bookedMap(menu);
   const months = monthsInWindow(today);
 
   const W = 760, PAD = 28, CELL_GAP = 8;
@@ -90,7 +100,8 @@ function buildSvg(menu) {
   // legend
   const legend = [
     [C.openSoft, C.open, "Open - you can order"],
-    [C.closed, C.faint, "Chef not available"]
+    [C.bookedSoft, C.chili, "Booked"],
+    [C.closed, C.faint, "Not open"]
   ];
   let lx = PAD;
   legend.forEach(([fill, stroke, label]) => {
@@ -138,14 +149,17 @@ function buildSvg(menu) {
         const cy = gy + ri * (cellH + CELL_GAP);
         const inWindow = iso >= today && iso <= end;
         const e = inWindow ? open[iso] : null;
+        const b = inWindow && !e ? booked[iso] : null;
         const weekend = col === 0 || col === 6;
         let fill = "none", stroke = "none", num = C.faint, weight = 400;
         if (e) { fill = C.openSoft; stroke = C.open; num = C.open; weight = 700; }
+        else if (b) { fill = C.bookedSoft; stroke = C.chili; num = C.chili; weight = 700; }
         else if (inWindow && weekend) { fill = C.closed; stroke = C.line; num = C.muted; }
         else if (inWindow) { num = C.muted; }
         if (fill !== "none") parts.push(`<rect x="${x}" y="${cy}" width="${cellW}" height="${cellH}" rx="12" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`);
         if (iso === today) parts.push(`<rect x="${x + 1}" y="${cy + 1}" width="${cellW - 2}" height="${cellH - 2}" rx="11" fill="none" stroke="${C.ink}" stroke-width="2.5"/>`);
         parts.push(`<text x="${x + cellW / 2}" y="${cy + 33}" font-size="23" font-weight="${weight}" text-anchor="middle" fill="${num}">${d}</text>`);
+        if (b) parts.push(`<text x="${x + cellW / 2}" y="${cy + 54}" font-size="13" font-weight="700" text-anchor="middle" fill="${C.chili}" letter-spacing="0.5">BOOKED</text>`);
         if (e) {
           const dots = [];
           if (e.pickupAM || e.pickupPM) dots.push(C.open);

@@ -155,9 +155,20 @@ data class AvailabilityResponse(
     val dates: List<OpenDate> = emptyList(),
     val fulfillmentOptions: FulfillmentOptions? = null,
     val preorderDays: List<PreorderDay>? = null,
+    /** Days Chef marked Booked (private events) - shown as Booked, not left out. */
+    val booked: List<BookedDate>? = null,
 ) {
     @Serializable data class FulfillmentOptions(val pickup: Boolean = true, val delivery: Boolean = false)
 }
+
+@Serializable
+data class BookedDate(
+    val date: String,
+    val label: String = "",
+    val lunch: Boolean = false,
+    val dinner: Boolean = false,
+    val summary: String = "",
+)
 
 @Serializable
 data class OpenDate(

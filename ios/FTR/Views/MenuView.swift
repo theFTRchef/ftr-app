@@ -599,7 +599,15 @@ struct CategoryDishesView: View {
 struct AvailabilityView: View {
     @State private var dates: [OpenDate] = []
     @State private var preDays: [PreorderDay] = []
+    @State private var booked: [BookedDate] = []
     @State private var loading = true
+
+    private enum Row: Identifiable {
+        case open(OpenDate), booked(BookedDate)
+        var id: String { switch self { case .open(let d): "o" + d.date; case .booked(let b): "b" + b.date } }
+        var date: String { switch self { case .open(let d): d.date; case .booked(let b): b.date } }
+    }
+    private var rows: [Row] { (dates.map(Row.open) + booked.map(Row.booked)).sorted { $0.date < $1.date } }
 
     var body: some View {
         ScrollView {
@@ -630,21 +638,38 @@ struct AvailabilityView: View {
                     }
                     Text("Catering & LIVE Dose").font(Typeface.display(20, relativeTo: .title3)).foregroundStyle(Palette.ink).padding(.top, 6)
                 }
-                ForEach(dates) { d in
-                    HStack(alignment: .top, spacing: 14) {
-                        DateBadge(iso: d.date)
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(d.label).font(Typeface.body(17, weight: .bold)).foregroundStyle(Palette.ink)
-                            ForEach(d.summary.components(separatedBy: " · "), id: \.self) { part in
-                                Label(part, systemImage: part.contains("LIVE") ? "flame.fill" : "takeoutbag.and.cup.and.straw")
-                                    .font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                ForEach(rows) { row in
+                    switch row {
+                    case .open(let d):
+                        HStack(alignment: .top, spacing: 14) {
+                            DateBadge(iso: d.date)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(d.label).font(Typeface.body(17, weight: .bold)).foregroundStyle(Palette.ink)
+                                ForEach(d.summary.components(separatedBy: " · "), id: \.self) { part in
+                                    Label(part, systemImage: part.hasSuffix("booked") ? "calendar.badge.checkmark" : part.contains("LIVE") ? "flame.fill" : "takeoutbag.and.cup.and.straw")
+                                        .font(Typeface.body(14)).foregroundStyle(part.hasSuffix("booked") ? Palette.red : Palette.muted)
+                                }
                             }
+                            Spacer(minLength: 0)
                         }
-                        Spacer(minLength: 0)
+                        .padding(14)
+                        .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.line))
+                    case .booked(let b):
+                        HStack(alignment: .top, spacing: 14) {
+                            DateBadge(iso: b.date)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(b.label).font(Typeface.body(17, weight: .bold)).foregroundStyle(Palette.ink)
+                                Label(b.lunch && b.dinner ? "Booked for lunch & dinner" : b.lunch ? "Booked for lunch" : "Booked for dinner", systemImage: "calendar.badge.checkmark")
+                                    .font(Typeface.body(14, weight: .semibold)).foregroundStyle(Palette.red)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(14)
+                        .background(Palette.red.opacity(0.07), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.red.opacity(0.35)))
+                        .accessibilityElement(children: .combine)
                     }
-                    .padding(14)
-                    .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.line))
                 }
             }
             .padding(16)
@@ -657,7 +682,7 @@ struct AvailabilityView: View {
 
     private func load() async {
         defer { loading = false }
-        if let r = try? await (APIClient.shared.get("availability") as AvailabilityResponse) { dates = r.dates; preDays = r.preorderDays ?? [] }
+        if let r = try? await (APIClient.shared.get("availability") as AvailabilityResponse) { dates = r.dates; preDays = r.preorderDays ?? []; booked = r.booked ?? [] }
     }
 }
 

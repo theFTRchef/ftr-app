@@ -8,6 +8,9 @@
  *     dinner) - the chef cooks that morning/afternoon for those orders.
  *   - catering: one or more delivery windows, e.g. 12-3 PM and 6-9 PM.
  *   - liveDose: one or more LIVE Dose Station windows.
+ *   - bookedAM / bookedPM: Chef is booked (e.g. a private event) for lunch /
+ *     dinner. Customers see "Booked" instead of "not available"; a booked
+ *     pickup is never open at the same time.
  *
  * Older menu.json files stored catering/liveDose as a single {start,end}
  * object (or null) and had no pickup flags - normalizeDateEntry upgrades
@@ -54,10 +57,14 @@ function toWindowList(value) {
 }
 
 function normalizeDateEntry(entry) {
+  const bookedAM = !!entry.bookedAM;
+  const bookedPM = !!entry.bookedPM;
   return {
     date: entry.date,
-    pickupAM: !!entry.pickupAM,
-    pickupPM: !!entry.pickupPM,
+    pickupAM: !!entry.pickupAM && !bookedAM,
+    pickupPM: !!entry.pickupPM && !bookedPM,
+    bookedAM,
+    bookedPM,
     catering: toWindowList(entry.catering).map((w) => ({ start: w.start, end: w.end })),
     liveDose: toWindowList(entry.liveDose).map((w) => ({ start: w.start, end: w.end }))
   };
@@ -81,6 +88,15 @@ function offersCatering(d) {
 
 function offersLiveDose(d) {
   return d.liveDose.length > 0;
+}
+
+function isBooked(d) {
+  return !!(d && (d.bookedAM || d.bookedPM));
+}
+
+/** "Lunch & dinner" / "Lunch" / "Dinner" for a booked day. */
+function bookedLabel(d) {
+  return d.bookedAM && d.bookedPM ? "Lunch & dinner" : d.bookedAM ? "Lunch" : d.bookedPM ? "Dinner" : "";
 }
 
 /** Throws a readable error for the admin page if a window is bad. */
@@ -145,6 +161,8 @@ module.exports = {
   hasPickup,
   offersCatering,
   offersLiveDose,
+  isBooked,
+  bookedLabel,
   validateWindow,
   sortWindows
 };
