@@ -58,6 +58,11 @@ async function sendMessage(payload) {
  */
 async function downloadMedia(url) {
   if (!/^https:\/\//.test(url || "")) throw new Error("No media link");
+  // Only ever send our Vonage sign-in to Vonage's own media servers: a forged
+  // webhook must not be able to point us at another site and collect it.
+  let host = "";
+  try { host = new URL(url).hostname.toLowerCase(); } catch { /* bad link */ }
+  if (!/(^|\.)(nexmo\.com|vonage\.com)$/.test(host)) throw new Error("Media link isn't from Vonage");
   let res = await fetch(url, { headers: { Authorization: `Bearer ${generateJwt()}` } });
   if (res.status === 401 || res.status === 403) res = await fetch(url);
   if (!res.ok) throw new Error(`Media download failed: ${res.status}`);

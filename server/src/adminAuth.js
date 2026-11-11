@@ -69,13 +69,42 @@ function readCookie(req) {
   return null;
 }
 
-function validSession(req) {
-  if (!configured()) return false;
+// --- Signed-in devices (each admin sign-in is a session Chef can sign out) ---
+const store = require("./jsonFile");
+const SESSIONS_FILE = "admin-sessions.json";
+function sessions() {
+  const list = store.read(SESSIONS_FILE, []);
+  return Array.isArray(list) ? list.filter((x) => x.expires > Date.now()) : [];
+}
+function saveSessions(list) {
+  store.write(SESSIONS_FILE, list.slice(-50));
+}
+function deviceName(ua = "") {
+  const os = /iPhone|iPad/.test(ua) ? "iPhone" : /Android/.test(ua) ? "Android" : /Macintosh|Mac OS X/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Windows" : /Linux/.test(ua) ? "Linux" : "Device";
+  const app = /FTR-(iOS|Android)|; wv\)|FTRDOSE/.test(ua) ? "FTR-DOSE app" : /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "browser";
+  return `${app} on ${os}`;
+}
+
+/** The current session record, or null (cookie = expires.sessionId.signature). */
+function currentSession(req) {
+  if (!configured()) return null;
   const value = readCookie(req);
-  if (!value) return false;
-  const [expires, sig] = value.split(".");
-  if (!expires || !sig || Number(expires) < Date.now()) return false;
-  return sameText(sig, sign(expires));
+  if (!value) return null;
+  const [expires, sid, sig] = value.split(".");
+  if (!expires || !sid || !sig || Number(expires) < Date.now()) return null;
+  if (!sameText(sig, sign(`${expires}.${sid}`))) return null;
+  const list = sessions();
+  const rec = list.find((x) => x.id === sid);
+  if (!rec) return null;
+  if (Date.now() - (rec.lastSeen || 0) > 10 * 60 * 1000) {
+    rec.lastSeen = Date.now();
+    saveSessions(list);
+  }
+  return rec;
+}
+
+function validSession(req) {
+  return !!currentSession(req);
 }
 
 function cookieFlags(req) {
@@ -185,11 +214,7 @@ function mountAuthRoutes(app) {
       return sendLogin(res, { error: "Wrong username or password.", next: safeNext(req.body?.next) }, 401);
     }
     failures.delete(ip);
-    const expires = Date.now() + MAX_AGE_DAYS * 24 * 3600 * 1000;
-    res.set(
-      "Set-Cookie",
-      `${COOKIE}=${expires}.${sign(expires)}; Max-Age=${MAX_AGE_DAYS * 24 * 3600}; ${cookieFlags(req)}`
-    );
+    issueSession(req, res, "Backup password");
     res.redirect(303, safeNext(req.body?.next));
   });
 
@@ -202,7 +227,10 @@ function mountAuthRoutes(app) {
     const verifier = crypto.randomBytes(32).toString("base64url");
     const challenge = crypto.createHash("sha256").update(verifier).digest("base64url");
     const nonce = crypto.randomBytes(16).toString("base64url");
-    oauthStates.set(state, { verifier, nonce, app: req.query.app === "1", next: safeNext(req.query.next), expires: now + 10 * 60 * 1000 });
+    const app1 = req.query.app === "1";
+    const cc = String(req.query.cc || "");
+    if (app1 && !/^[A-Za-z0-9_-]{43}$/.test(cc)) return sendLogin(res, { error: "Please update the FTR-DOSE app to open Chef's Kitchen." }, 426);
+    oauthStates.set(state, { verifier, nonce, app: app1, cc: app1 ? cc : "", next: safeNext(req.query.next), expires: now + 10 * 60 * 1000 });
     const q = new URLSearchParams({
       client_id: process.env.GOOGLE_OAUTH_CLIENT_ID,
       redirect_uri: redirectUri(),
@@ -260,9 +288,9 @@ function mountAuthRoutes(app) {
       if (st.app) {
         // Back to the FTR-DOSE app, which opens Chef's Kitchen with this one-time code.
         res.set("Cache-Control", "no-store");
-        return res.redirect(302, `ftrdose://kitchen?code=${encodeURIComponent(newEntryCode())}`);
+        return res.redirect(302, `ftrdose://kitchen?code=${encodeURIComponent(newEntryCode(st.cc))}`);
       }
-      issueSession(req, res);
+      issueSession(req, res, "Google");
       res.redirect(303, st.next);
     } catch (err) {
       console.error("[admin] Google sign-in failed:", err.message);
@@ -271,6 +299,8 @@ function mountAuthRoutes(app) {
   });
 
   const logout = (req, res) => {
+    const me = currentSession(req);
+    if (me) endSession(me.id);
     res.set("Set-Cookie", `${COOKIE}=; Max-Age=0; ${cookieFlags(req)}`);
     res.redirect(303, "/admin/login?out=1");
   };
@@ -283,9 +313,31 @@ function mountAuthRoutes(app) {
  * Used when the owner opens Chef's Kitchen from the FTR iOS app - they've already
  * proved it's them with a code sent to the owner's phone.
  */
-function issueSession(req, res) {
+function issueSession(req, res, how = "") {
   const expires = Date.now() + MAX_AGE_DAYS * 24 * 3600 * 1000;
-  res.set("Set-Cookie", `${COOKIE}=${expires}.${sign(expires)}; Max-Age=${MAX_AGE_DAYS * 24 * 3600}; ${cookieFlags(req)}`);
+  const sid = crypto.randomBytes(12).toString("base64url");
+  const list = sessions();
+  list.push({ id: sid, created: Date.now(), lastSeen: Date.now(), expires, device: deviceName(req.get("user-agent") || ""), how });
+  saveSessions(list);
+  res.set("Set-Cookie", `${COOKIE}=${expires}.${sid}.${sign(`${expires}.${sid}`)}; Max-Age=${MAX_AGE_DAYS * 24 * 3600}; ${cookieFlags(req)}`);
+}
+
+/** Chef's Kitchen › Setup › Signed-in devices. */
+function listSessions(req) {
+  const me = currentSession(req);
+  return sessions()
+    .sort((a, b) => b.lastSeen - a.lastSeen)
+    .map((x) => ({ id: x.id, device: x.device, how: x.how, created: x.created, lastSeen: x.lastSeen, current: !!me && me.id === x.id }));
+}
+function endSession(id) {
+  const list = sessions();
+  const next = list.filter((x) => x.id !== id);
+  saveSessions(next);
+  return next.length !== list.length;
+}
+function endOtherSessions(req) {
+  const me = currentSession(req);
+  saveSessions(sessions().filter((x) => me && x.id === me.id));
 }
 
 const oauthStates = new Map(); // state -> { verifier, nonce, app, next, expires }
@@ -293,20 +345,30 @@ function redirectUri() {
   return `${(process.env.PUBLIC_BASE_URL || "https://bot.franklintiffinroom.com").replace(/\/+$/, "")}/admin/google/callback`;
 }
 
-/** One-time, one-minute codes the app uses to open the admin page signed in. */
-const entryCodes = new Map(); // code -> expires
-function newEntryCode() {
+/**
+ * One-time, one-minute codes the app uses to open the admin page signed in.
+ * With Google sign-in the code is bound to a secret only the app that started
+ * the sign-in holds (cc = SHA-256 of it, like PKCE): another app that catches
+ * the ftrdose:// link can't use the code without that secret.
+ */
+const entryCodes = new Map(); // code -> { expires, cc }
+function newEntryCode(cc = "") {
   const code = crypto.randomBytes(24).toString("base64url");
   const now = Date.now();
-  for (const [k, t] of entryCodes) if (t < now) entryCodes.delete(k);
-  entryCodes.set(code, now + 60 * 1000);
+  for (const [k, t] of entryCodes) if (t.expires < now) entryCodes.delete(k);
+  entryCodes.set(code, { expires: now + 60 * 1000, cc });
   return code;
 }
-function useEntryCode(code) {
+function useEntryCode(code, verifier = "") {
   const key = String(code || "");
   const t = entryCodes.get(key);
   entryCodes.delete(key);
-  return !!t && t >= Date.now();
+  if (!t || t.expires < Date.now()) return false;
+  if (t.cc) {
+    const got = crypto.createHash("sha256").update(String(verifier || "")).digest("base64url");
+    return sameText(got, t.cc);
+  }
+  return true;
 }
 
-module.exports = { requireAdminAuth, mountAuthRoutes, issueSession, configured, googleConfigured, newEntryCode, useEntryCode, validSession };
+module.exports = { requireAdminAuth, mountAuthRoutes, issueSession, configured, googleConfigured, newEntryCode, useEntryCode, validSession, listSessions, endSession, endOtherSessions };

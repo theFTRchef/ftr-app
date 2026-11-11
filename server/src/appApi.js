@@ -62,7 +62,7 @@ function rateLimit(key, max, windowMs) {
   const e = limits.get(key);
   if (!e || e.until < now) {
     limits.set(key, { n: 1, until: now + windowMs });
-    if (limits.size > 5000) limits.clear();
+    if (limits.size > 5000) for (const [k, v] of limits) if (v.until < now) limits.delete(k);
     return;
   }
   e.n += 1;
@@ -933,6 +933,8 @@ function router() {
       if (!phone) throw new ApiError(400, "Please enter a 10-digit US mobile number.", "bad_phone");
       rateLimit(`start:${ip(req)}`, 10, 15 * 60 * 1000);
       rateLimit(`start:${phone}`, 4, 15 * 60 * 1000);
+      // Cap on sign-in codes across everyone, so a flood of numbers can't run up the texting bill.
+      rateLimit("start:all", Number(process.env.APP_OTP_MAX_PER_HOUR) || 60, 60 * 60 * 1000);
       let sent;
       try {
         sent = await phoneVerify.start(phone, req.body && req.body.via === "sms" ? "sms" : undefined);

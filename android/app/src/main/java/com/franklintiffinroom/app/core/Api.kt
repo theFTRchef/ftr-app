@@ -56,9 +56,21 @@ object Api {
         prefs = context.getSharedPreferences("ftr.session", Context.MODE_PRIVATE)
     }
 
+    /** The sign-in token, encrypted with a key that never leaves this phone's Android Keystore. */
     var token: String?
-        get() = prefs.getString("token", null)
-        set(v) { prefs.edit().apply { if (v == null) remove("token") else putString("token", v) }.apply() }
+        get() {
+            prefs.getString("token.enc", null)?.let { return SecureBox.open(it) }
+            // Older app versions kept it as plain text: move it into the encrypted slot.
+            val old = prefs.getString("token", null) ?: return null
+            token = old
+            return old
+        }
+        set(v) {
+            prefs.edit().apply {
+                remove("token")
+                if (v == null) remove("token.enc") else SecureBox.seal(v)?.let { putString("token.enc", it) } ?: putString("token", v)
+            }.apply()
+        }
 
     /** A random id for this app install, so a single-use gift QR code stays with the phone that scanned it. */
     val installId: String
@@ -151,3 +163,34 @@ class Empty
 
 @kotlinx.serialization.Serializable
 data class OK(val ok: Boolean? = null)
+
+/** AES-GCM with a key held in the Android Keystore (it can't be copied off the phone). */
+private object SecureBox {
+    private const val ALIAS = "ftr.session.key"
+    private fun key(): javax.crypto.SecretKey {
+        val ks = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        (ks.getKey(ALIAS, null) as? javax.crypto.SecretKey)?.let { return it }
+        val gen = javax.crypto.KeyGenerator.getInstance(android.security.keystore.KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        gen.init(
+            android.security.keystore.KeyGenParameterSpec.Builder(ALIAS,
+                android.security.keystore.KeyProperties.PURPOSE_ENCRYPT or android.security.keystore.KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(android.security.keystore.KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(android.security.keystore.KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                .build()
+        )
+        return gen.generateKey()
+    }
+    fun seal(text: String): String? = runCatching {
+        val c = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding")
+        c.init(javax.crypto.Cipher.ENCRYPT_MODE, key())
+        val out = c.iv + c.doFinal(text.toByteArray(Charsets.UTF_8))
+        android.util.Base64.encodeToString(out, android.util.Base64.NO_WRAP)
+    }.getOrNull()
+    fun open(sealed: String): String? = runCatching {
+        val raw = android.util.Base64.decode(sealed, android.util.Base64.NO_WRAP)
+        val c = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding")
+        c.init(javax.crypto.Cipher.DECRYPT_MODE, key(), javax.crypto.spec.GCMParameterSpec(128, raw, 0, 12))
+        String(c.doFinal(raw, 12, raw.size - 12), Charsets.UTF_8)
+    }.getOrNull()
+}

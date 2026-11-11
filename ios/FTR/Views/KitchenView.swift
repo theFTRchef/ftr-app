@@ -1,4 +1,5 @@
 import AuthenticationServices
+import CryptoKit
 import SwiftUI
 import WebKit
 
@@ -85,13 +86,24 @@ struct KitchenView: View {
     private func signInWithGoogle() async {
         guard let start = googleStart else { await open(); return }
         loading = true
+        // A fresh secret for this sign-in; the server only sees its SHA-256 (cc) and
+        // won't open Chef's Kitchen unless the same secret comes back with the code.
+        var raw = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, raw.count, &raw)
+        let verifier = Data(raw).base64URL
+        let challenge = Data(SHA256.hash(data: Data(verifier.utf8))).base64URL
+        var comps = URLComponents(url: start, resolvingAgainstBaseURL: false)
+        let existing = (comps?.queryItems ?? []).filter { $0.name != "cc" }
+        comps?.queryItems = existing + [URLQueryItem(name: "cc", value: challenge)]
         do {
-            let callback = try await google.signIn(start: start)
+            let callback = try await google.signIn(start: comps?.url ?? start)
             let code = URLComponents(url: callback, resolvingAgainstBaseURL: false)?
                 .queryItems?.first(where: { $0.name == "code" })?.value ?? ""
             signedOut = false
             error = nil
-            url = APIClient.shared.absolute("/admin/app-entry?code=\(code)")
+            var entry = URLComponents(string: "/admin/app-entry")
+            entry?.queryItems = [URLQueryItem(name: "code", value: code), URLQueryItem(name: "v", value: verifier)]
+            url = APIClient.shared.absolute(entry?.string)
         } catch let e as ASWebAuthenticationSessionError where e.code == .canceledLogin {
             loading = false
             signedOut = true
@@ -99,6 +111,12 @@ struct KitchenView: View {
             loading = false
             self.error = "Couldn't sign in with Google. Please try again."
         }
+    }
+}
+
+private extension Data {
+    var base64URL: String {
+        base64EncodedString().replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
     }
 }
 
