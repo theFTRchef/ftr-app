@@ -973,7 +973,13 @@ function router() {
     wrap((req, res) => {
       if (!isAdminPhone(req.phone)) throw new ApiError(403, "This phone isn't set up as Chef's.", "not_admin");
       const auth = require("./adminAuth");
-      if (!auth.configured()) throw new ApiError(500, "Set ADMIN_USERNAME and ADMIN_PASSWORD in .env first.");
+      if (!auth.configured()) throw new ApiError(500, "Set up the admin sign-in in .env first.");
+      // With Google sign-in on, the phone number alone isn't enough: the app opens
+      // Google sign-in for Chef's account (older app versions are asked to update).
+      if (auth.googleConfigured()) {
+        if (!(req.body && req.body.google)) throw new ApiError(426, "Update the FTR-DOSE app to open Chef's Kitchen with Chef's Google account.", "update_app");
+        return res.json({ google: "/admin/google/start?app=1" });
+      }
       res.json({ path: `/admin/app-entry?code=${auth.newEntryCode()}` });
     })
   );

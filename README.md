@@ -72,6 +72,24 @@ opens, and every 2 minutes while it's in use, so a save in the admin page shows 
 customers' phones within a couple of minutes, the same as on WhatsApp.
 
 ### Chef's Kitchen (the admin page inside the app)
+### Chef's Kitchen sign-in with Google (recommended)
+
+Add to `.env` and restart the bot:
+
+```ini
+GOOGLE_OAUTH_CLIENT_ID=<from Google Cloud › APIs & Services › Credentials>
+GOOGLE_OAUTH_CLIENT_SECRET=<same place; keep private>
+ADMIN_GOOGLE_EMAIL=thechef@franklintiffinroom.com
+# ADMIN_ALLOW_PASSWORD=1   # optional: keep the username/password form as a backup
+```
+
+The OAuth client is a **Web application** with the redirect URI
+`https://bot.franklintiffinroom.com/admin/google/callback`. Once set, Chef's Kitchen on the web
+and in both apps only opens for that Google account (the app opens Google sign-in in the
+system's secure sheet or browser and returns to the app via `ftrdose://kitchen`). The
+password form and the phone-only app handoff are switched off, and every existing admin
+sign-in is signed out once.
+
 When the phone signed in to the app is your owner WhatsApp number (`OWNER_WHATSAPP_NUMBER`,
 plus any numbers in `APP_ADMIN_PHONES=...` for helpers), the Account tab shows **Chef's
 Kitchen**. It opens your real admin page inside the app, already signed in - no password.

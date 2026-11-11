@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 import WebKit
 
@@ -11,13 +12,27 @@ struct KitchenView: View {
     @State private var error: String?
     @State private var loading = true
     @State private var reloadToken = 0
+    /// Set when Chef's Kitchen needs Chef's Google account (see /admin/google/start).
+    @State private var googleStart: URL?
+    @State private var signedOut = false
+    @State private var google = GoogleSignIn()
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Palette.bg.ignoresSafeArea()
-                if let url {
-                    AdminWebView(url: url, loading: $loading, reloadToken: reloadToken)
+                if signedOut {
+                    VStack(spacing: 14) {
+                        Notice(tone: .info, icon: "lock", text: "You're signed out of Chef's Kitchen.")
+                        Button("Sign in with Google") { Task { await signInWithGoogle() } }
+                            .buttonStyle(PrimaryButtonStyle()).frame(maxWidth: 260)
+                    }
+                    .padding(24)
+                } else if let url {
+                    AdminWebView(url: url, loading: $loading, reloadToken: reloadToken,
+                                 needsSignIn: { out in
+                                     if out { signedOut = true; loading = false } else { Task { await signInWithGoogle() } }
+                                 })
                         .ignoresSafeArea(edges: .bottom)
                 } else if let error {
                     VStack(spacing: 14) {
@@ -42,18 +57,74 @@ struct KitchenView: View {
         }
     }
 
-    /// Ask the server for a one-time link that signs this phone in to the admin page.
+    /// Ask the server how to open the admin page: with Chef's Google account (when
+    /// it's set up), or with a one-time link for this signed-in phone.
     private func open() async {
-        struct R: Decodable { let path: String }
-        struct B: Encodable {}
+        struct R: Decodable { let path: String?; let google: String? }
+        struct B: Encodable { let google = true }
         error = nil
+        signedOut = false
         loading = true
         do {
             let r: R = try await APIClient.shared.post("admin/handoff", B())
-            url = APIClient.shared.absolute(r.path)
+            if let g = r.google {
+                googleStart = APIClient.shared.absolute(g)
+                // A Google sign-in from the last 30 days is still in this app's web view;
+                // if not, the admin page sends us to its login and we open Google.
+                url = APIClient.shared.absolute("/admin")
+            } else if let p = r.path {
+                url = APIClient.shared.absolute(p)
+            }
         } catch {
             loading = false
             self.error = (error as? APIError)?.message ?? error.localizedDescription
+        }
+    }
+
+    /// Google sign-in in Apple's secure sign-in sheet (Google doesn't allow it inside a web view).
+    private func signInWithGoogle() async {
+        guard let start = googleStart else { await open(); return }
+        loading = true
+        do {
+            let callback = try await google.signIn(start: start)
+            let code = URLComponents(url: callback, resolvingAgainstBaseURL: false)?
+                .queryItems?.first(where: { $0.name == "code" })?.value ?? ""
+            signedOut = false
+            error = nil
+            url = APIClient.shared.absolute("/admin/app-entry?code=\(code)")
+        } catch let e as ASWebAuthenticationSessionError where e.code == .canceledLogin {
+            loading = false
+            signedOut = true
+        } catch {
+            loading = false
+            self.error = "Couldn't sign in with Google. Please try again."
+        }
+    }
+}
+
+/// Runs Google sign-in in ASWebAuthenticationSession and returns the ftrdose:// callback.
+@MainActor
+final class GoogleSignIn: NSObject, ASWebAuthenticationPresentationContextProviding {
+    private var session: ASWebAuthenticationSession?
+
+    func signIn(start: URL) async throws -> URL {
+        try await withCheckedThrowingContinuation { cont in
+            let s = ASWebAuthenticationSession(url: start, callbackURLScheme: "ftrdose") { url, error in
+                if let url { cont.resume(returning: url) } else { cont.resume(throwing: error ?? URLError(.cancelled)) }
+            }
+            s.presentationContextProvider = self
+            s.prefersEphemeralWebBrowserSession = false
+            session = s
+            if !s.start() { cont.resume(throwing: URLError(.cannotLoadFromNetwork)) }
+        }
+    }
+
+    nonisolated func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        MainActor.assumeIsolated {
+            UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap(\.windows)
+                .first(where: \.isKeyWindow) ?? ASPresentationAnchor()
         }
     }
 }
@@ -65,6 +136,8 @@ struct AdminWebView: UIViewRepresentable {
     let url: URL
     @Binding var loading: Bool
     let reloadToken: Int
+    /// Called when the admin page wants a sign-in (true = Chef just signed out).
+    var needsSignIn: (Bool) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -82,12 +155,16 @@ struct AdminWebView: UIViewRepresentable {
         web.scrollView.refreshControl = refresh
         web.load(URLRequest(url: url))
         context.coordinator.lastReload = reloadToken
+        context.coordinator.loadedURL = url
         return web
     }
 
     func updateUIView(_ web: WKWebView, context: Context) {
         context.coordinator.parent = self
-        if context.coordinator.lastReload != reloadToken {
+        if context.coordinator.loadedURL != url {
+            context.coordinator.loadedURL = url
+            web.load(URLRequest(url: url))
+        } else if context.coordinator.lastReload != reloadToken {
             context.coordinator.lastReload = reloadToken
             web.reload()
         }
@@ -97,6 +174,7 @@ struct AdminWebView: UIViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate {
         var parent: AdminWebView
         var lastReload = 0
+        var loadedURL: URL?
         private var downloadURL: URL?
 
         init(_ parent: AdminWebView) { self.parent = parent }
@@ -116,6 +194,15 @@ struct AdminWebView: UIViewRepresentable {
             guard let target = navigationAction.request.url else { return decisionHandler(.cancel) }
             if navigationAction.shouldPerformDownload { return decisionHandler(.download) }
             let ownHost = parent.url.host
+            // The admin page's login (or its Google button) means Chef needs to sign in:
+            // do that in the secure sign-in sheet, not in this web view.
+            if target.host == ownHost, target.path == "/admin/login" || target.path == "/admin/google/start" {
+                let out = target.query?.contains("out=1") == true
+                decisionHandler(.cancel)
+                parent.loading = false
+                parent.needsSignIn(out)
+                return
+            }
             if target.scheme == "about" || target.scheme == "blob" || target.scheme == "data" || target.host == ownHost {
                 return decisionHandler(.allow)
             }

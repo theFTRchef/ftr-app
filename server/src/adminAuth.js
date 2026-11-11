@@ -5,6 +5,13 @@
  * Signing in sets a signed, HttpOnly cookie that lasts 30 days on that
  * device. Log out clears it. Changing ADMIN_PASSWORD signs out every
  * device (the cookie signature is tied to the password).
+ *
+ * Google sign-in (recommended): set GOOGLE_OAUTH_CLIENT_ID,
+ * GOOGLE_OAUTH_CLIENT_SECRET and ADMIN_GOOGLE_EMAIL (default
+ * thechef@franklintiffinroom.com). Then Chef's Kitchen, on the web and in the
+ * apps, only opens for that Google account; the password form and the
+ * phone-only app handoff are turned off (ADMIN_ALLOW_PASSWORD=1 keeps the
+ * password form as a backup). Turning Google on signs out every device once.
  */
 const crypto = require("crypto");
 
@@ -12,14 +19,34 @@ const COOKIE = "ftr_admin";
 const MAX_AGE_DAYS = 30;
 const failures = new Map(); // ip -> { count, until }
 
-function configured() {
+function passwordConfigured() {
   return !!(process.env.ADMIN_USERNAME && process.env.ADMIN_PASSWORD);
+}
+
+function googleConfigured() {
+  return !!(process.env.GOOGLE_OAUTH_CLIENT_ID && process.env.GOOGLE_OAUTH_CLIENT_SECRET);
+}
+
+/** The password form works when there's no Google sign-in, or when it's kept as a backup. */
+function passwordAllowed() {
+  return passwordConfigured() && (!googleConfigured() || process.env.ADMIN_ALLOW_PASSWORD === "1");
+}
+
+function configured() {
+  return passwordConfigured() || googleConfigured();
+}
+
+function adminEmails() {
+  return String(process.env.ADMIN_GOOGLE_EMAIL || "thechef@franklintiffinroom.com")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 function key() {
   return crypto
     .createHash("sha256")
-    .update(`ftr-admin|${process.env.ADMIN_USERNAME}|${process.env.ADMIN_PASSWORD}|${process.env.SESSION_SECRET || ""}`)
+    .update(`ftr-admin|${process.env.ADMIN_USERNAME}|${process.env.ADMIN_PASSWORD}|${process.env.SESSION_SECRET || ""}|${googleConfigured() ? "google:" + process.env.GOOGLE_OAUTH_CLIENT_ID + ":" + adminEmails().join(",") : ""}`)
     .digest();
 }
 
@@ -64,7 +91,7 @@ function requireAdminAuth(req, res, next) {
   if (!configured()) {
     return res
       .status(500)
-      .send("Admin panel is not configured - set ADMIN_USERNAME and ADMIN_PASSWORD in .env");
+      .send("Admin panel is not configured - set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET (or ADMIN_USERNAME and ADMIN_PASSWORD) in .env");
   }
   if (validSession(req)) return next();
   if (req.path.startsWith("/admin/api") || req.method !== "GET") {
@@ -78,6 +105,8 @@ function esc(s) {
 }
 
 function loginPage({ error = "", next = "/admin", note = "" } = {}) {
+  const google = googleConfigured();
+  const pw = passwordAllowed();
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in · FTR Chef's Kitchen</title>
@@ -99,19 +128,24 @@ input:focus { outline:2px solid var(--leaf); outline-offset:1px; border-color:tr
 button { width:100%; margin-top:22px; font:inherit; font-weight:700; padding:13px; border:0; border-radius:12px; background:var(--leaf); color:#fff; cursor:pointer; }
 .err { color:var(--bad); font-weight:600; font-size:14px; margin:14px 0 0; }
 .note { color:var(--leaf); font-weight:600; font-size:14px; margin:0 0 6px; }
+.g { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-top:8px; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); font-weight:700; text-decoration:none; }
+.g:focus-visible { outline:2px solid var(--leaf); outline-offset:2px; }
+.or { text-align:center; color:var(--muted); font-size:13px; margin:18px 0 0; }
 </style></head><body>
 <form class="card" method="post" action="/admin/login">
   <div class="logo" aria-hidden="true"></div>
   <h1>FTR Chef's Kitchen</h1>
-  <p>Franklin Tiffin Room admin</p>
+  <p>${google ? "Sign in with Chef's Google account." : "Franklin Tiffin Room admin"}</p>
   ${note ? `<div class="note">${esc(note)}</div>` : ""}
+  ${google ? `<a class="g" href="/admin/google/start?next=${encodeURIComponent(next)}"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Sign in with Google</a>` : ""}
+  ${error ? `<div class="err" role="alert">${esc(error)}</div>` : ""}
+  ${pw ? `${google ? '<div class="or">or use the backup password</div>' : ""}
   <input type="hidden" name="next" value="${esc(next)}">
   <label for="u">Username</label>
-  <input id="u" name="username" autocomplete="username" autocapitalize="none" required autofocus>
+  <input id="u" name="username" autocomplete="username" autocapitalize="none" required ${google ? "" : "autofocus"}>
   <label for="p">Password</label>
   <input id="p" name="password" type="password" autocomplete="current-password" required>
-  ${error ? `<div class="err" role="alert">${esc(error)}</div>` : ""}
-  <button type="submit">Sign in</button>
+  <button type="submit">Sign in</button>` : ""}
 </form></body></html>`;
 }
 
@@ -132,7 +166,7 @@ function mountAuthRoutes(app) {
   });
 
   app.post("/admin/login", (req, res) => {
-    if (!configured()) return res.status(500).send("Admin panel is not configured");
+    if (!passwordAllowed()) return sendLogin(res, { error: "Please sign in with Google.", next: safeNext(req.body?.next) }, 403);
     const ip = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress || "?";
     const f = failures.get(ip);
     if (f && f.until > Date.now() && f.count >= 8) {
@@ -155,6 +189,83 @@ function mountAuthRoutes(app) {
     res.redirect(303, safeNext(req.body?.next));
   });
 
+  // --- Google sign-in (OpenID Connect, authorization code + PKCE) ---
+  app.get("/admin/google/start", (req, res) => {
+    if (!googleConfigured()) return res.redirect(302, "/admin/login");
+    const now = Date.now();
+    for (const [k, v] of oauthStates) if (v.expires < now) oauthStates.delete(k);
+    const state = crypto.randomBytes(24).toString("base64url");
+    const verifier = crypto.randomBytes(32).toString("base64url");
+    const challenge = crypto.createHash("sha256").update(verifier).digest("base64url");
+    const nonce = crypto.randomBytes(16).toString("base64url");
+    oauthStates.set(state, { verifier, nonce, app: req.query.app === "1", next: safeNext(req.query.next), expires: now + 10 * 60 * 1000 });
+    const q = new URLSearchParams({
+      client_id: process.env.GOOGLE_OAUTH_CLIENT_ID,
+      redirect_uri: redirectUri(),
+      response_type: "code",
+      scope: "openid email",
+      state,
+      nonce,
+      code_challenge: challenge,
+      code_challenge_method: "S256",
+      prompt: "select_account",
+      login_hint: adminEmails()[0] || ""
+    });
+    res.set("Cache-Control", "no-store");
+    res.redirect(302, `https://accounts.google.com/o/oauth2/v2/auth?${q}`);
+  });
+
+  app.get("/admin/google/callback", async (req, res) => {
+    const st = oauthStates.get(String(req.query.state || ""));
+    oauthStates.delete(String(req.query.state || ""));
+    const fail = (msg, status = 403) => sendLogin(res, { error: msg, next: st ? st.next : "/admin" }, status);
+    if (!googleConfigured()) return res.redirect(302, "/admin/login");
+    if (!st || st.expires < Date.now()) return fail("That sign-in took too long or was already used. Please try again.", 400);
+    if (req.query.error) return fail("Google sign-in was cancelled.", 400);
+    try {
+      const r = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          code: String(req.query.code || ""),
+          client_id: process.env.GOOGLE_OAUTH_CLIENT_ID,
+          client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+          redirect_uri: redirectUri(),
+          grant_type: "authorization_code",
+          code_verifier: st.verifier
+        })
+      });
+      const tok = await r.json();
+      if (!r.ok || !tok.id_token) return fail("Google didn't confirm the sign-in. Please try again.", 400);
+      // The ID token came straight from Google over TLS, so its claims can be trusted
+      // without checking the signature (OpenID Connect Core 3.1.3.7); still check every claim.
+      const claims = JSON.parse(Buffer.from(tok.id_token.split(".")[1], "base64url").toString("utf8"));
+      const email = String(claims.email || "").toLowerCase();
+      const good =
+        ["accounts.google.com", "https://accounts.google.com"].includes(claims.iss) &&
+        claims.aud === process.env.GOOGLE_OAUTH_CLIENT_ID &&
+        Number(claims.exp) * 1000 > Date.now() &&
+        claims.nonce === st.nonce &&
+        claims.email_verified === true;
+      if (!good) return fail("Google didn't confirm the sign-in. Please try again.", 400);
+      if (!adminEmails().includes(email)) {
+        console.warn(`[admin] Google sign-in refused for ${email}`);
+        return fail(`${email} isn't Chef's account. Sign in with ${adminEmails()[0]}.`);
+      }
+      console.log(`[admin] Chef signed in with Google (${st.app ? "app" : "browser"})`);
+      if (st.app) {
+        // Back to the FTR-DOSE app, which opens Chef's Kitchen with this one-time code.
+        res.set("Cache-Control", "no-store");
+        return res.redirect(302, `ftrdose://kitchen?code=${encodeURIComponent(newEntryCode())}`);
+      }
+      issueSession(req, res);
+      res.redirect(303, st.next);
+    } catch (err) {
+      console.error("[admin] Google sign-in failed:", err.message);
+      fail("Couldn't reach Google. Please try again.", 502);
+    }
+  });
+
   const logout = (req, res) => {
     res.set("Set-Cookie", `${COOKIE}=; Max-Age=0; ${cookieFlags(req)}`);
     res.redirect(303, "/admin/login?out=1");
@@ -173,6 +284,11 @@ function issueSession(req, res) {
   res.set("Set-Cookie", `${COOKIE}=${expires}.${sign(expires)}; Max-Age=${MAX_AGE_DAYS * 24 * 3600}; ${cookieFlags(req)}`);
 }
 
+const oauthStates = new Map(); // state -> { verifier, nonce, app, next, expires }
+function redirectUri() {
+  return `${(process.env.PUBLIC_BASE_URL || "https://bot.franklintiffinroom.com").replace(/\/+$/, "")}/admin/google/callback`;
+}
+
 /** One-time, one-minute codes the app uses to open the admin page signed in. */
 const entryCodes = new Map(); // code -> expires
 function newEntryCode() {
@@ -189,4 +305,4 @@ function useEntryCode(code) {
   return !!t && t >= Date.now();
 }
 
-module.exports = { requireAdminAuth, mountAuthRoutes, issueSession, configured, newEntryCode, useEntryCode, validSession };
+module.exports = { requireAdminAuth, mountAuthRoutes, issueSession, configured, googleConfigured, newEntryCode, useEntryCode, validSession };

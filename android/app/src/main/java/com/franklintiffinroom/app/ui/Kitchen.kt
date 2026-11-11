@@ -48,7 +48,13 @@ import com.franklintiffinroom.app.core.friendly
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
-@Serializable private data class Handoff(val path: String)
+@Serializable private data class Handoff(val path: String? = null, val google: String? = null)
+@Serializable private data class HandoffBody(val google: Boolean = true)
+
+/** The one-time code Google sign-in hands back (ftrdose://kitchen?code=...), set by MainActivity. */
+object KitchenAuth {
+    var code by mutableStateOf<String?>(null)
+}
 
 /**
  * Chef's Kitchen: the real admin page, opened inside the app and already signed in
@@ -63,6 +69,8 @@ fun KitchenSheet(onDismiss: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(true) }
     var web by remember { mutableStateOf<WebView?>(null) }
+    var googleStart by remember { mutableStateOf<String?>(null) }
+    var signedOut by remember { mutableStateOf(false) }
     var fileCallback by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
     val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         fileCallback?.onReceiveValue(uri?.let { arrayOf(it) } ?: arrayOf())
@@ -70,11 +78,33 @@ fun KitchenSheet(onDismiss: () -> Unit) {
     }
 
     fun open() = scope.launch {
-        error = null; loading = true
-        try { url = Api.absolute(Api.post<Handoff, Empty>("admin/handoff", Empty()).path) }
-        catch (e: Exception) { loading = false; error = e.friendly() }
+        error = null; loading = true; signedOut = false
+        try {
+            val h = Api.post<Handoff, HandoffBody>("admin/handoff", HandoffBody())
+            if (h.google != null) {
+                // Chef's Google account opens Chef's Kitchen. A sign-in from the last 30 days
+                // is still in this web view; if not, the admin page sends us to its login.
+                googleStart = Api.absolute(h.google)
+                url = Api.absolute("/admin")
+            } else if (h.path != null) url = Api.absolute(h.path)
+        } catch (e: Exception) { loading = false; error = e.friendly() }
+    }
+    /** Google sign-in runs in the phone's browser (Google doesn't allow it inside a web view). */
+    fun signInWithGoogle() {
+        val start = googleStart ?: return run { open() }
+        loading = false
+        runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(start)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            .onFailure { error = "Couldn't open the browser for Google sign-in." }
     }
     LaunchedEffect(Unit) { open() }
+    // Back from Google: sign this web view in with the one-time code.
+    LaunchedEffect(KitchenAuth.code) {
+        val code = KitchenAuth.code ?: return@LaunchedEffect
+        KitchenAuth.code = null
+        signedOut = false; error = null; loading = true
+        val entry = Api.absolute("/admin/app-entry?code=" + Uri.encode(code))
+        if (web != null && url != null) web?.loadUrl(entry) else url = entry
+    }
     BackHandler(enabled = web?.canGoBack() == true) { web?.goBack() }
 
     FullSheet(onDismiss, title = "Chef's Kitchen", closeLabel = "Done", actions = {
@@ -82,7 +112,12 @@ fun KitchenSheet(onDismiss: () -> Unit) {
     }) { pad ->
         Box(Modifier.fillMaxSize().padding(pad)) {
             val u = url
-            if (u != null) {
+            if (signedOut) {
+                Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Notice("You're signed out of Chef's Kitchen.")
+                    PrimaryButton("Sign in with Google", Modifier.widthIn(max = 260.dp)) { signInWithGoogle() }
+                }
+            } else if (u != null) {
                 val host = Uri.parse(u).host
                 AndroidView(modifier = Modifier.fillMaxSize(), factory = { c ->
                     WebView(c).apply {
@@ -93,9 +128,21 @@ fun KitchenSheet(onDismiss: () -> Unit) {
                         CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) { loading = false; CookieManager.getInstance().flush() }
+                            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                                val t = url?.let(Uri::parse) ?: return
+                                if (googleStart != null && t.host == host && t.path == "/admin/login") {
+                                    view?.stopLoading()
+                                    if (t.getQueryParameter("out") == "1") { signedOut = true; loading = false } else signInWithGoogle()
+                                }
+                            }
                             /** Stay on your own server; WhatsApp, phone and other sites open in their apps. */
                             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                                 val target = request.url
+                                // The admin login (or its Google button) means Chef needs to sign in with Google.
+                                if (googleStart != null && target.host == host && (target.path == "/admin/login" || target.path == "/admin/google/start")) {
+                                    if (target.getQueryParameter("out") == "1") { signedOut = true; loading = false } else signInWithGoogle()
+                                    return true
+                                }
                                 if (target.host == host || target.scheme in listOf("about", "blob", "data")) return false
                                 runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, target).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                                 return true

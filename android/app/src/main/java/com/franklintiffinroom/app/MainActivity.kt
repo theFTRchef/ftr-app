@@ -42,6 +42,10 @@ class MainActivity : ComponentActivity() {
     /** Tapping a notification opens the order it's about (or Notifications). */
     private fun handle(intent: Intent?) {
         // Screenshot runs: adb shell am start ... --es ftrScanCode CHEF-TEST opens that recipe.
+        // Back from Google sign-in: open Chef's Kitchen with the one-time code.
+        intent?.data?.takeIf { it.scheme == "ftrdose" && it.host == "kitchen" }?.getQueryParameter("code")?.let {
+            com.franklintiffinroom.app.ui.KitchenAuth.code = it
+        }
         if (BuildConfig.DEBUG) intent?.getStringExtra("ftrScanCode")?.let { com.franklintiffinroom.app.ui.RecipeCode.pending = it }
         if (intent?.getBooleanExtra(Push.EXTRA_FROM_PUSH, false) == true) {
             model.openFromNotification(intent.getStringExtra("orderId"))
