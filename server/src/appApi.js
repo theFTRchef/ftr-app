@@ -25,7 +25,7 @@ const appCarts = require("./appCarts");
 const { verifyAddress } = require("./geocode");
 const { itemsText } = require("./sheets");
 const { paymentText, deadlineLabel } = require("./paymentText");
-const { pickupTimes, offersCatering, offersLiveDose, pickupOnly, ldsSessions, ldsExtension } = require("./availability");
+const { pickupTimes, offersCatering, offersLiveDose, isBooked, bookedLabel, pickupOnly, ldsSessions, ldsExtension } = require("./availability");
 const { formatTimeLabel } = require("./timeUtils");
 const preorders = require("./preorders");
 const { sendText } = require("./messaging");
@@ -361,6 +361,7 @@ function availabilityPayload(query) {
     if (pickups.length) offer.push(`Catering pickup ${pickups.join(" or ")}`);
     if (d.catering.length) offer.push(`Catering delivery ${d.catering.map(f.windowLabel).join(", ")}`);
     if (d.liveDose.length) offer.push(`LIVE Dose ${d.liveDose.map(f.windowLabel).join(", ")}`);
+    if (isBooked(d)) offer.push(`${bookedLabel(d)} booked`);
     const out = {
       date: d.date,
       label: f.formatDateLabel(d.date),
@@ -379,8 +380,17 @@ function availabilityPayload(query) {
     }
     return out;
   });
+  // Days Chef marked Booked (shown as "Booked", not just missing).
+  const booked = f.upcomingBooked(menu).map((d) => ({
+    date: d.date,
+    label: f.formatDateLabel(d.date),
+    lunch: !!d.bookedAM,
+    dinner: !!d.bookedPM,
+    summary: `Booked · ${bookedLabel(d).toLowerCase()}`
+  }));
   return {
     kind,
+    booked,
     preorderDays: preorders.open(menu).map(preorderDay),
     fulfillment: kind === "lds" ? "delivery" : fulfillment,
     dates: kind ? dates.filter((d) => d.slots.length > 0) : dates,

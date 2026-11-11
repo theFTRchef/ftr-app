@@ -9,7 +9,7 @@ const { appendOrder, updateOrderStatus, updateOrderSubtotal, updateOrderTime } =
 const customerStore = require("./customerStore");
 const { verifyAddress, milesBetween } = require("./geocode");
 const { generateSlots, formatTimeLabel, liveDoseSchedule, liveDoseTotalMinutes } = require("./timeUtils");
-const { normalizeDateEntry, pickupTimes, offersCatering, offersLiveDose, customerView, pickupOnly, ldsExtension } = require("./availability");
+const { normalizeDateEntry, pickupTimes, offersCatering, offersLiveDose, isBooked, bookedLabel, customerView, pickupOnly, ldsExtension } = require("./availability");
 
 /** The menu as customers see it (catering delivery hidden when pickup-only). */
 function botMenu() {
@@ -139,6 +139,16 @@ function upcomingDates(menu) {
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
+/** Weekend days in the booking window Chef marked Booked and didn't open for anything. */
+function upcomingBooked(menu) {
+  const from = todayLocal();
+  const to = addDays(from, BOOKING_WINDOW_DAYS);
+  return (menu.availability?.dates || [])
+    .map(normalizeDateEntry)
+    .filter((d) => d.date >= from && d.date <= to && isBooked(d) && !offersCatering(d) && !offersLiveDose(d))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
 function findDateEntry(menu, dateStr) {
   const raw = (menu.availability?.dates || []).find((d) => d.date === dateStr);
   const pre = preorders.openEntry(menu, dateStr);
@@ -176,11 +186,14 @@ function availabilitySummary(menu) {
     if (pickups.length) parts.push(`Catering pickup ${pickups.join(" or ")}`);
     if (d.catering.length) parts.push(`Catering delivery ${d.catering.map(windowLabel).join(", ")}`);
     if (d.liveDose.length) parts.push(`LIVE Dose Station ${d.liveDose.map(windowLabel).join(", ")}`);
+    if (isBooked(d)) parts.push(`${bookedLabel(d)} booked`);
     return `- ${formatDateLabel(d.date)}: ${parts.join(" | ")}`;
   });
+  const booked = upcomingBooked(menu);
   return [
     `Chef availability (next ${BOOKING_WINDOW_DAYS} days):`,
     ...lines,
+    ...(booked.length ? ["", "Booked:", ...booked.map((d) => `- ${formatDateLabel(d.date)}: ${bookedLabel(d)}`)] : []),
     "",
     `Catering and the LIVE Dose Station are booked as separate orders. Delivery has a fee based on distance. ${paymentSentence(menu)}`
   ].join("\n");
@@ -3702,6 +3715,7 @@ module.exports = {
     paymentSentence,
     pickupAgreementText,
     upcomingDates,
+    upcomingBooked,
     findDateEntry,
     timeOptionsFor,
     cateringFulfillmentOptions,

@@ -29,6 +29,7 @@
   --bad: #9E3A2E;  --bad-soft: #F6DCD6;
   --info: #3F5F7A; --info-soft: #E0E8EF;
   --chili: #A4483F; --chili-soft: #F3DED9; --chili-ink: #7E3029;
+  --booked-bg: #3A332D; --booked-fg: #F3EBDD;   /* charcoal: day is taken */
   --charcoal: #2E2A26; --gold: #D4A84A;
   --shadow: 0 1px 2px rgba(62,44,40,.06), 0 6px 18px rgba(62,44,40,.07);
   --f-display: "Oswald", "Arial Narrow", sans-serif;
@@ -44,6 +45,7 @@
   --turmeric: #D9B76A; --turmeric-soft: #3A2F1A; --turmeric-ink: #E9C77B;
   --good: #9CC0A6; --good-soft: #26332A; --bad: #F08A7C; --bad-soft: #3D2420; --info: #9DB8D2; --info-soft: #22303C;
   --chili: #E08A7E; --chili-soft: #43231D; --chili-ink: #F2B3A8;
+  --booked-bg: #E8DCC6; --booked-fg: #2E2A26;
   --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #1F1B18; --surface: #2A2521; --surface-2: #35302B; --line: #433C35;
@@ -51,6 +53,7 @@
   --turmeric: #D9B76A; --turmeric-soft: #3A2F1A; --turmeric-ink: #E9C77B;
   --good: #9CC0A6; --good-soft: #26332A; --bad: #F08A7C; --bad-soft: #3D2420; --info: #9DB8D2; --info-soft: #22303C;
   --chili: #E08A7E; --chili-soft: #43231D; --chili-ink: #F2B3A8;
+  --booked-bg: #E8DCC6; --booked-fg: #2E2A26;
   --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark; }
 
 * { box-sizing: border-box; }
@@ -145,6 +148,7 @@ nav.tabs a[aria-current="page"]::before { content: ""; position: absolute; top: 
 .p-wait { background: var(--turmeric-soft); color: var(--turmeric-ink); }
 .p-good { background: var(--good-soft); color: var(--good); }
 .p-bad { background: var(--bad-soft); color: var(--bad); }
+.p-booked { background: var(--booked-bg); color: var(--booked-fg); }
 .p-info { background: var(--info-soft); color: var(--info); }
 .p-off { background: var(--surface-2); color: var(--muted); }
 .p-ff { background: var(--chili-soft); color: var(--chili-ink); }
@@ -256,6 +260,8 @@ button.li:hover { background: var(--surface-2); }
 .tog small { color: var(--muted); font-size: 12px; }
 .tog[aria-pressed="true"] { border-style: solid; border-color: var(--leaf); background: var(--leaf-soft); }
 .tog[aria-pressed="true"] b { color: var(--leaf); }
+.tog.bk[aria-pressed="true"] { border-color: var(--booked-bg); background: var(--booked-bg); }
+.tog.bk[aria-pressed="true"] b, .tog.bk[aria-pressed="true"] small { color: var(--booked-fg); }
 .win { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
 .win input[type=time] { min-height: 42px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 15px; }
 .win .to { color: var(--muted); font-size: 13px; }
@@ -277,7 +283,7 @@ button.li:hover { background: var(--surface-2); }
 .dc.past, .dc.wkday { opacity: .45; cursor: default; }
 .dc.closed { background: var(--surface-2); color: var(--muted); border-color: var(--line); cursor: pointer; }
 .dc.open { background: var(--leaf-soft); border-color: color-mix(in srgb, var(--leaf) 45%, transparent); color: var(--leaf); cursor: pointer; }
-.dc.booked { background: var(--chili-soft); border-color: color-mix(in srgb, var(--chili) 50%, transparent); color: var(--chili-ink); cursor: pointer; }
+.dc.booked { background: var(--booked-bg); border-color: var(--booked-bg); color: var(--booked-fg); cursor: pointer; }
 .dc.today { box-shadow: inset 0 0 0 2px var(--fg); }
 .dc.sel { outline: 2px solid var(--leaf); outline-offset: 1px; }
 .dc .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 2px; }
@@ -294,7 +300,7 @@ button.li:hover { background: var(--surface-2); }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); padding: 2px 4px; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 1px solid var(--line); }
-.sw.g { background: var(--leaf-soft); border-color: var(--leaf); } .sw.r { background: var(--chili-soft); border-color: var(--chili); }
+.sw.g { background: var(--leaf-soft); border-color: var(--leaf); } .sw.r { background: var(--booked-bg); border-color: var(--booked-bg); }
 .sw.c { background: var(--surface-2); } .sw.x { background: transparent; opacity: .5; }
 .legend .dt { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .agenda .li { cursor: pointer; }
@@ -688,7 +694,8 @@ function when(iso) { return iso ? new Date(iso).toLocaleString("en-US", { month:
 
 function normalizeDate(e) {
   const list = (v) => (Array.isArray(v) ? v : v ? [v] : []).filter((w) => w && (w.start || w.end));
-  e.pickupAM = !!e.pickupAM; e.pickupPM = !!e.pickupPM;
+  e.bookedAM = !!e.bookedAM; e.bookedPM = !!e.bookedPM;
+  e.pickupAM = !!e.pickupAM && !e.bookedAM; e.pickupPM = !!e.pickupPM && !e.bookedPM;
   e.catering = list(e.catering); e.liveDose = list(e.liveDose);
   return e;
 }
@@ -720,6 +727,8 @@ function ensureShape(menu) {
   return menu;
 }
 function isOpen(e) { return e && (e.pickupAM || e.pickupPM || e.catering.length || e.liveDose.length); }
+function isMarkedBooked(e) { return !!(e && (e.bookedAM || e.bookedPM)); }
+function bookedText(e) { return e.bookedAM && e.bookedPM ? "lunch & dinner" : e.bookedAM ? "lunch" : "dinner"; }
 function ldsCat() { return S.menu.categories.find((c) => c.type === "live-dose-station"); }
 function preCats() { return S.menu.categories.filter((c) => c.type === "preorder"); }
 function shiftISO(iso, n) { const [y, m, d] = String(iso).split("-").map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); }
@@ -831,7 +840,7 @@ function markDirty() {
   $("#saveMsg").textContent = "Unsaved changes";
 }
 function pruneDates(menu) {
-  menu.availability.dates = menu.availability.dates.filter(isOpen).sort((a, b) => (a.date < b.date ? -1 : 1));
+  menu.availability.dates = menu.availability.dates.filter((d) => isOpen(d) || isMarkedBooked(d)).sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 async function save() {
   if (S.busy) return;
@@ -1021,6 +1030,7 @@ function daySummary(d) {
   if (d.pickupPM) out.push('<span class="pill p-good">Dinner pickup ' + t12(pt.pm) + "</span>");
   d.catering.forEach((w) => out.push('<span class="pill p-info">Delivery ' + winLabel(w) + "</span>"));
   d.liveDose.forEach((w) => out.push('<span class="pill p-wait">LIVE Dose ' + winLabel(w) + "</span>"));
+  if (isMarkedBooked(d)) out.push('<span class="pill p-booked">Booked – ' + bookedText(d) + "</span>");
   return out.length ? out.join("") : '<span class="pill p-off">Closed</span>';
 }
 
@@ -1180,7 +1190,8 @@ function viewCalendar() {
     if (iso < t) { cls += " past"; state = "past"; }
     else if (!weekend) { cls += " wkday"; state = "weekday, not bookable"; }
     else if (confirmed) { cls += " booked"; state = "booked, " + confirmed + " confirmed"; }
-    else if (isOpen(e)) { cls += " open"; state = "open"; }
+    else if (isOpen(e)) { cls += " open"; state = "open" + (isMarkedBooked(e) ? ", " + bookedText(e) + " booked" : ""); }
+    else if (isMarkedBooked(e)) { cls += " booked"; state = "booked for " + bookedText(e); }
     else { cls += " closed"; state = "closed"; }
     if (iso === t) cls += " today";
     const offers = e ? (e.pickupAM || e.pickupPM ? '<i class="o-p"></i>' : "") + (e.catering.length ? '<i class="o-d"></i>' : "") + (e.liveDose.length ? '<i class="o-l"></i>' : "") : "";
@@ -1197,7 +1208,7 @@ function viewCalendar() {
     const iso = S.calMonth + "-" + String(d).padStart(2, "0");
     if (iso < t) continue;
     const e = entryFor(iso), list = byDay[iso] || [];
-    if (!isOpen(e) && !list.length) continue;
+    if (!isOpen(e) && !isMarkedBooked(e) && !list.length) continue;
     agenda.push({ iso, e: e || normalizeDate({ date: iso }), list });
   }
   const label = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -1213,7 +1224,7 @@ function viewCalendar() {
       '<div class="wk">' + cells.join("") + "</div>" +
     "</div>" +
     '<div class="legend">' +
-      '<span><i class="sw g"></i>Open for orders</span><span><i class="sw r"></i>Booked</span><span><i class="sw c"></i>Not open</span><span><i class="sw x"></i>Weekday / past</span>' +
+      '<span><i class="sw g"></i>Open for orders</span><span><i class="sw r"></i>Booked (orders or marked)</span><span><i class="sw c"></i>Not open</span><span><i class="sw x"></i>Weekday / past</span>' +
       '<span><i class="dt" style="background:var(--turmeric)"></i>Waiting on you</span>' +
       '<span><i class="dt o-p"></i>Pickup</span><span><i class="dt o-d"></i>Delivery</span><span><i class="dt o-l"></i>LIVE Dose</span>' +
     "</div>" +
@@ -1224,7 +1235,7 @@ function viewCalendar() {
           const conf = list.filter((o) => o.status === "Confirmed");
           const sum = conf.reduce((s2, o) => s2 + Number(o.subtotal || 0), 0);
           return '<button class="li" data-act="open-day" data-date="' + iso + '">' +
-            '<div class="cal' + (conf.length ? "" : "") + '"><i style="background:' + (conf.length ? "var(--chili)" : isOpen(e) ? "var(--leaf)" : "var(--surface-2)") + ';color:' + (conf.length || isOpen(e) ? "#fff" : "var(--muted)") + '">' + p.wd + "</i><b>" + p.day + "</b></div>" +
+            '<div class="cal' + (conf.length ? "" : "") + '"><i style="background:' + (conf.length || (!isOpen(e) && isMarkedBooked(e)) ? "var(--booked-bg)" : isOpen(e) ? "var(--leaf)" : "var(--surface-2)") + ';color:' + (conf.length || (!isOpen(e) && isMarkedBooked(e)) ? "var(--booked-fg)" : isOpen(e) ? "#fff" : "var(--muted)") + '">' + p.wd + "</i><b>" + p.day + "</b></div>" +
             '<div class="grow"><div class="day-sum">' + daySummary(e) + "</div>" +
             '<div class="d" style="margin-top:4px">' + (list.length ? conf.length + " confirmed" + (conf.length ? " · " + money(sum) : "") + (list.length - conf.length ? " · " + (list.length - conf.length) + " waiting" : "") : "No orders yet") + "</div></div>" +
             '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>';
@@ -1276,12 +1287,17 @@ function dayEditor(e, pt) {
       '<button class="tog" data-act="pickup" data-date="' + e.date + '" data-k="pickupAM" aria-pressed="' + e.pickupAM + '"><b>Lunch</b><small>Pickup by ' + t12(pt.am) + "</small></button>" +
       '<button class="tog" data-act="pickup" data-date="' + e.date + '" data-k="pickupPM" aria-pressed="' + e.pickupPM + '"><b>Dinner</b><small>Pickup by ' + t12(pt.pm) + "</small></button>" +
     "</div></div>" +
+    '<div class="day-sec"><h4>Booked</h4><div class="toggles">' +
+      '<button class="tog bk" data-act="booked" data-date="' + e.date + '" data-k="bookedAM" aria-pressed="' + e.bookedAM + '"><b>Lunch</b><small>Customers see “Booked”</small></button>' +
+      '<button class="tog bk" data-act="booked" data-date="' + e.date + '" data-k="bookedPM" aria-pressed="' + e.bookedPM + '"><b>Dinner</b><small>Customers see “Booked”</small></button>' +
+    '</div><p class="small muted" style="margin:8px 0 0">Booked for a private event? Mark it here instead of closing the day – it shows as Booked in the app and on the WhatsApp calendar. A booked lunch or dinner turns off that pickup.</p></div>' +
     (pickupOnly ? "" : wins("catering", "Catering delivery windows", "No delivery this day.")) +
     '<div class="day-sec"><h4>LIVE Dose Station (on-site)</h4><div class="toggles">' +
       sessions.map((w, i) => '<button class="tog" data-act="lds-sess" data-date="' + e.date + '" data-i="' + i + '" aria-pressed="' + sessOn(w) + '"><b>' + esc(w.label || ("Session " + (i + 1))) + "</b><small>" + t12(w.start) + " – " + t12(w.end) + "</small></button>").join("") +
     "</div>" + (custom.length ? '<p class="small muted" style="margin:8px 0 0">Older custom window ' + custom.map(winLabel).join(", ") + ' – customers see the standard session(s) it overlaps. Tap a session to switch this day to standard times.</p>' : "") + "</div>" +
     '<div class="row"><button class="btn sm" data-act="copy-day" data-date="' + e.date + '">Copy to next ' + dateParts(e.date).wd + '</button>' +
-    (isOpen(e) ? '<button class="btn sm danger" data-act="close-day" data-date="' + e.date + '">Close this day</button>' : "") + "</div>" +
+    (!(e.bookedAM && e.bookedPM) ? '<button class="btn sm" data-act="book-day" data-date="' + e.date + '">Mark whole day booked</button>' : "") +
+    (isOpen(e) || isMarkedBooked(e) ? '<button class="btn sm danger" data-act="close-day" data-date="' + e.date + '">Close this day</button>' : "") + "</div>" +
   "</div>";
 }
 
@@ -2163,10 +2179,26 @@ document.addEventListener("click", (e) => {
     case "open-day": openDaySheet(date); break;
     case "month": S.calMonth = shiftMonth(S.calMonth, +el.dataset.n); render(); break;
     case "month-today": S.calMonth = monthKey(todayISO()); render(); break;
-    case "pickup": { const en = entryFor(date, true); en[el.dataset.k] = !en[el.dataset.k]; refreshDaySheet(); break; }
+    case "pickup": {
+      const en = entryFor(date, true), k = el.dataset.k;
+      en[k] = !en[k];
+      if (en[k]) en[k === "pickupAM" ? "bookedAM" : "bookedPM"] = false;
+      refreshDaySheet(); break;
+    }
+    case "booked": {
+      const en = entryFor(date, true), k = el.dataset.k;
+      en[k] = !en[k];
+      if (en[k]) en[k === "bookedAM" ? "pickupAM" : "pickupPM"] = false;
+      refreshDaySheet(); break;
+    }
+    case "book-day": {
+      const en = entryFor(date, true);
+      Object.assign(en, { bookedAM: true, bookedPM: true, pickupAM: false, pickupPM: false, catering: [], liveDose: [] });
+      refreshDaySheet(); toast("Marked booked. Customers will see this day as Booked after you save."); break;
+    }
     case "std-day": {
       const en = entryFor(date, true);
-      Object.assign(en, { pickupAM: true, pickupPM: true, catering: [], liveDose: S.menu.availability.liveDoseSessions.map((w) => ({ start: w.start, end: w.end })) });
+      Object.assign(en, { bookedAM: false, bookedPM: false, pickupAM: true, pickupPM: true, catering: [], liveDose: S.menu.availability.liveDoseSessions.map((w) => ({ start: w.start, end: w.end })) });
       refreshDaySheet(); break;
     }
     case "pre-add": {
@@ -2224,10 +2256,10 @@ document.addEventListener("click", (e) => {
       refreshDaySheet(); break;
     }
     case "win-del": { const en = entryFor(date, true); en[el.dataset.key].splice(+el.dataset.i, 1); refreshDaySheet(); break; }
-    case "close-day": { const en = entryFor(date, true); Object.assign(en, { pickupAM: false, pickupPM: false, catering: [], liveDose: [] }); refreshDaySheet(); break; }
+    case "close-day": { const en = entryFor(date, true); Object.assign(en, { bookedAM: false, bookedPM: false, pickupAM: false, pickupPM: false, catering: [], liveDose: [] }); refreshDaySheet(); break; }
     case "copy-day": {
       const src = entryFor(date, true), to = addDays(date, 7), dst = entryFor(to, true);
-      Object.assign(dst, clone({ pickupAM: src.pickupAM, pickupPM: src.pickupPM, catering: src.catering, liveDose: src.liveDose }));
+      Object.assign(dst, clone({ bookedAM: src.bookedAM, bookedPM: src.bookedPM, pickupAM: src.pickupAM, pickupPM: src.pickupPM, catering: src.catering, liveDose: src.liveDose }));
       S.sheetDay = to; refreshDaySheet(); toast("Copied to " + dateParts(to).wd + ", " + dateParts(to).mon + " " + dateParts(to).day + ". Showing that day now."); break;
     }
     case "dev-out": {

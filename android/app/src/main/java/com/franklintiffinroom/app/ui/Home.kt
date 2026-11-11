@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material.icons.filled.TakeoutDining
 import androidx.compose.material.icons.filled.WineBar
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.LocalFireDepartment
@@ -78,6 +79,7 @@ import androidx.compose.ui.unit.sp
 import com.franklintiffinroom.app.core.Api
 import com.franklintiffinroom.app.core.AppModel
 import com.franklintiffinroom.app.core.AvailabilityResponse
+import com.franklintiffinroom.app.core.BookedDate
 import com.franklintiffinroom.app.core.Dish
 import com.franklintiffinroom.app.core.MenuCategory
 import com.franklintiffinroom.app.core.Money
@@ -385,9 +387,10 @@ fun DishRow(dish: Dish, inCart: Double, modifier: Modifier = Modifier) {
 fun AvailabilityScreen(nav: Nav) {
     var dates by remember { mutableStateOf<List<OpenDate>>(emptyList()) }
     var preDays by remember { mutableStateOf<List<PreorderDay>>(emptyList()) }
+    var booked by remember { mutableStateOf<List<BookedDate>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     suspend fun load() {
-        runCatching { Api.get<AvailabilityResponse>("availability") }.getOrNull()?.let { dates = it.dates; preDays = it.preorderDays.orEmpty() }
+        runCatching { Api.get<AvailabilityResponse>("availability") }.getOrNull()?.let { dates = it.dates; preDays = it.preorderDays.orEmpty(); booked = it.booked.orEmpty() }
         loading = false
     }
     LaunchedEffect(Unit) { load() }
@@ -411,13 +414,31 @@ fun AvailabilityScreen(nav: Nav) {
                 }
                 SectionTitle("Catering & LIVE Dose", size = 20)
             }
-            dates.forEach { d ->
-                Row(Modifier.fillMaxWidth().card(P.surface, P.line).padding(14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    DateBadge(d.date)
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(d.label, style = Type.bold(17.0), color = P.ink)
-                        d.summary.split(" · ").filter { it.isNotBlank() }.forEach { part ->
-                            LabelRow(if ("LIVE" in part) Icons.Outlined.LocalFireDepartment else Icons.Outlined.TakeoutDining, part, P.muted, 14.0)
+            // Open and booked days together, in date order.
+            val rows: List<Any> = (dates + booked).sortedBy { if (it is OpenDate) it.date else (it as BookedDate).date }
+            rows.forEach { r ->
+                if (r is OpenDate) {
+                    val d = r
+                    Row(Modifier.fillMaxWidth().card(P.surface, P.line).padding(14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        DateBadge(d.date)
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(d.label, style = Type.bold(17.0), color = P.ink)
+                            d.summary.split(" · ").filter { it.isNotBlank() }.forEach { part ->
+                                val isBooked = part.endsWith("booked")
+                                LabelRow(
+                                    if (isBooked) Icons.Outlined.EventAvailable else if ("LIVE" in part) Icons.Outlined.LocalFireDepartment else Icons.Outlined.TakeoutDining,
+                                    part, if (isBooked) P.red else P.muted, 14.0
+                                )
+                            }
+                        }
+                    }
+                } else if (r is BookedDate) {
+                    val text = if (r.lunch && r.dinner) "Booked for lunch & dinner" else if (r.lunch) "Booked for lunch" else "Booked for dinner"
+                    Row(Modifier.fillMaxWidth().card(P.red.copy(alpha = 0.07f), P.red.copy(alpha = 0.35f)).padding(14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        DateBadge(r.date)
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(r.label, style = Type.bold(17.0), color = P.ink)
+                            LabelRow(Icons.Outlined.EventAvailable, text, P.red, 14.0)
                         }
                     }
                 }

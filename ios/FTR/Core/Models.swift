@@ -158,6 +158,17 @@ struct AvailabilityResponse: Decodable {
     let dates: [OpenDate]
     let fulfillmentOptions: FulfillmentOptions?
     let preorderDays: [PreorderDay]?
+    /// Days Chef marked Booked (private events) - shown as Booked, not left out.
+    let booked: [BookedDate]?
+}
+
+struct BookedDate: Decodable, Identifiable, Hashable {
+    let date: String
+    let label: String
+    let lunch: Bool
+    let dinner: Bool
+    let summary: String
+    var id: String { date }
 }
 
 struct OpenDate: Decodable, Identifiable, Hashable {
