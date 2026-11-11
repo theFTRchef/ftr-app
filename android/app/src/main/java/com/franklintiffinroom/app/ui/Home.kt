@@ -147,14 +147,14 @@ fun HomeScreen(model: AppModel, nav: Nav) {
             ) {
                 Box(Modifier.fillMaxWidth().aspectRatio(4f / 3f).background(P.photo)) {
                     Image(
-                        painterResource(R.drawable.flagship_dose), "Chef cooking Mysore Masala Dose on the griddle at a party",
+                        painterResource(R.drawable.flagship_dose), "Chef cooking Mysore Masale Dose on the griddle at a party",
                         Modifier.fillMaxSize(), contentScale = ContentScale.Crop,
                     )
                     Text("OUR FLAGSHIP", style = Type.bold(11.0).copy(letterSpacing = 0.8.sp), color = P.turmericInk,
                         modifier = Modifier.padding(12.dp).background(P.turmericSoft, RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 5.dp))
                 }
                 Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("THE OG MYSORE MASALA DOSE", style = Type.display(28), color = P.ink)
+                    Text("THE OG MYSORE MASALE DOSE", style = Type.display(28), color = P.ink)
                     Text(if (lds?.open == false) "No LIVE Dose dates open right now" else "Cooked live at your party by Chef's crew. 100% vegetarian.", style = Type.body(14.0), color = P.muted)
                     Text("Book the LIVE Dose Station", style = Type.bold(14.0), color = P.leafInk,
                         modifier = Modifier.padding(top = 4.dp).background(P.leaf, RoundedCornerShape(50)).padding(horizontal = 18.dp, vertical = 12.dp))
@@ -175,7 +175,7 @@ fun HomeScreen(model: AppModel, nav: Nav) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("TAKE-HOME · SERVES 4", style = Type.bold(11.0).copy(letterSpacing = 1.sp), color = P.red)
                         Text(dib.title.uppercase(), style = Type.display(22), color = P.ink)
-                        val sub = if (dib.items.isEmpty()) "Take-home Masala Dose kit · coming soon"
+                        val sub = if (dib.items.isEmpty()) "Take-home Masale Dose kit · coming soon"
                         else dib.preorder?.next?.let { "Order by ${it.orderByLabel} · pickup ${it.pickupLabel}" } ?: "Next pickup day coming soon"
                         Text(sub, style = Type.body(13.0), color = P.muted)
                     }

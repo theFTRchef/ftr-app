@@ -318,7 +318,7 @@ async function sendWelcome(to, greet = true) {
         rows: [
           { id: "hub:order", title: "Place an order", description: "Start a catering or LIVE Dose Station order" },
           ...(preorders.open(menu).length && menu.categories.some((c) => c.type === "preorder" && (c.items || []).length)
-            ? [{ id: "hub:preorder", title: "Dose-in-a-Box", description: (preorderShort(menu) || "Take-home Masala Dose kit - pre-order").slice(0, 72) }]
+            ? [{ id: "hub:preorder", title: "Dose-in-a-Box", description: (preorderShort(menu) || "Take-home Masale Dose kit - pre-order").slice(0, 72) }]
             : []),
           { id: "hub:browse", title: "See our menu", description: "Browse dishes and prices without ordering" },
           { id: "hub:myorders", title: "My orders", description: "See your orders, or cancel one before it's paid" },

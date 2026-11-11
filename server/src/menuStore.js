@@ -68,9 +68,26 @@ function dedupeItemIds(menu) {
   return changed;
 }
 
+/** House spelling is "Masale Dose" - fix any older "Masala Dose/Dosa" text Chef or the seed data saved. */
+function fixDoseSpelling(menu) {
+  const re = /\bMasala(\s+)Dos[ae]\b/gi;
+  const fix = (t) => (typeof t === "string" ? t.replace(re, (m, sp) => (m === m.toUpperCase() ? `MASALE${sp}DOSE` : `Masale${sp}Dose`)) : t);
+  let changed = false;
+  const set = (obj, key) => {
+    if (obj && typeof obj[key] === "string") { const v = fix(obj[key]); if (v !== obj[key]) { obj[key] = v; changed = true; } }
+  };
+  ["tagline", "businessName"].forEach((k) => set(menu.settings, k));
+  for (const c of menu.categories || []) {
+    ["title", "rowTitle", "rowDescription", "description"].forEach((k) => set(c, k));
+    for (const i of c.items || []) ["title", "description", "size", "promoNote", "limitedNote"].forEach((k) => set(i, k));
+  }
+  return changed;
+}
+
 function getMenu() {
   const raw = fs.readFileSync(DATA_PATH, "utf8");
   const menu = JSON.parse(raw);
+  if (fixDoseSpelling(menu)) fs.writeFileSync(DATA_PATH, JSON.stringify(menu, null, 2));
   // One-time fix for menus saved before ids were unique menu-wide.
   if (dedupeItemIds(menu)) fs.writeFileSync(DATA_PATH, JSON.stringify(menu, null, 2));
   // Upgrade older single-window dates to the multi-window/pickup shape.

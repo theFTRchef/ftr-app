@@ -123,13 +123,13 @@ function ensureDoseInABox(menu) {
     flagship: true,
     title: "Dose-in-a-Box",
     rowTitle: "Dose-in-a-Box",
-    rowDescription: "Take-home Masala Dose kit for 4 - pre-order, pickup only",
+    rowDescription: "Take-home Masale Dose kit for 4 - pre-order, pickup only",
     items: [
       {
         id: DIB_ID,
         title: "Dose-in-a-Box",
         description:
-          "A take-home kit for Mysore Masala Dose, prepped and packed. You just make it on your tawa. In the box: dose batter, potato-onion palya, red garlic chutney and green coconut chutney.",
+          "A take-home kit for Mysore Masale Dose, prepped and packed. You just make it on your tawa. In the box: dose batter, potato-onion palya, red garlic chutney and green coconut chutney.",
         price: 0,
         size: "Kit - serves 4",
         servesMin: 4,

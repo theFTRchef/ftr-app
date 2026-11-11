@@ -116,7 +116,7 @@ struct LaunchView: View {
         VStack(spacing: 20) {
             Spacer()
             FTRLogo(size: 44)
-            Text("Bringing back the OG flavor of Masala Dose")
+            Text("Bringing back the OG flavor of Masale Dose")
                 .font(Typeface.tagline(18))
                 .foregroundStyle(Palette.red)
             if let err = model.loadError {
