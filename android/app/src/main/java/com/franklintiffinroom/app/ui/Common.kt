@@ -234,7 +234,7 @@ object Intents {
 /** The share message, same as the iPhone app's Share FTR. */
 fun shareMessage(phoneDisplay: String?, phoneDial: String?): String {
     val phone = phoneDisplay ?: "1-234-FTR-DOSE"
-    return "Franklin Tiffin Room - Karnataka-style vegetarian home catering in Somerset, NJ. The LIVE Masala Dose Station at your party, Dose-in-a-Box to make at home, and catering trays. " +
+    return "Franklin Tiffin Room - Karnataka-style vegetarian home catering in Somerset, NJ. The LIVE Masale Dose Station at your party, Dose-in-a-Box to make at home, and catering trays. " +
         "Order on WhatsApp: https://wa.me/${phoneDial ?: "12343873673"}?text=hi or call $phone. https://franklintiffinroom.com"
 }
 

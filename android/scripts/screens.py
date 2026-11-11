@@ -64,7 +64,7 @@ swipe_up()
 adb("shell", "input", "swipe", "540", "700", "540", "1800", "400")
 adb("shell", "input", "swipe", "540", "700", "540", "1800", "400")
 time.sleep(1)
-if tap("The OG Mysore Masala Dose"):
+if tap("The OG Mysore Masale Dose"):
     shot("08-live-dose")
     back(); time.sleep(2)
 if tap("Dose-in-a-Box"):
