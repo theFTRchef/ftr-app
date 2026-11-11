@@ -24,7 +24,7 @@ const tabSync = require("./tabSync");
 const adminAuth = require("./adminAuth");
 
 const BATCHES = {
-  T50: { count: 125, firstGift: 4001, title: "Triveni 50th anniversary souvenir bag", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" }
+  T50: { count: 130, firstGift: 4001, title: "Triveni 50th anniversary souvenir bag", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" }
 };
 
 const CODES_FILE = "gift-codes.json";
