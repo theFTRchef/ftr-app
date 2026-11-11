@@ -93,7 +93,8 @@ struct KitchenView: View {
         let verifier = Data(raw).base64URL
         let challenge = Data(SHA256.hash(data: Data(verifier.utf8))).base64URL
         var comps = URLComponents(url: start, resolvingAgainstBaseURL: false)
-        comps?.queryItems = (comps?.queryItems ?? []).filter { $0.name != "cc" } + [URLQueryItem(name: "cc", value: challenge)]
+        let existing = (comps?.queryItems ?? []).filter { $0.name != "cc" }
+        comps?.queryItems = existing + [URLQueryItem(name: "cc", value: challenge)]
         do {
             let callback = try await google.signIn(start: comps?.url ?? start)
             let code = URLComponents(url: callback, resolvingAgainstBaseURL: false)?
