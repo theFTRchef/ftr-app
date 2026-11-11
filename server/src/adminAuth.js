@@ -111,29 +111,33 @@ function loginPage({ error = "", next = "/admin", note = "" } = {}) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in · FTR Chef's Kitchen</title>
 <meta name="robots" content="noindex">
+<link rel="icon" href="/app/seal.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=Oswald:wght@500&display=swap" rel="stylesheet">
 <style>
-:root { --bg:#f3f5f2; --card:#fff; --ink:#1c2420; --muted:#66736b; --line:#d5dcd4; --leaf:#2e6a4c; --bad:#b3402e; }
-@media (prefers-color-scheme: dark) { :root { --bg:#121815; --card:#1a221e; --ink:#e8eee9; --muted:#9aa89f; --line:#2f3b35; --leaf:#5fae86; --bad:#e2735f; } }
+:root { --bg:#F7F1E8; --card:#FFFDF9; --ink:#3E2C28; --muted:#6E5D55; --line:#E4D8C6; --leaf:#A4483F; --gold:#B9954A; --bad:#9E3A2E; }
+@media (prefers-color-scheme: dark) { :root { --bg:#1F1B18; --card:#2A2521; --ink:#F3EBDD; --muted:#BFB2A3; --line:#433C35; --leaf:#E08A7E; --gold:#D9B76A; --bad:#F08A7C; } }
 * { box-sizing:border-box; }
 body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--ink);
-  font:16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding:16px; }
-.card { width:100%; max-width:380px; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:28px 24px; }
-.logo { width:44px; height:44px; border-radius:50%; border:6px solid var(--leaf); display:grid; place-items:center; margin-bottom:14px; }
-.logo::after { content:""; width:16px; height:16px; border-radius:50%; background:#d99a12; }
-h1 { font-size:22px; margin:0 0 4px; }
+  font:16px/1.45 "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding:16px; }
+.card { width:100%; max-width:380px; background:var(--card); border:1px solid var(--line); border-top:4px solid var(--gold); border-radius:20px; padding:28px 24px; text-align:center; }
+.card label, .card input, .err { text-align:left; }
+.logo { width:96px; height:96px; display:block; margin:0 auto 14px; }
+h1 { font:500 24px/1.1 "Oswald", "Arial Narrow", sans-serif; letter-spacing:.04em; text-transform:uppercase; margin:0 0 6px; }
 p { margin:0 0 20px; color:var(--muted); font-size:14.5px; }
 label { display:block; font-weight:600; font-size:14px; margin:14px 0 6px; }
 input { width:100%; font:inherit; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:transparent; color:var(--ink); }
 input:focus { outline:2px solid var(--leaf); outline-offset:1px; border-color:transparent; }
-button { width:100%; margin-top:22px; font:inherit; font-weight:700; padding:13px; border:0; border-radius:12px; background:var(--leaf); color:#fff; cursor:pointer; }
+button { width:100%; margin-top:22px; font:inherit; font-weight:700; padding:13px; border:0; border-radius:999px; background:var(--leaf); color:#fff; cursor:pointer; }
+@media (prefers-color-scheme: dark) { button { color:#2E2A26; } }
 .err { color:var(--bad); font-weight:600; font-size:14px; margin:14px 0 0; }
 .note { color:var(--leaf); font-weight:600; font-size:14px; margin:0 0 6px; }
-.g { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-top:8px; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); font-weight:700; text-decoration:none; }
+.g { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-top:8px; padding:13px; border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--ink); font-weight:700; text-decoration:none; }
 .g:focus-visible { outline:2px solid var(--leaf); outline-offset:2px; }
 .or { text-align:center; color:var(--muted); font-size:13px; margin:18px 0 0; }
 </style></head><body>
 <form class="card" method="post" action="/admin/login">
-  <div class="logo" aria-hidden="true"></div>
+  <img class="logo" src="/app/seal.png" alt="Franklin Tiffin Room seal" width="96" height="96">
   <h1>FTR Chef's Kitchen</h1>
   <p>${google ? "Sign in with Chef's Google account." : "Franklin Tiffin Room admin"}</p>
   ${note ? `<div class="note">${esc(note)}</div>` : ""}

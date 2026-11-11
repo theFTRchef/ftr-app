@@ -2,49 +2,55 @@
 <title>FTR Chef's Kitchen</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#F7F1E8">
+<link rel="icon" href="/app/seal.png" type="image/png">
+<link rel="apple-touch-icon" href="/app/seal.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Josefin+Sans:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,500&family=Josefin+Sans:wght@600;700&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
 <style>
 /* Layout: phone-first app shell - header, one scrolling view, bottom tab bar (side rail on wide screens), sticky save bar when edits are pending. */
 :root {
-  /* FTR brand, from the catering flyers: cream paper, forest green, chili red, marigold gold. */
-  --bg: #fffbf3;
-  --surface: #ffffff;
-  --surface-2: #f6eedd;
-  --line: #e8dcc4;
-  --fg: #1e3a27;
-  --muted: #4a5a4e;
-  --leaf: #1e3a27;         /* forest green - actions */
-  --leaf-ink: #fff6e6;
-  --leaf-soft: #e6ede4;
-  --turmeric: #e3a72f;     /* marigold - waiting on you */
-  --turmeric-soft: #fbefd0;
-  --turmeric-ink: #7a5200;
-  --good: #2e7d3a; --good-soft: #e3efe2;
-  --bad: #b23a2c;  --bad-soft: #f8ddd6;
-  --info: #2d5a8c; --info-soft: #dfe8f4;
-  --chili: #c8463f; --chili-soft: #f8ddd6; --chili-ink: #8e2a1a;   /* FRANKLIN red, booked days */
-  --shadow: 0 1px 2px rgba(30,58,39,.06), 0 6px 18px rgba(30,58,39,.06);
-  --f-display: "Fraunces", Georgia, "Times New Roman", serif;
+  /* FTR brand, same as the FTR-DOSE app ("Warm Sand"): sand paper, cocoa ink,
+     soft brick buttons, and the charcoal + gold of the FTR kitchen seal. */
+  --bg: #F7F1E8;
+  --surface: #FFFDF9;
+  --surface-2: #EEE6D8;
+  --line: #E4D8C6;
+  --fg: #3E2C28;
+  --muted: #6E5D55;
+  --leaf: #A4483F;         /* soft brick - actions */
+  --leaf-ink: #FFFFFF;
+  --leaf-soft: #F3DED9;
+  --turmeric: #B9954A;     /* seal gold - waiting on you */
+  --turmeric-soft: #F1E2C4;
+  --turmeric-ink: #6B4A1E;
+  --good: #4F6B57; --good-soft: #E3EADF;
+  --bad: #9E3A2E;  --bad-soft: #F6DCD6;
+  --info: #3F5F7A; --info-soft: #E0E8EF;
+  --chili: #A4483F; --chili-soft: #F3DED9; --chili-ink: #7E3029;
+  --charcoal: #2E2A26; --gold: #D4A84A;
+  --shadow: 0 1px 2px rgba(62,44,40,.06), 0 6px 18px rgba(62,44,40,.07);
+  --f-display: "Oswald", "Arial Narrow", sans-serif;
   --f-logo: "Josefin Sans", "Futura", "Century Gothic", sans-serif;
-  --f-body: "Outfit", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-body: "Archivo", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-serif: "Fraunces", Georgia, serif;
   --r: 14px;
   --tab-h: 64px;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #111a14; --surface: #18241c; --surface-2: #213027; --line: #2f3f34;
-  --fg: #fff6e6; --muted: #b3bcaf; --leaf: #f2c14e; --leaf-ink: #1e3a27; --leaf-soft: #22362a;
-  --turmeric: #f2c14e; --turmeric-soft: #3a2f14; --turmeric-ink: #f6d38a;
-  --good: #6cc196; --good-soft: #1d3428; --bad: #f08a7c; --bad-soft: #3d2420; --info: #8fb5e3; --info-soft: #1f2c3d;
-  --chili: #e8675e; --chili-soft: #43231d; --chili-ink: #ffb4a6;
+  --bg: #1F1B18; --surface: #2A2521; --surface-2: #35302B; --line: #433C35;
+  --fg: #F3EBDD; --muted: #BFB2A3; --leaf: #E08A7E; --leaf-ink: #2E2A26; --leaf-soft: #432823;
+  --turmeric: #D9B76A; --turmeric-soft: #3A2F1A; --turmeric-ink: #E9C77B;
+  --good: #9CC0A6; --good-soft: #26332A; --bad: #F08A7C; --bad-soft: #3D2420; --info: #9DB8D2; --info-soft: #22303C;
+  --chili: #E08A7E; --chili-soft: #43231D; --chili-ink: #F2B3A8;
   --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark; } }
 :root[data-theme="dark"] {
-  --bg: #111a14; --surface: #18241c; --surface-2: #213027; --line: #2f3f34;
-  --fg: #fff6e6; --muted: #b3bcaf; --leaf: #f2c14e; --leaf-ink: #1e3a27; --leaf-soft: #22362a;
-  --turmeric: #f2c14e; --turmeric-soft: #3a2f14; --turmeric-ink: #f6d38a;
-  --good: #6cc196; --good-soft: #1d3428; --bad: #f08a7c; --bad-soft: #3d2420; --info: #8fb5e3; --info-soft: #1f2c3d;
-  --chili: #e8675e; --chili-soft: #43231d; --chili-ink: #ffb4a6;
+  --bg: #1F1B18; --surface: #2A2521; --surface-2: #35302B; --line: #433C35;
+  --fg: #F3EBDD; --muted: #BFB2A3; --leaf: #E08A7E; --leaf-ink: #2E2A26; --leaf-soft: #432823;
+  --turmeric: #D9B76A; --turmeric-soft: #3A2F1A; --turmeric-ink: #E9C77B;
+  --good: #9CC0A6; --good-soft: #26332A; --bad: #F08A7C; --bad-soft: #3D2420; --info: #9DB8D2; --info-soft: #22303C;
+  --chili: #E08A7E; --chili-soft: #43231D; --chili-ink: #F2B3A8;
   --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark; }
 
 * { box-sizing: border-box; }
@@ -64,19 +70,13 @@ button { cursor: pointer; }
 .app { min-height: 100%; display: flex; flex-direction: column; }
 header.top {
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
-  background: var(--surface); border-bottom: 1px solid var(--line);
+  background: var(--surface); border-bottom: 3px solid var(--turmeric);
   padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   display: flex; align-items: center; gap: 12px;
 }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
-.mark {
-  width: 34px; height: 34px; border-radius: 24%; flex: none; position: relative;
-  background: #1e3a27; color: #fff6e6; display: grid; place-items: center; padding-top: 6px;
-  font: 700 13px/1 var(--f-logo); letter-spacing: .5px;
-}
-.mark::before { content: "FTR"; }
-.mark::after { content: ""; position: absolute; top: 16%; right: 15%; width: 28%; height: 17%; border-top: 2px solid #e8675e; border-right: 2px solid #e8675e; }
-.brand h1 { font: 700 18px/1.1 var(--f-display); margin: 0; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mark { width: 40px; height: 40px; flex: none; display: block; }
+.brand h1 { font: 500 19px/1.1 var(--f-display); margin: 0; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brand small { display: block; color: var(--muted); font-size: 12px; }
 .icon-btn {
   width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
@@ -351,10 +351,10 @@ button.li:hover { background: var(--surface-2); }
 <div class="app">
   <header class="top">
     <div class="brand">
-      <div class="mark" aria-hidden="true"></div>
+      <img class="mark" src="/app/seal.png" alt="" width="40" height="40">
       <div style="min-width:0">
-        <h1>FTR Chef's Kitchen</h1>
-        <small>Franklin Tiffin Room admin</small>
+        <h1>Chef's Kitchen</h1>
+        <small>Franklin Tiffin Room</small>
       </div>
     </div>
     <div class="top-actions">
