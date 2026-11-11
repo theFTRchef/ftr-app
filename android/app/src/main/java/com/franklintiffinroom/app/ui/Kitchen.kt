@@ -54,6 +54,21 @@ import kotlinx.serialization.Serializable
 /** The one-time code Google sign-in hands back (ftrdose://kitchen?code=...), set by MainActivity. */
 object KitchenAuth {
     var code by mutableStateOf<String?>(null)
+    /**
+     * A fresh secret for each Google sign-in. Only its SHA-256 goes to the server (cc);
+     * the code that comes back opens Chef's Kitchen only together with this secret, so
+     * another app that grabs the ftrdose:// link can't use it.
+     */
+    var verifier: String? = null
+
+    fun newChallenge(): String {
+        val raw = ByteArray(32).also { java.security.SecureRandom().nextBytes(it) }
+        val flags = android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP
+        val v = android.util.Base64.encodeToString(raw, flags)
+        verifier = v
+        val hash = java.security.MessageDigest.getInstance("SHA-256").digest(v.toByteArray(Charsets.US_ASCII))
+        return android.util.Base64.encodeToString(hash, flags)
+    }
 }
 
 /**
@@ -93,7 +108,8 @@ fun KitchenSheet(onDismiss: () -> Unit) {
     fun signInWithGoogle() {
         val start = googleStart ?: return run { open() }
         loading = false
-        runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(start)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        val withChallenge = Uri.parse(start).buildUpon().appendQueryParameter("cc", KitchenAuth.newChallenge()).build()
+        runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, withChallenge).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             .onFailure { error = "Couldn't open the browser for Google sign-in." }
     }
     LaunchedEffect(Unit) { open() }
@@ -102,7 +118,9 @@ fun KitchenSheet(onDismiss: () -> Unit) {
         val code = KitchenAuth.code ?: return@LaunchedEffect
         KitchenAuth.code = null
         signedOut = false; error = null; loading = true
-        val entry = Api.absolute("/admin/app-entry?code=" + Uri.encode(code)) ?: return@LaunchedEffect
+        val v = KitchenAuth.verifier.orEmpty()
+        KitchenAuth.verifier = null
+        val entry = Api.absolute("/admin/app-entry?code=" + Uri.encode(code) + "&v=" + Uri.encode(v)) ?: return@LaunchedEffect
         if (web != null && url != null) web?.loadUrl(entry) else url = entry
     }
     BackHandler(enabled = web?.canGoBack() == true) { web?.goBack() }

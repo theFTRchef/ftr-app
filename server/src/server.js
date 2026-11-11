@@ -9,8 +9,52 @@ const payments = require("./payments");
 const { paymentText } = require("./paymentText");
 
 const app = express();
-app.use(express.json());
+app.disable("x-powered-by");
+// Security headers on every response (the admin page must not be framed by other sites).
+app.use((req, res, next) => {
+  res.set({
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+  });
+  next();
+});
+// Keep the raw body so Vonage's webhook signature can be checked.
+app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: true }));
+
+/**
+ * Vonage signs every Messages API webhook with a JWT (HS256, the account's
+ * signature secret) whose payload_hash is the SHA-256 of the body. With
+ * VONAGE_SIGNATURE_SECRET set, unsigned or tampered webhooks are refused, so
+ * nobody can fake a WhatsApp message from Chef or a customer.
+ */
+function vonageSigned(req) {
+  const secret = process.env.VONAGE_SIGNATURE_SECRET;
+  if (!secret) {
+    if (!vonageSigned.warned) { console.warn("[webhooks] VONAGE_SIGNATURE_SECRET not set: inbound webhooks are not verified"); vonageSigned.warned = true; }
+    return true;
+  }
+  try {
+    const m = /^Bearer\s+(.+)$/i.exec(req.get("authorization") || "");
+    if (!m) return false;
+    const [h, p, sig] = m[1].split(".");
+    const crypto = require("crypto");
+    const want = crypto.createHmac("sha256", secret).update(`${h}.${p}`).digest("base64url");
+    if (!sig || sig.length !== want.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want))) return false;
+    const claims = JSON.parse(Buffer.from(p, "base64url").toString("utf8"));
+    if (claims.exp && claims.exp * 1000 < Date.now()) return false;
+    if (claims.payload_hash) {
+      const hash = crypto.createHash("sha256").update(req.rawBody || Buffer.from("")).digest("hex");
+      if (hash !== claims.payload_hash) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function normalizeInbound(body) {
   const from =
@@ -45,6 +89,10 @@ mountAuthRoutes(app);
 app.use("/api/v1", require("./appApi").router());
 
 app.post("/webhooks/inbound", async (req, res) => {
+  if (!vonageSigned(req)) {
+    console.warn("[webhooks] refused an unsigned or invalid inbound webhook");
+    return res.status(401).end();
+  }
   res.status(200).end();
   try {
     const payload = normalizeInbound(req.body);
@@ -65,6 +113,7 @@ app.post("/webhooks/inbound", async (req, res) => {
 });
 
 app.post("/webhooks/status", (req, res) => {
+  if (!vonageSigned(req)) return res.status(401).end();
   res.status(200).end();
   const b = req.body || {};
   // Delivered/read receipts are routine - only log problems.
@@ -330,9 +379,21 @@ app.post("/admin/api/orders/:id/decision", requireAdminAuth, async (req, res) =>
 
 // FTR app: Chef's Kitchen opens here with a one-time code (see appApi.js /admin/handoff).
 app.get("/admin/app-entry", (req, res) => {
-  if (!require("./adminAuth").useEntryCode(req.query.code)) return res.redirect(302, "/admin/login");
-  require("./adminAuth").issueSession(req, res);
+  if (!require("./adminAuth").useEntryCode(req.query.code, req.query.v)) return res.redirect(302, "/admin/login");
+  require("./adminAuth").issueSession(req, res, "FTR-DOSE app");
   res.redirect(302, "/admin");
+});
+
+// Chef's Kitchen › Setup › Signed-in devices
+app.get("/admin/api/sessions", requireAdminAuth, (req, res) => {
+  res.json(require("./adminAuth").listSessions(req));
+});
+app.delete("/admin/api/sessions/:id", requireAdminAuth, (req, res) => {
+  res.json({ ok: require("./adminAuth").endSession(String(req.params.id)) });
+});
+app.post("/admin/api/sessions/sign-out-others", requireAdminAuth, (req, res) => {
+  require("./adminAuth").endOtherSessions(req);
+  res.json({ ok: true });
 });
 
 app.post("/admin/api/orders/reset", requireAdminAuth, async (req, res) => {

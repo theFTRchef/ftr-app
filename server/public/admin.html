@@ -1981,7 +1981,31 @@ function depositExample(kind) {
   const d = Number(p.ldsDaysBefore) || 0;
   return "Saturday event → due " + WD[(6 - d + 70) % 7] + " by " + t12(p.ldsTime || "10:00") + ". Sunday event → " + WD[(7 - d + 70) % 7] + ".";
 }
+function ago(t) {
+  const m = Math.round((Date.now() - t) / 60000);
+  if (m < 2) return "just now";
+  if (m < 60) return m + " min ago";
+  const h = Math.round(m / 60);
+  if (h < 36) return h + " hr ago";
+  return Math.round(h / 24) + " days ago";
+}
+async function loadDevices() {
+  const box = document.getElementById("devices");
+  if (!box) return;
+  if (S.mode !== "live") { box.innerHTML = '<p class="small muted" style="margin:0">Preview only – on the real admin page this lists every phone and browser signed in to Chef\'s Kitchen.</p>'; return; }
+  try {
+    const list = await api("GET", "/admin/api/sessions");
+    const others = list.filter((x) => !x.current).length;
+    box.innerHTML = '<p class="small muted" style="margin:0">Every phone and browser signed in to Chef\'s Kitchen. If you don\'t recognise one, sign it out.</p>' +
+      list.map((x) => '<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b>' + esc(x.device) + '</b>' + (x.current ? ' <span class="pill">This device</span>' : "") +
+        '<br><span class="small muted">' + esc(x.how || "Signed in") + ' · signed in ' + ago(x.created) + ' · last used ' + ago(x.lastSeen) + '</span></span>' +
+        (x.current ? "" : '<button class="btn sm" data-act="dev-out" data-id="' + esc(x.id) + '">Sign out</button>') + '</div>').join("") +
+      (others ? '<button class="btn" data-act="dev-out-others">Sign out all other devices</button>' : "");
+  } catch (e) { box.innerHTML = '<p class="small muted" style="margin:0">Couldn\'t load signed-in devices.</p>'; }
+}
+
 function viewSetup() {
+  setTimeout(loadDevices, 0);
   const s = S.menu.settings, a = S.menu.availability, d = s.delivery;
   const f = (id, label, val, attrs, hint) => '<label class="field"><span>' + label + '</span><input id="' + id + '" data-bind="' + id + '" value="' + esc(val ?? "") + '" ' + (attrs || "") + " />" + (hint ? '<span class="hint">' + hint + "</span>" : "") + "</label>";
   return '<div><h2 class="h-page">Setup</h2><p class="sub">Business details, order rules, pickup times and delivery area.</p></div>' +
@@ -2061,6 +2085,7 @@ function viewSetup() {
         '<div class="row"><label class="btn sm">' + (S.qr ? "Replace" : "Upload QR code") + '<input type="file" id="qrFile" accept="image/png,image/jpeg" hidden /></label>' +
         (S.qr ? '<button class="btn sm ghost" data-act="qr-del">Remove</button>' : "") + "</div></div></div>") +
     "</div>" +
+    '<div class="h-sec">Signed-in devices</div><div class="card pad stack" id="devices"><p class="small muted" style="margin:0">Loading…</p></div>' +
     '<div class="h-sec">Test data</div><div class="card pad danger-zone"><h3>Reset all orders</h3>' +
       '<p class="small muted" style="margin:0 0 12px">For clearing test orders before you go live. Removes every order here and in the Google Sheet. A backup copy is kept on the server.</p>' +
       '<p class="small" style="margin:0 0 12px"><b>Saved customers are always kept.</b> To remove a customer, delete them one at a time on the Customers page.</p>' +
@@ -2204,6 +2229,15 @@ document.addEventListener("click", (e) => {
       const src = entryFor(date, true), to = addDays(date, 7), dst = entryFor(to, true);
       Object.assign(dst, clone({ pickupAM: src.pickupAM, pickupPM: src.pickupPM, catering: src.catering, liveDose: src.liveDose }));
       S.sheetDay = to; refreshDaySheet(); toast("Copied to " + dateParts(to).wd + ", " + dateParts(to).mon + " " + dateParts(to).day + ". Showing that day now."); break;
+    }
+    case "dev-out": {
+      api("DELETE", "/admin/api/sessions/" + encodeURIComponent(el.dataset.id)).then(() => { toast("Signed out that device."); loadDevices(); }).catch((e) => toast(e.message));
+      break;
+    }
+    case "dev-out-others": {
+      confirmSheet({ title: "Sign out all other devices?", text: "Every other phone and browser will need to sign in with Chef's Google account again.", confirmLabel: "Sign out others", danger: true,
+        onConfirm: () => api("POST", "/admin/api/sessions/sign-out-others").then(() => { toast("Signed out all other devices."); loadDevices(); }).catch((e) => toast(e.message)) });
+      break;
     }
     case "logout": {
       const go = () => {
