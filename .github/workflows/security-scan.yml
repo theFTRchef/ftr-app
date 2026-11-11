@@ -1,0 +1,23 @@
+name: Security scan (read-only checks)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: DNS and email records
+        run: |
+          for t in "TXT franklintiffinroom.com" "TXT _dmarc.franklintiffinroom.com" "TXT google._domainkey.franklintiffinroom.com" "MX franklintiffinroom.com" "CAA franklintiffinroom.com" "A bot.franklintiffinroom.com" "A franklintiffinroom.com" "CNAME www.franklintiffinroom.com"; do echo "== $t"; dig +short $t; done
+      - name: HTTPS and security headers
+        run: |
+          for u in https://franklintiffinroom.com/ https://bot.franklintiffinroom.com/ https://bot.franklintiffinroom.com/admin/login https://bot.franklintiffinroom.com/api/v1/health; do echo "== $u"; curl -sS -o /dev/null -D - "$u" | grep -iE "^HTTP|strict-transport|content-security|x-frame|x-content-type|referrer-policy|permissions-policy|server:|x-powered-by" ; done
+          echo "== http redirect"; curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' http://bot.franklintiffinroom.com/ ; curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' http://franklintiffinroom.com/
+          echo "== TLS"; echo | openssl s_client -connect bot.franklintiffinroom.com:443 -servername bot.franklintiffinroom.com 2>/dev/null | openssl x509 -noout -dates -issuer
+          echo "== exposed paths (should all be 404)"; for p in /.env /data/orders.json /backups/ /.git/config /src/server.js /package.json; do curl -s -o /dev/null -w "$p %{http_code}\n" "https://bot.franklintiffinroom.com$p"; done
+          echo "== open ports"; for port in 22 80 443 3000 8080; do timeout 3 bash -c "echo > /dev/tcp/bot.franklintiffinroom.com/$port" 2>/dev/null && echo "$port open" || echo "$port closed"; done
+      - name: npm audit (server)
+        working-directory: server
+        run: npm audit --omit=dev || true
