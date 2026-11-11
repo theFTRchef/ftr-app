@@ -102,7 +102,7 @@ fun KitchenSheet(onDismiss: () -> Unit) {
         val code = KitchenAuth.code ?: return@LaunchedEffect
         KitchenAuth.code = null
         signedOut = false; error = null; loading = true
-        val entry = Api.absolute("/admin/app-entry?code=" + Uri.encode(code))
+        val entry = Api.absolute("/admin/app-entry?code=" + Uri.encode(code)) ?: return@LaunchedEffect
         if (web != null && url != null) web?.loadUrl(entry) else url = entry
     }
     BackHandler(enabled = web?.canGoBack() == true) { web?.goBack() }
