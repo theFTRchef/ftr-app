@@ -24,7 +24,7 @@ const tabSync = require("./tabSync");
 const adminAuth = require("./adminAuth");
 
 const BATCHES = {
-  T50: { count: 125, firstGift: 4001, title: "Triveni 50th anniversary souvenir bag", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" },
+  T50: { count: 130, firstGift: 4001, title: "Triveni 50th anniversary souvenir bag", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" },
   // Shareable: any number of phones can open these (flyers, a table card, the counter).
   BBR: { count: 10, firstGift: 9001, title: "Bisi Bele Bhath recipe (shareable)", product: "FTR Bisi Bele Bhath Pudi", recipe: "bbb25", multi: true }
 };
