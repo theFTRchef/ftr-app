@@ -122,7 +122,7 @@ const SURVEY_FIELDS = [
   ["missed", "Steps missed or unclear"],
   ["emphasis", "What to emphasize more"],
   ["different", "What they would do differently"],
-  ["better", "Their BBB secret"],
+  ["better", "Better BBB experience"],
   ["notes", "Notes for FTR"],
   ["buyAgain", "Would buy FTR Bisi Bele Bhath Pudi"]
 ];
@@ -392,7 +392,7 @@ ${q("ease", "How easy was the recipe to follow?", ["1", "2", "3", "4", "5"])}<p 
 ${t("missed", "Were any steps missing or unclear?")}
 ${t("emphasis", "Anything we should emphasize more in the recipe?")}
 ${t("different", "Anything you would do differently?")}
-${t("better", "Is your BBB better than FTR's? Share your secret!")}
+${t("better", "If you have had a better BBB, share your experience and help us improve.")}
 ${t("notes", "Any other notes for FTR")}
 ${q("buyAgain", "Would you buy FTR Bisi Bele Bhath Pudi?", ["Yes", "Maybe", "No"])}
 <label for="sname">Name <span class="note">(optional)</span></label><input id="sname" name="name" type="text" maxlength="80" value="${esc((prev && prev.name) || r.name || "")}">
@@ -454,7 +454,7 @@ const APP_QUESTIONS = {
   missed: "Were any steps missing or unclear?",
   emphasis: "Anything we should emphasize more in the recipe?",
   different: "Anything you would do differently?",
-  better: "Is your BBB better than FTR's? Share your secret!",
+  better: "If you have had a better BBB, share your experience and help us improve.",
   notes: "Any other notes for FTR",
   buyAgain: "Would you buy FTR Bisi Bele Bhath Pudi?"
 };
