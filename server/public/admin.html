@@ -2020,8 +2020,23 @@ async function loadDevices() {
   } catch (e) { box.innerHTML = '<p class="small muted" style="margin:0">Couldn\'t load signed-in devices.</p>'; }
 }
 
+async function loadQrLabels() {
+  const box = document.getElementById("qrlabels");
+  if (!box) return;
+  if (S.mode !== "live") { box.innerHTML = '<p class="small muted" style="margin:0">Preview only – on the real admin page this lists each batch of recipe QR codes with a printable label sheet.</p>'; return; }
+  try {
+    const g = await api("GET", "/admin/api/gift");
+    if (!g.ready) { box.innerHTML = '<p class="small muted" style="margin:0">QR codes are off until GIFT_CODE_SECRET is set on the server.</p>'; return; }
+    box.innerHTML = Object.entries(g.batches).map(([id, b]) =>
+      '<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b>' + esc(b.title) + '</b><br><span class="small muted">' + b.codes + ' codes · ' +
+      (b.multi ? 'work on any phone · scanned ' + b.scans + ' times' : 'one phone each · ' + b.scanned + ' used') + ' · ' + b.surveys + ' feedback</span></span>' +
+      '<a class="btn sm" href="/admin/gift/' + encodeURIComponent(id) + '/labels">Open label sheet</a></div>').join("");
+  } catch (e) { box.innerHTML = '<p class="small muted" style="margin:0">Couldn\'t load QR labels.</p>'; }
+}
+
 function viewSetup() {
   setTimeout(loadDevices, 0);
+  setTimeout(loadQrLabels, 0);
   const s = S.menu.settings, a = S.menu.availability, d = s.delivery;
   const f = (id, label, val, attrs, hint) => '<label class="field"><span>' + label + '</span><input id="' + id + '" data-bind="' + id + '" value="' + esc(val ?? "") + '" ' + (attrs || "") + " />" + (hint ? '<span class="hint">' + hint + "</span>" : "") + "</label>";
   return '<div><h2 class="h-page">Setup</h2><p class="sub">Business details, order rules, pickup times and delivery area.</p></div>' +
@@ -2101,6 +2116,7 @@ function viewSetup() {
         '<div class="row"><label class="btn sm">' + (S.qr ? "Replace" : "Upload QR code") + '<input type="file" id="qrFile" accept="image/png,image/jpeg" hidden /></label>' +
         (S.qr ? '<button class="btn sm ghost" data-act="qr-del">Remove</button>' : "") + "</div></div></div>") +
     "</div>" +
+    '<div class="h-sec">Recipe QR labels</div><div class="card pad stack" id="qrlabels"><p class="small muted" style="margin:0">Loading…</p></div>' +
     '<div class="h-sec">Signed-in devices</div><div class="card pad stack" id="devices"><p class="small muted" style="margin:0">Loading…</p></div>' +
     '<div class="h-sec">Test data</div><div class="card pad danger-zone"><h3>Reset all orders</h3>' +
       '<p class="small muted" style="margin:0 0 12px">For clearing test orders before you go live. Removes every order here and in the Google Sheet. A backup copy is kept on the server.</p>' +

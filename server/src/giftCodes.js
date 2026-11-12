@@ -24,7 +24,9 @@ const tabSync = require("./tabSync");
 const adminAuth = require("./adminAuth");
 
 const BATCHES = {
-  T50: { count: 125, firstGift: 4001, title: "Triveni 50th anniversary souvenir bag", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" }
+  T50: { count: 125, firstGift: 4001, title: "Triveni 50th anniversary souvenir bag", product: "FTR Bisi Bele Bhath Pudi, 25 g", recipe: "bbb25" },
+  // Shareable: any number of phones can open these (flyers, a table card, the counter).
+  BBR: { count: 10, firstGift: 9001, title: "Bisi Bele Bhath recipe (shareable)", product: "FTR Bisi Bele Bhath Pudi", recipe: "bbb25", multi: true }
 };
 
 const CODES_FILE = "gift-codes.json";
@@ -188,7 +190,7 @@ function deviceId(req, res) {
 
 /** Who is this visitor for this code? "owner", "new" (unclaimed) or "other". */
 function standing(info, dev) {
-  if (info.test || info.chef) return "owner";
+  if (info.test || info.chef || info.batch.multi) return "owner";
   const r = codes()[info.code];
   if (!r || !r.claimedAt) return "new";
   return r.device_id === dev ? "owner" : "other";
@@ -198,6 +200,7 @@ function standing(info, dev) {
 function chefNote(info) {
   if (info.test) return "";
   const r = codes()[info.code] || {};
+  if (info.batch.multi) return `Chef preview: shareable QR no. ${info.gift} works on any number of phones. Scanned ${r.scans || 0} time${r.scans === 1 ? "" : "s"} so far; your scan doesn't count.`;
   if (!r.claimedAt) return `Chef preview: gift no. ${info.gift} is not used yet. Your scan doesn't count, so it still works for a customer.`;
   const who = [r.name, r.phone].filter(Boolean).join(", ");
   return `Chef preview: gift no. ${info.gift} was used ${stamp(r.claimedAt)}${who ? ` by ${who}` : ""} on ${r.device || "a phone"}. Your scan doesn't count.`;
@@ -357,8 +360,8 @@ function welcomeForm(info, r) {
 }
 
 function giftPage(info, r) {
-  const done = surveys().some((s) => s.code === info.code);
-  const kicker = info.test ? "Chef's test code · reusable" : info.chef ? `Chef preview · Gift no. ${info.gift} · not counted` : `Franklin Tiffin Room · Gift no. ${info.gift}`;
+  const done = !info.batch.multi && surveys().some((s) => s.code === info.code);
+  const kicker = info.test ? "Chef's test code · reusable" : info.chef ? `Chef preview · Gift no. ${info.gift} · not counted` : info.batch.multi ? "Franklin Tiffin Room · Recipe card" : `Franklin Tiffin Room · Gift no. ${info.gift}`;
   const note = info.chef ? `<p class="card hi" style="margin:14px 0 0">${esc(chefNote(info))}</p>` : "";
   return shell("Your FTR Bisi Bele Bhath Pudi recipe", `
 ${recipeHtml(info.batch.recipe, kicker)}
@@ -480,6 +483,15 @@ function appScan(raw, who) {
   }
   const all = codes();
   const r = all[info.code] || {};
+  if (info.batch.multi) {
+    // Shareable code: count the scan, never lock it to a phone.
+    all[info.code] = { ...r, claimedAt: r.claimedAt || new Date().toISOString(), device: r.device || device, scans: (r.scans || 0) + 1 };
+    store.write(CODES_FILE, all);
+    logScan(info, "Scan (shareable, app)", device);
+    syncSheets();
+    const mine = who.phone ? surveys().find((s) => s.code === info.code && s.phone === who.phone) : null;
+    return { gift: base, recipe: appRecipe(info.batch.recipe), survey: { questions: appSurveyForm(), answers: (mine && mine.answers) || {}, done: !!mine } };
+  }
   const st = standing(info, who.owner);
   if (st === "other") {
     all[info.code] = { ...r, blocked: (r.blocked || 0) + 1 };
@@ -513,9 +525,10 @@ function appSurvey(raw, who, body) {
     const v = clean(a[k], 1500);
     answers[k] = SURVEY_OPTIONS[k] && v && !SURVEY_OPTIONS[k].includes(v) ? "" : v;
   }
-  const r = codes()[info.code] || {};
-  const list = surveys().filter((s) => s.code !== info.code);
-  list.push({ at: new Date().toISOString(), code: info.code, n: info.n, batchId: info.batchId, name: who.name || r.name || "", phone: who.phone || r.phone || "", answers, via: "app" });
+  const r = info.batch.multi ? {} : codes()[info.code] || {};
+  const phone = who.phone || r.phone || "";
+  const list = surveys().filter((s) => s.code !== info.code || (info.batch.multi && (!phone || s.phone !== phone)));
+  list.push({ at: new Date().toISOString(), code: info.code, n: info.n, batchId: info.batchId, name: who.name || r.name || "", phone, answers, via: "app" });
   store.write(SURVEY_FILE, list);
   syncSheets();
   return { ok: true };
@@ -535,7 +548,8 @@ function register(app, requireAdminAuth) {
     const out = {};
     for (const [id, b] of Object.entries(BATCHES)) {
       const used = Object.keys(all).filter((c) => c.startsWith(id + "-") && all[c].claimedAt).length;
-      out[id] = { title: b.title, codes: b.count, scanned: used, surveys: surveys().filter((s) => s.batchId === id).length };
+      const scans = Object.keys(all).filter((c) => c.startsWith(id + "-")).reduce((t, c) => t + (all[c].scans || 0), 0);
+      out[id] = { title: b.title, codes: b.count, scanned: used, scans, multi: !!b.multi, surveys: surveys().filter((s) => s.batchId === id).length };
     }
     res.json({ ready: !!secret(), batches: out });
   });
@@ -546,6 +560,31 @@ function register(app, requireAdminAuth) {
     const lines = ["label,code,url"];
     for (let n = 1; n <= b.count; n++) lines.push(`${n},${makeCode(id, n)},${urlFor(makeCode(id, n))}`);
     res.type("text/csv").set("Content-Disposition", `attachment; filename="${id}-labels.csv"`).send(lines.join("\n") + "\n");
+  });
+
+  // Printable sheet of QR labels for a batch (Chef's Kitchen › Setup › Recipe QR labels).
+  app.get("/admin/gift/:batch/labels", requireAdminAuth, async (req, res) => {
+    const id = String(req.params.batch).toUpperCase();
+    const b = BATCHES[id];
+    if (!b || !secret()) return res.status(404).type("text").send("Unknown batch, or GIFT_CODE_SECRET is not set.");
+    const QR = require("qrcode");
+    const cells = [];
+    for (let n = 1; n <= b.count; n++) {
+      const code = makeCode(id, n);
+      const svg = await QR.toString(urlFor(code), { type: "svg", errorCorrectionLevel: "M", margin: 1, color: { dark: "#2E2A26", light: "#FFFFFF" } });
+      cells.push(`<figure class="lab">${svg}<figcaption><b>${b.multi ? "Scan for the recipe" : "Scan for your gift"}</b><span>${esc(b.product)}</span><small>${b.multi ? "Shareable QR" : "Gift no."} ${giftNo(id, n)} · ${esc(code)}</small></figcaption></figure>`);
+    }
+    res.set("Cache-Control", "no-store").type("html").send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>${esc(b.title)} · QR labels</title>
+<style>
+body{margin:0;background:#F7F1E8;color:#2E2A26;font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:20px 16px 8px;max-width:900px;margin:0 auto}h1{font-size:1.3rem;margin:0 0 4px}header p{margin:0;color:#6E5D55}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;padding:16px;max-width:900px;margin:0 auto}
+.lab{margin:0;background:#fff;border:1px solid #E4D8C6;border-radius:14px;padding:14px;display:grid;gap:8px;justify-items:center;text-align:center;break-inside:avoid}
+.lab svg{width:100%;max-width:170px;height:auto}figcaption{display:grid;gap:2px}figcaption b{font-size:1rem}figcaption span{color:#6E5D55;font-size:.85rem}figcaption small{color:#8A6A2E;font-size:.72rem;letter-spacing:.02em}
+@media print{body{background:#fff}header p{display:none}.grid{gap:8px}.lab{border-color:#ccc}}
+</style></head><body><header><h1>${esc(b.title)}</h1><p>${b.count} QR codes${b.multi ? " that work on any number of phones" : ", each works on one phone"}. Each opens the recipe in the Charcoal &amp; Gold card. Print this page, or save it as a PDF, and cut out the labels.</p></header>
+<main class="grid">${cells.join("")}</main></body></html>`);
   });
 
   function load(req, res) {
@@ -570,6 +609,15 @@ function register(app, requireAdminAuth) {
     const dev = deviceId(req, res);
     const device = deviceOf(req.get("user-agent"));
     if (info.test || info.chef) return res.type("html").send(giftPage(info, { skipped: true }));
+    if (info.batch.multi) {
+      const all = codes();
+      const r = all[info.code] || {};
+      all[info.code] = { ...r, claimedAt: r.claimedAt || new Date().toISOString(), device: r.device || device, scans: (r.scans || 0) + 1 };
+      store.write(CODES_FILE, all);
+      logScan(info, "Scan (shareable)", device);
+      syncSheets();
+      return res.type("html").send(giftPage(info, { skipped: true }));
+    }
     const all = codes();
     const r = all[info.code] || {};
     const who = standing(info, dev);
@@ -617,8 +665,8 @@ function register(app, requireAdminAuth) {
     const info = load(req, res);
     if (!info) return;
     if (standing(info, readCookie(req)) !== "owner") return res.status(410).type("html").send(usedPage());
-    const prev = surveys().find((s) => s.code === info.code);
-    res.type("html").send(surveyPage(info, codes()[info.code], prev));
+    const prev = info.batch.multi ? null : surveys().find((s) => s.code === info.code);
+    res.type("html").send(surveyPage(info, info.batch.multi ? {} : codes()[info.code], prev));
   });
 
   app.post("/g/:code/survey", (req, res) => {
@@ -629,7 +677,7 @@ function register(app, requireAdminAuth) {
     const answers = {};
     for (const [k] of SURVEY_FIELDS) answers[k] = clean(b[k], 1500);
     if (info.test || info.chef) return res.type("html").send(shell("Thank you!", `<h1>Test feedback received</h1><p class="sub">Chef's previews don't save answers.</p><a class="btn alt" href="/g/${esc(info.code)}">Back to the recipe</a>`));
-    const list = surveys().filter((s) => s.code !== info.code);
+    const list = info.batch.multi ? surveys() : surveys().filter((s) => s.code !== info.code);
     list.push({ at: new Date().toISOString(), code: info.code, n: info.n, batchId: info.batchId, name: clean(b.name, 80), phone: clean(b.phone, 20), answers });
     store.write(SURVEY_FILE, list);
     syncSheets();
