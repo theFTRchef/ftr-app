@@ -53,10 +53,25 @@ struct OpenedRecipe: Equatable {
     var recipe: Recipe
     var gift: GiftInfo?
     var survey: GiftSurvey?
+    /// The code that opened it, so it can be saved to the account.
+    var source: RecipeCode.Kind? = nil
+    /// Set when this recipe is already in Account › My recipes.
+    var savedId: String? = nil
+}
+
+/// A recipe kept in the customer's account (Account › My recipes).
+struct SavedRecipe: Decodable, Equatable, Identifiable {
+    let id: String
+    let kind: String
+    let code: String
+    let title: String
+    let subtitle: String?
+    let savedAt: String
 }
 
 private struct RecipeResponse: Decodable { let recipe: Recipe }
 private struct GiftResponse: Decodable { let gift: GiftInfo; let recipe: Recipe; let survey: GiftSurvey }
+private struct SavedResponse: Decodable { let recipe: Recipe; let gift: GiftInfo?; let survey: GiftSurvey? }
 
 @MainActor
 enum RecipeCode {
@@ -97,11 +112,30 @@ enum RecipeCode {
         switch kind {
         case .recipe(let token):
             let r: RecipeResponse = try await APIClient.shared.get("recipes/scan/\(token)")
-            return OpenedRecipe(recipe: r.recipe)
+            return OpenedRecipe(recipe: r.recipe, source: kind)
         case .gift(let code):
             let r: GiftResponse = try await APIClient.shared.get("gift/\(code)")
-            return OpenedRecipe(recipe: r.recipe, gift: r.gift, survey: r.survey)
+            return OpenedRecipe(recipe: r.recipe, gift: r.gift, survey: r.survey, source: kind)
         }
+    }
+
+    /// Open a recipe from Account › My recipes (read fresh from the server).
+    static func open(saved: SavedRecipe) async throws -> OpenedRecipe {
+        let r: SavedResponse = try await APIClient.shared.get("me/recipes/\(saved.id)")
+        let kind: Kind = saved.kind == "recipe" ? .recipe(saved.code) : .gift(saved.code)
+        return OpenedRecipe(recipe: r.recipe, gift: r.gift, survey: r.survey, source: kind, savedId: saved.id)
+    }
+
+    static func save(_ kind: Kind) async throws -> SavedRecipe {
+        struct Body: Encodable { let kind: String; let code: String }
+        struct R: Decodable { let saved: SavedRecipe }
+        let body: Body
+        switch kind {
+        case .recipe(let t): body = Body(kind: "recipe", code: t)
+        case .gift(let c): body = Body(kind: "gift", code: c)
+        }
+        let r: R = try await APIClient.shared.post("me/recipes", body)
+        return r.saved
     }
 
     static func sendSurvey(code: String, answers: [String: String]) async throws {
@@ -112,10 +146,10 @@ enum RecipeCode {
 
 /// The Home-screen card that opens the scanner.
 struct ScanRecipeCard: View {
-    @State private var showScan = false
+    @Environment(AppModel.self) private var model
 
     var body: some View {
-        Button { showScan = true } label: {
+        Button { model.scanOpened = nil; model.scanOpen = true } label: {
             HStack(spacing: 14) {
                 Image(systemName: "qrcode.viewfinder")
                     .font(.system(size: 28, weight: .regular))
@@ -141,10 +175,9 @@ struct ScanRecipeCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint("Opens the camera to scan the QR code on an FTR masala packet")
-        .fullScreenCover(isPresented: $showScan) { RecipeScanFlow() }
         .onAppear {
             // (Screenshot runs: -ftrScanToken <token> opens the recipe without the camera.)
-            if ProcessInfo.processInfo.arguments.contains("-ftrScanToken") { showScan = true }
+            if ProcessInfo.processInfo.arguments.contains("-ftrScanToken") && model.scanOpened == nil { model.scanOpen = true }
         }
     }
 }
@@ -152,7 +185,12 @@ struct ScanRecipeCard: View {
 /// Camera → recipe. Full screen; Close at the top.
 struct RecipeScanFlow: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var opened: OpenedRecipe?
+    @Environment(AppModel.self) private var model
+    /// Kept in the app model: turning the phone rebuilds the screen, and the recipe stays.
+    private var opened: OpenedRecipe? {
+        get { model.scanOpened }
+        nonmutating set { model.scanOpened = newValue }
+    }
     @State private var error: String?
     @State private var loading = false
     @State private var scanning = true
@@ -193,7 +231,7 @@ struct RecipeScanFlow: View {
             }
         }
         .task {
-            if let t = testCode { await open(t) }
+            if let t = testCode, opened == nil { await open(t) }
         }
     }
 
@@ -309,7 +347,11 @@ enum CG {
 /// The recipe, as Chef wrote it, on the Charcoal & Gold card.
 struct RecipeView: View {
     @Binding var opened: OpenedRecipe
+    @Environment(AppModel.self) private var model
     @State private var showSurvey = false
+    @State private var saving = false
+    @State private var saveError: String?
+    @State private var showSignIn = false
     private var recipe: Recipe { opened.recipe }
 
     private var kicker: String {
@@ -359,10 +401,10 @@ struct RecipeView: View {
                             HStack(alignment: .top, spacing: 28) {
                                 VStack(alignment: .leading, spacing: 18) { ingredients; notesBlock }
                                     .frame(width: 300)
-                                VStack(alignment: .leading, spacing: 18) { method; feedback }
+                                VStack(alignment: .leading, spacing: 18) { method; saveBlock; feedback }
                             }
                         } else {
-                            VStack(alignment: .leading, spacing: 22) { ingredients; notesBlock; method; feedback }
+                            VStack(alignment: .leading, spacing: 22) { saveBlock; ingredients; notesBlock; method; feedback }
                         }
                     }
                     .padding(.horizontal, wide ? 32 : 18)
@@ -507,6 +549,58 @@ struct RecipeView: View {
                 .accessibilityElement(children: .combine)
             }
         }
+    }
+
+    /// Save to my account / In My recipes. Hidden for Chef's previews and test codes.
+    @ViewBuilder private var saveBlock: some View {
+        if let source = opened.source, opened.gift?.chef != true, opened.gift?.test != true {
+            VStack(alignment: .leading, spacing: 8) {
+                if opened.savedId != nil {
+                    Label("Saved in Account › My recipes", systemImage: "bookmark.fill")
+                        .font(Typeface.body(15, weight: .semibold))
+                        .foregroundStyle(CG.charcoal)
+                } else {
+                    Button {
+                        if !model.isSignedIn { showSignIn = true; return }
+                        Task { await save(source) }
+                    } label: {
+                        HStack(spacing: 8) {
+                            if saving { ProgressView().tint(CG.charcoal) } else { Image(systemName: "bookmark") }
+                            Text(model.isSignedIn ? "Save to my account" : "Sign in to save this recipe")
+                        }
+                        .font(Typeface.body(17, weight: .bold))
+                        .foregroundStyle(CG.charcoal)
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .overlay(Capsule().strokeBorder(CG.charcoal, lineWidth: 2))
+                        .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(saving)
+                    Text("Keep it in Account › My recipes and open it any time, without scanning again.")
+                        .font(Typeface.body(13)).foregroundStyle(CG.stripInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let saveError {
+                    Text(saveError).font(Typeface.body(14, weight: .semibold)).foregroundStyle(Color(uiColor: UIColor(hex: 0xA4483F)))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .sheet(isPresented: $showSignIn) { SignInView { showSignIn = false } }
+        }
+    }
+
+    private func save(_ source: RecipeCode.Kind) async {
+        saving = true
+        saveError = nil
+        do {
+            let s = try await RecipeCode.save(source)
+            opened.savedId = s.id
+            await model.loadSavedRecipes()
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        } catch {
+            saveError = (error as? APIError)?.message ?? "Couldn't save the recipe. Check your connection and try again."
+        }
+        saving = false
     }
 
     @ViewBuilder private var feedback: some View {

@@ -8,7 +8,6 @@ struct AccountView: View {
     @State private var editingName = false
     @State private var confirmDelete = false
     @State private var deleteError: String?
-    @State private var showKitchen = false
     @State private var showFeedback = false
 
     var body: some View {
@@ -16,7 +15,7 @@ struct AccountView: View {
             List {
                 if model.profile?.isAdmin == true {
                     Section {
-                        Button { showKitchen = true } label: {
+                        Button { model.kitchenOpen = true } label: {
                             HStack(spacing: 14) {
                                 BrandMark(size: 40)
                                 VStack(alignment: .leading, spacing: 2) {
@@ -32,6 +31,9 @@ struct AccountView: View {
                     } footer: {
                         Text("Only shows on Chef's phone. Changes here are the same as on the admin website and the WhatsApp bot.")
                     }
+                }
+                if model.isSignedIn {
+                    MyRecipesSection()
                 }
                 if let p = model.profile {
                     Section {
@@ -121,10 +123,6 @@ struct AccountView: View {
             .screenBackground()
             .navigationTitle("Account")
             .sheet(isPresented: $showSignIn) { SignInView() }
-            .fullScreenCover(isPresented: $showKitchen) {
-                KitchenView()
-                    .onDisappear { Task { await model.loadMenu(); await model.refreshAccountData() } }
-            }
             .sheet(isPresented: $showCustom) { CustomRequestView() }
             .sheet(isPresented: $showQuestion) { QuestionView() }
             .sheet(isPresented: $showFeedback) { FeedbackView() }
@@ -380,6 +378,84 @@ struct FeedbackView: View {
             sent = true
         } catch {
             self.error = (error as? APIError)?.message ?? error.localizedDescription
+        }
+    }
+}
+
+
+/// Account › My recipes: recipes the customer saved from a scanned QR code.
+private struct MyRecipesSection: View {
+    @Environment(AppModel.self) private var model
+    @State private var opening: String?
+    @State private var error: String?
+
+    var body: some View {
+        Section {
+            if model.savedRecipes.isEmpty {
+                Text("Scan the QR code on an FTR masala packet, then tap Save to my account to keep the recipe here.")
+                    .font(Typeface.body(14)).foregroundStyle(Palette.muted)
+            }
+            ForEach(model.savedRecipes) { s in
+                Button { Task { await open(s) } } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "book.closed").foregroundStyle(Palette.red).frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(s.title).font(Typeface.body(16, weight: .semibold)).foregroundStyle(Palette.ink)
+                            if let sub = s.subtitle, !sub.isEmpty {
+                                Text(sub).font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                            }
+                        }
+                        Spacer()
+                        if opening == s.id { ProgressView() } else { Image(systemName: "chevron.right").foregroundStyle(Palette.muted) }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .swipeActions {
+                    Button(role: .destructive) { Task { await model.removeSavedRecipe(s) } } label: { Label("Remove", systemImage: "trash") }
+                }
+            }
+            if let error { Text(error).font(Typeface.body(14)).foregroundStyle(Palette.red) }
+        } header: {
+            Text("My recipes")
+        } footer: {
+            if !model.savedRecipes.isEmpty { Text("Swipe left on a recipe to remove it.") }
+        }
+        .task { await model.loadSavedRecipes() }
+    }
+
+    private func open(_ s: SavedRecipe) async {
+        opening = s.id
+        error = nil
+        do { model.viewingRecipe = try await RecipeCode.open(saved: s) } catch {
+            self.error = (error as? APIError)?.message ?? "Couldn't open the recipe. Check your connection and try again."
+        }
+        opening = nil
+    }
+}
+
+/// A saved recipe, full screen (from Account › My recipes).
+struct SavedRecipeScreen: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let opened = model.viewingRecipe {
+                    RecipeView(opened: Binding(get: { opened }, set: { model.viewingRecipe = $0 }))
+                }
+            }
+            .background { CG.sand.ignoresSafeArea() }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(CG.charcoal, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .tint(CG.gold)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { model.viewingRecipe = nil } label: { Text("Close").foregroundStyle(CG.cream) }
+                }
+            }
         }
     }
 }

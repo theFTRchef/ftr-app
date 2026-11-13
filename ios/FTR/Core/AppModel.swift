@@ -91,6 +91,16 @@ final class AppModel {
     /// True while the sign-in sheet is up (it asks for the name itself).
     var signInOpen = false
 
+    // Full-screen pages shown from the root, so turning the phone (which rebuilds
+    // the screens) keeps them open on the same recipe or admin page.
+    var kitchenOpen = false
+    var scanOpen = false
+    var scanOpened: OpenedRecipe?
+    var viewingRecipe: OpenedRecipe?
+
+    /// Account › My recipes.
+    var savedRecipes: [SavedRecipe] = []
+
     enum Tab: Hashable { case menu, orders, messages, account }
 
     private let api = APIClient.shared
@@ -109,6 +119,20 @@ final class AppModel {
         guard let min = config?.minAppVersion,
               let mine = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String else { return false }
         return mine.compare(min, options: .numeric) == .orderedAscending
+    }
+
+    // MARK: saved recipes
+
+    func loadSavedRecipes() async {
+        guard isSignedIn else { savedRecipes = []; return }
+        struct R: Decodable { let recipes: [SavedRecipe] }
+        if let r: R = try? await api.get("me/recipes") { savedRecipes = r.recipes }
+    }
+
+    func removeSavedRecipe(_ s: SavedRecipe) async {
+        savedRecipes.removeAll { $0.id == s.id }
+        let _: APIClient.OK? = try? await api.delete("me/recipes/\(s.id)")
+        await loadSavedRecipes()
     }
 
     // MARK: loading
@@ -147,6 +171,7 @@ final class AppModel {
 
     func refreshAccountData() async {
         guard isSignedIn else { return }
+        Task { await loadSavedRecipes() }
         async let o = try? (api.get("orders") as OrdersResponse)
         async let i = try? (api.get("inbox") as InboxResponse)
         let ordersResult = await o
@@ -207,6 +232,8 @@ final class AppModel {
         applyingSavedCart = false
         api.token = nil
         profile = nil
+        savedRecipes = []
+        viewingRecipe = nil
         orders = []
         inbox = []
         unread = 0

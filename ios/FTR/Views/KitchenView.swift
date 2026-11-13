@@ -7,6 +7,22 @@ import WebKit
 /// opened inside the app and already signed in. Because it IS the admin page,
 /// every menu item, setting, date and order is the same data the WhatsApp bot
 /// uses - nothing to keep in sync, and new admin features show up here too.
+/// Keeps Chef's Kitchen's web page alive while the app runs, so turning the phone
+/// (or opening/closing the iPhone Duo) - which rebuilds the screen - stays on the
+/// page Chef was reading instead of starting over at the admin home page.
+@MainActor
+final class KitchenSession {
+    static let shared = KitchenSession()
+    var web: WKWebView?
+    /// The page to come back to: on our own server and not a sign-in page.
+    var resumeURL: URL? {
+        guard let u = web?.url, u.host == APIClient.shared.baseURL.host,
+              !u.path.hasPrefix("/admin/login"), !u.path.hasPrefix("/admin/google"), !u.path.hasPrefix("/admin/app-entry") else { return nil }
+        return u
+    }
+    func reset() { web?.stopLoading(); web?.removeFromSuperview(); web = nil }
+}
+
 struct KitchenView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var url: URL?
@@ -47,7 +63,7 @@ struct KitchenView: View {
             .navigationTitle("Chef's Kitchen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { KitchenSession.shared.reset(); dismiss() } }
                 ToolbarItem(placement: .primaryAction) {
                     Button { reloadToken += 1 } label: { Image(systemName: "arrow.clockwise") }
                         .accessibilityLabel("Reload")
@@ -65,6 +81,12 @@ struct KitchenView: View {
         struct B: Encodable { let google = true }
         error = nil
         signedOut = false
+        // Screen rebuilt (phone turned): carry on where Chef was.
+        if let resume = KitchenSession.shared.resumeURL {
+            url = resume
+            loading = false
+            return
+        }
         loading = true
         do {
             let r: R = try await APIClient.shared.post("admin/handoff", B())
@@ -160,6 +182,19 @@ struct AdminWebView: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeUIView(context: Context) -> WKWebView {
+        if let web = KitchenSession.shared.web {
+            // Same page as before the screen was rebuilt: just hook it up again.
+            web.removeFromSuperview()
+            web.navigationDelegate = context.coordinator
+            web.uiDelegate = context.coordinator
+            let refresh = UIRefreshControl()
+            refresh.addTarget(context.coordinator, action: #selector(Coordinator.pulled(_:)), for: .valueChanged)
+            web.scrollView.refreshControl = refresh
+            context.coordinator.lastReload = reloadToken
+            context.coordinator.loadedURL = url
+            if web.url == nil { web.load(URLRequest(url: url)) }
+            return web
+        }
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default() // the 30-day admin sign-in survives app restarts
         let web = WKWebView(frame: .zero, configuration: config)
@@ -174,6 +209,7 @@ struct AdminWebView: UIViewRepresentable {
         web.load(URLRequest(url: url))
         context.coordinator.lastReload = reloadToken
         context.coordinator.loadedURL = url
+        KitchenSession.shared.web = web
         return web
     }
 

@@ -1028,8 +1028,66 @@ function router() {
       appUsers.remove(req.phone);
       appInbox.clear(req.phone);
       appCarts.remove(req.phone);
+      require("./savedRecipes").clear(req.phone);
       customerStore.remove(req.phone);
       res.json({ deleted: true });
+    })
+  );
+
+  // Recipes saved to the account from scanned QR codes (references only; read fresh).
+  const saved = require("./savedRecipes");
+  r.get("/me/recipes", requireUser, wrap((req, res) => res.json({ recipes: saved.list(req.phone) })));
+  r.post(
+    "/me/recipes",
+    requireUser,
+    wrap((req, res) => {
+      rateLimit(`save-recipe:${req.phone}`, 60, 60 * 60 * 1000);
+      const b = req.body || {};
+      const kind = b.kind === "recipe" ? "recipe" : "gift";
+      let entry;
+      if (kind === "recipe") {
+        const rec = require("./recipes").peek(b.code);
+        if (!rec) throw new ApiError(404, "This recipe has been turned off by Chef.");
+        entry = { kind, code: String(b.code).trim().toLowerCase(), title: rec.title, subtitle: rec.powder || "" };
+      } else {
+        const install = String(req.get("x-ftr-install") || "");
+        const owners = [`user:${req.phone}`].concat(/^[A-Za-z0-9-]{8,64}$/.test(install) ? [`app:${install}`] : []);
+        try {
+          entry = { kind, ...gift.savable(b.code, owners, isAdminPhone(req.phone)) };
+        } catch (e) {
+          if (e instanceof gift.GiftError) throw new ApiError(e.status, e.message, e.code);
+          throw e;
+        }
+      }
+      try {
+        res.json({ saved: saved.save(req.phone, entry) });
+      } catch (e) {
+        throw new ApiError(e.status || 400, e.message);
+      }
+    })
+  );
+  r.get(
+    "/me/recipes/:id",
+    requireUser,
+    wrap((req, res) => {
+      const item = saved.find(req.phone, String(req.params.id));
+      if (!item) throw new ApiError(404, "That saved recipe isn't in your account any more.");
+      if (item.kind === "recipe") {
+        const recipe = require("./recipes").peek(item.code);
+        if (!recipe) throw new ApiError(410, "Chef has turned this recipe off.");
+        return res.json({ recipe });
+      }
+      const out = gift.savedRecipe(item.code, req.phone);
+      if (!out) throw new ApiError(410, "This recipe isn't available any more.");
+      res.json(out);
+    })
+  );
+  r.delete(
+    "/me/recipes/:id",
+    requireUser,
+    wrap((req, res) => {
+      if (!saved.remove(req.phone, String(req.params.id))) throw new ApiError(404, "That saved recipe isn't in your account.");
+      res.json({ ok: true });
     })
   );
 
