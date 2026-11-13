@@ -513,6 +513,41 @@ function appScan(raw, who) {
   return { gift: base, recipe: appRecipe(info.batch.recipe), survey: { questions: appSurveyForm(), answers: (prev && prev.answers) || {}, done: !!prev } };
 }
 
+/**
+ * Saving a gift recipe to an account. owners = [user:<phone>, app:<install>?].
+ * Allowed for the phone that holds the code (or Chef). A code first opened on this
+ * phone before signing in moves to the account, so it keeps working after sign-in.
+ */
+function savable(raw, owners, chef) {
+  const info = parse(raw);
+  if (!info) throw new GiftError(404, "We couldn't find this code.", "gift_invalid");
+  if (!(info.test || chef || info.batch.multi)) {
+    const all = codes();
+    const r = all[info.code];
+    if (!r || !r.claimedAt) throw new GiftError(403, "Scan this code first, then save the recipe.", "gift_not_scanned");
+    if (!owners.includes(r.device_id)) throw new GiftError(410, "This gift code belongs to another phone.", "gift_used");
+    if (r.device_id !== owners[0]) {
+      all[info.code] = { ...r, device_id: owners[0], phone: r.phone || owners[0].replace(/^user:/, "") };
+      store.write(CODES_FILE, all);
+      logScan(info, "Saved to account", r.device || "App");
+    }
+  }
+  const recipe = appRecipe(info.batch.recipe);
+  return { code: info.code, title: recipe.title, subtitle: info.batch.product };
+}
+
+/** The recipe for a code someone saved (read fresh; nothing is counted). */
+function savedRecipe(code, phone) {
+  const info = parse(code);
+  if (!info) return null;
+  const prev = surveys().find((x) => x.code === info.code && (!info.batch.multi || (phone && x.phone === phone)));
+  return {
+    gift: { code: info.code, label: info.gift, title: info.batch.title, product: info.batch.product, test: !!info.test, chef: false, note: "" },
+    recipe: appRecipe(info.batch.recipe),
+    survey: { questions: appSurveyForm(), answers: (prev && prev.answers) || {}, done: !!prev },
+  };
+}
+
 /** Feedback from the app for a code this owner holds. */
 function appSurvey(raw, who, body) {
   const info = parse(raw);
@@ -688,4 +723,4 @@ header{padding:20px 16px 8px;max-width:900px;margin:0 auto}h1{font-size:1.3rem;m
   });
 }
 
-module.exports = { register, giftNo, makeCode, parse, urlFor, syncSheets, appScan, appSurvey, GiftError, BATCHES, TEST_CODE };
+module.exports = { register, giftNo, makeCode, parse, urlFor, syncSheets, appScan, appSurvey, savable, savedRecipe, GiftError, BATCHES, TEST_CODE };

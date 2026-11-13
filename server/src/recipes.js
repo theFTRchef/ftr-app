@@ -121,6 +121,13 @@ function scan(token) {
   return forApp(r);
 }
 
+/** A recipe by its code for someone who saved it (no scan counted); null if turned off. */
+function peek(token) {
+  const t = String(token || "").trim().toLowerCase();
+  const r = all().find((x) => x.token === t && x.active);
+  return r ? forApp(r) : null;
+}
+
 function webPage() {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -142,4 +149,4 @@ a.btn:focus-visible{outline:3px solid #2E2A26;outline-offset:3px}
 </main></body></html>`;
 }
 
-module.exports = { list, create, update, remove, scan, webPage, BASE };
+module.exports = { list, create, update, remove, scan, peek, webPage, BASE };

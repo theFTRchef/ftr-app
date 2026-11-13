@@ -26,6 +26,14 @@ struct RootView: View {
         .onChange(of: model.openOrderId) { _, id in if id != nil { entered = true } }
         .onChange(of: model.selectedTab) { _, tab in if tab != .menu { entered = true } }
         .fullScreenCover(isPresented: .constant(model.needsAppUpdate)) { UpdateRequiredView() }
+        // Kept here, above the layouts: turning the phone switches between the phone and
+        // wide layouts, and these stay open on the same page.
+        .fullScreenCover(isPresented: Binding(get: { model.kitchenOpen }, set: { model.kitchenOpen = $0 })) {
+            KitchenView()
+                .onDisappear { Task { await model.loadMenu(); await model.refreshAccountData() } }
+        }
+        .fullScreenCover(isPresented: Binding(get: { model.scanOpen }, set: { model.scanOpen = $0; if !$0 { model.scanOpened = nil } })) { RecipeScanFlow() }
+        .fullScreenCover(isPresented: Binding(get: { model.viewingRecipe != nil }, set: { if !$0 { model.viewingRecipe = nil } })) { SavedRecipeScreen() }
         // Signed in but never gave a name (e.g. closed the app mid sign-up): ask once, here.
         .sheet(isPresented: Binding(get: { model.profile?.needsName == true && !model.signInOpen }, set: { _ in })) {
             EditNameView().interactiveDismissDisabled()

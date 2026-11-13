@@ -1,7 +1,7 @@
 // Public pages the app stores require: bot.franklintiffinroom.com/privacy and /support.
 // Plain HTML, same Warm Sand look as /app. Update EFFECTIVE when the policy changes.
 
-const EFFECTIVE = "November 9, 2026";
+const EFFECTIVE = "November 13, 2026";
 const EMAIL = "thechef@franklintiffinroom.com";
 const PHONE = "1-234-FTR-DOSE (387-3673)";
 
@@ -45,7 +45,8 @@ function privacy() {
 <li><b>Delivery or event address</b>, when you choose delivery or book the LIVE Dose Station. We check that it is a real US address.</li>
 <li><b>Payment confirmations</b>: if you send a screenshot of a deposit or payment, we keep it with that order. We do not receive or store card or bank numbers.</li>
 <li><b>Messages</b> between you and Chef, and feedback or quote requests you send.</li>
-<li><b>Gift QR code scans</b>: when you scan the code on an FTR gift packet, we record which code, when, the kind of phone, and your name and number if you are signed in or choose to give them, plus any feedback you send. Each code works on one phone only.</li>
+<li><b>Gift QR code scans</b>: when you scan the code on an FTR gift packet, we record which code, when, the kind of phone, and your name and number if you are signed in or choose to give them, plus any feedback you send. Gift codes work on one phone only; some recipe codes can be shared.</li>
+<li><b>Saved recipes</b>: if you tap Save to my account on a recipe, we keep which recipe code you saved and when, so it stays in Account → My recipes. You can remove it there at any time.</li>
 <li><b>A notification token</b> from your phone, so we can send order updates and (only if you turn them on) announcements of new dishes.</li>
 </ul>
 <p>The app uses the camera only while you scan a QR code; no picture is taken or sent. We do not collect your location, contacts, photos (other than ones you choose to send), or any advertising or tracking identifiers, and the app contains no ads or third-party analytics.</p>
@@ -68,7 +69,7 @@ function privacy() {
 <p>We may also disclose information if the law requires it. We do not sell or rent your information to anyone.</p>
 
 <h2>How long we keep it</h2>
-<p>We keep order records for as long as we need them to run the business and meet tax and legal record-keeping rules. If you delete your account, we remove your profile, saved cart, messages and notification token; records of past orders may be kept for our books.</p>
+<p>We keep order records for as long as we need them to run the business and meet tax and legal record-keeping rules. If you delete your account, we remove your profile, saved cart, saved recipes, messages and notification token; records of past orders may be kept for our books.</p>
 
 <h2>Your choices</h2>
 <ul>
