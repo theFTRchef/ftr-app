@@ -158,6 +158,7 @@ struct HomeView: View {
                             .font(Typeface.display(28, relativeTo: .title))
                             .foregroundStyle(Palette.ink)
                             .multilineTextAlignment(.leading)
+                        if let r = lds?.rating { RatingBadge(rating: r) }
                         Text(lds?.open == false ? "No LIVE Dose dates open right now" : "Cooked live at your party by Chef's crew. 100% vegetarian.")
                             .font(Typeface.body(14))
                             .foregroundStyle(Palette.muted)
@@ -714,6 +715,7 @@ struct DishRow: View {
                     .foregroundStyle(Palette.ink)
                     .multilineTextAlignment(.leading)
                 if dish.isPick || dish.isLimited { DishTags(dish: dish) }
+                if let r = dish.rating { RatingBadge(rating: r) }
                 if !meta.isEmpty {
                     Text(meta).font(Typeface.body(14)).foregroundStyle(Palette.muted)
                 }

@@ -232,9 +232,11 @@ function menuPayload() {
   const menu = f.botMenu();
   const allowed = new Set(f.categoriesAllowedForCart(menu, [], null).map((c) => c.id));
   const half = f.halfTraysOn(menu);
+  const ratingSums = require("./itemRatings").summaries();
   return {
     categories: (menu.categories || []).map((c) => {
       const isLds = c.type === "live-dose-station";
+      const stars = ratingSums;
       const base = {
         id: c.id,
         title: c.title,
@@ -252,6 +254,8 @@ function menuPayload() {
         return {
           ...base,
           items: [],
+          // Average stars from customers who booked it (shown from a few ratings).
+          rating: stars[`${c.id}-order`] || null,
           liveDose: {
             setupFee: Number(l.setupFee) || 0,
             pricePerHundred: Number(l.pricePerHundred) || 0,
@@ -295,7 +299,9 @@ function menuPayload() {
           promoted: promoActive(i),
           promoNote: promoActive(i) && i.promoNote ? i.promoNote : null,
           limited: !!i.limited,
-          limitedNote: i.limited && i.limitedNote ? i.limitedNote : null
+          limitedNote: i.limited && i.limitedNote ? i.limitedNote : null,
+          // Average stars from customers who ordered it (older app versions ignore this).
+          rating: stars[i.id] || null
         }))
       };
     })
@@ -1029,10 +1035,30 @@ function router() {
       appInbox.clear(req.phone);
       appCarts.remove(req.phone);
       require("./savedRecipes").clear(req.phone);
+      require("./itemRatings").clear(req.phone);
       customerStore.remove(req.phone);
       res.json({ deleted: true });
     })
   );
+
+  // Star ratings: customers rate dishes they received; comments go to Chef only.
+  const ratings = require("./itemRatings");
+  r.get("/me/ratings", requireUser, wrap((req, res) => res.json({ items: ratings.mine(req.phone), minToShow: ratings.MIN_TO_SHOW })));
+  r.put(
+    "/me/ratings/:itemId",
+    requireUser,
+    wrap((req, res) => {
+      rateLimit(`rate:${req.phone}`, 60, 60 * 60 * 1000);
+      const c = customerStore.get ? customerStore.get(req.phone) : null;
+      const name = c ? [c.firstName, c.lastName].filter(Boolean).join(" ") : "";
+      try {
+        res.json({ rating: ratings.rate(req.phone, name, String(req.params.itemId), (req.body || {}).stars, (req.body || {}).comment) });
+      } catch (e) {
+        throw new ApiError(e.status || 400, e.message);
+      }
+    })
+  );
+  r.delete("/me/ratings/:itemId", requireUser, wrap((req, res) => { ratings.unrate(req.phone, String(req.params.itemId)); res.json({ ok: true }); }));
 
   // Recipes saved to the account from scanned QR codes (references only; read fresh).
   const saved = require("./savedRecipes");
