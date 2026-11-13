@@ -47,6 +47,7 @@ function privacy() {
 <li><b>Messages</b> between you and Chef, and feedback or quote requests you send.</li>
 <li><b>Gift QR code scans</b>: when you scan the code on an FTR gift packet, we record which code, when, the kind of phone, and your name and number if you are signed in or choose to give them, plus any feedback you send. Gift codes work on one phone only; some recipe codes can be shared.</li>
 <li><b>Saved recipes</b>: if you tap Save to my account on a recipe, we keep which recipe code you saved and when, so it stays in Account → My recipes. You can remove it there at any time.</li>
+<li><b>Ratings</b>: if you rate a dish you ordered, we keep your stars, any comment and your name. The menu shows only each dish's average and number of ratings, never names or comments; Chef reads the comments.</li>
 <li><b>A notification token</b> from your phone, so we can send order updates and (only if you turn them on) announcements of new dishes.</li>
 </ul>
 <p>The app uses the camera only while you scan a QR code; no picture is taken or sent. We do not collect your location, contacts, photos (other than ones you choose to send), or any advertising or tracking identifiers, and the app contains no ads or third-party analytics.</p>
@@ -69,7 +70,7 @@ function privacy() {
 <p>We may also disclose information if the law requires it. We do not sell or rent your information to anyone.</p>
 
 <h2>How long we keep it</h2>
-<p>We keep order records for as long as we need them to run the business and meet tax and legal record-keeping rules. If you delete your account, we remove your profile, saved cart, saved recipes, messages and notification token; records of past orders may be kept for our books.</p>
+<p>We keep order records for as long as we need them to run the business and meet tax and legal record-keeping rules. If you delete your account, we remove your profile, saved cart, saved recipes, ratings, messages and notification token; records of past orders may be kept for our books.</p>
 
 <h2>Your choices</h2>
 <ul>

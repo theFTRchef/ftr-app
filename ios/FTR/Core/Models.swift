@@ -54,6 +54,8 @@ struct MenuCategory: Decodable, Identifiable, Hashable {
     let kind: Kind
     let open: Bool
     let items: [Dish]
+    /// LIVE Dose Station average stars (other sections rate per dish).
+    let rating: ItemRating?
     let liveDose: LiveDoseInfo?
     /// Set for pre-order sections (Dose-in-a-Box, weekly takeout).
     let preorder: PreorderInfo?
@@ -118,6 +120,8 @@ struct Dish: Decodable, Identifiable, Hashable {
     let promoNote: String?
     let limited: Bool?
     let limitedNote: String?
+    /// Average stars from customers who ordered it (sent once a few have rated it).
+    let rating: ItemRating?
 
     var isPick: Bool { promoted == true }
     var isLimited: Bool { limited == true }

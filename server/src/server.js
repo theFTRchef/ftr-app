@@ -454,6 +454,13 @@ app.post("/admin/api/customers/:phone/family", requireAdminAuth, (req, res) => {
 
 // --- Announcements to customers ---
 // --- Recipes (QR codes on give-away masala packets) ---
+// Star ratings and comments (Chef's Kitchen › Reports)
+app.get("/admin/api/ratings", requireAdminAuth, (req, res) => res.json({ items: require("./itemRatings").forChef(), minToShow: require("./itemRatings").MIN_TO_SHOW }));
+app.delete("/admin/api/ratings/:itemId/:phone", requireAdminAuth, (req, res) => {
+  require("./itemRatings").removeOne(String(req.params.itemId), String(req.params.phone));
+  res.json({ ok: true });
+});
+
 // Chef's recipe book (internal recipe cards, Chef only; content lives in the data folder, not Git)
 app.get("/admin/api/book", requireAdminAuth, (req, res) => res.json({ cards: require("./chefBook").summary() }));
 app.post("/admin/api/book/import", requireAdminAuth, (req, res) => {

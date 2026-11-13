@@ -37,6 +37,10 @@ struct OrdersView: View {
             } else {
                 let groups = OrderGroups(model.orders)
                 LazyVStack(alignment: .leading, spacing: 12) {
+                    if model.unratedCount > 0 {
+                        RateDishesPanel(only: Set(model.rateable.filter { $0.stars == 0 }.map(\.itemId)))
+                            .padding(.bottom, 6)
+                    }
                     if !groups.needsYou.isEmpty {
                         sectionHeader("Needs you", color: Palette.turmericInk)
                         ForEach(groups.needsYou) { row($0) }
@@ -269,6 +273,7 @@ struct OrderDetailView: View {
                         Notice(tone: .info, icon: "checkmark.seal", text: p.summary)
                     }
                     detailsPanel(o)
+                    RateDishesPanel(only: Set(o.lines.compactMap(\.itemId)))
                     Button { commentOn = true } label: {
                         Label("Comment on this order", systemImage: "text.bubble")
                     }

@@ -101,6 +101,10 @@ final class AppModel {
     /// Account › My recipes.
     var savedRecipes: [SavedRecipe] = []
 
+    /// Dishes the customer received and can rate (Orders › How was it?).
+    var rateable: [RateableItem] = []
+    var unratedCount: Int { rateable.filter { $0.stars == 0 }.count }
+
     enum Tab: Hashable { case menu, orders, messages, account }
 
     private let api = APIClient.shared
@@ -119,6 +123,25 @@ final class AppModel {
         guard let min = config?.minAppVersion,
               let mine = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String else { return false }
         return mine.compare(min, options: .numeric) == .orderedAscending
+    }
+
+    // MARK: ratings
+
+    func loadRatings() async {
+        guard isSignedIn else { rateable = []; return }
+        struct R: Decodable { let items: [RateableItem] }
+        if let r: R = try? await api.get("me/ratings") { rateable = r.items }
+    }
+
+    func rate(_ itemId: String, stars: Int, comment: String) async throws {
+        struct Body: Encodable { let stars: Int; let comment: String }
+        struct R: Decodable { let rating: Saved }
+        struct Saved: Decodable { let stars: Int; let comment: String }
+        let r: R = try await api.put("me/ratings/\(itemId)", Body(stars: stars, comment: comment))
+        if let i = rateable.firstIndex(where: { $0.itemId == itemId }) {
+            rateable[i].stars = r.rating.stars
+            rateable[i].comment = r.rating.comment
+        }
     }
 
     // MARK: saved recipes
@@ -172,6 +195,7 @@ final class AppModel {
     func refreshAccountData() async {
         guard isSignedIn else { return }
         Task { await loadSavedRecipes() }
+        Task { await loadRatings() }
         async let o = try? (api.get("orders") as OrdersResponse)
         async let i = try? (api.get("inbox") as InboxResponse)
         let ordersResult = await o
@@ -233,6 +257,7 @@ final class AppModel {
         api.token = nil
         profile = nil
         savedRecipes = []
+        rateable = []
         viewingRecipe = nil
         orders = []
         inbox = []

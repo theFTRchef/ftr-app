@@ -1541,7 +1541,27 @@ function viewReports() {
     '<div class="card pad row" style="justify-content:space-between"><div><b>' + Object.keys(custs).length + " customers</b><div class=\"small muted\">" + repeat + " ordered more than once</div></div>" +
       (S.mode === "live"
         ? '<div class="row"><a class="btn sm" href="/admin/api/orders.csv">Orders for Excel</a><a class="btn sm" href="/admin/api/customers.csv">Customers for Excel</a></div>'
-        : '<span class="small muted">Excel downloads work on the live admin page.</span>') + "</div>";
+        : '<span class="small muted">Excel downloads work on the live admin page.</span>') + "</div>" +
+    '<div class="h-sec">Ratings &amp; comments</div><div class="stack" id="ratingsBox"><div class="card pad"><p class="small muted" style="margin:0">Loading…</p></div></div>' +
+    (setTimeout(loadRatings, 0), "");
+}
+
+function starText(n) { return "★★★★★".slice(0, Math.round(n)) + "☆☆☆☆☆".slice(0, 5 - Math.round(n)); }
+async function loadRatings() {
+  const box = document.getElementById("ratingsBox");
+  if (!box) return;
+  if (S.mode !== "live") { box.innerHTML = '<div class="card pad"><p class="small muted" style="margin:0">Preview only – on the real admin page this lists star ratings and comments for each dish.</p></div>'; return; }
+  try {
+    const { items, minToShow } = await api("GET", "/admin/api/ratings");
+    if (!items.length) { box.innerHTML = '<div class="card pad"><p class="small muted" style="margin:0"><b>No ratings yet.</b> Customers can rate a dish in the app once their order is confirmed and its date has passed. Averages show on the menu from ' + minToShow + ' ratings.</p></div>'; return; }
+    box.innerHTML = items.map((it) =>
+      '<details class="card pad"><summary class="row" style="justify-content:space-between;gap:8px;cursor:pointer;flex-wrap:wrap"><b>' + esc(it.title) + '</b><span><span style="color:var(--gold-ink,#8A6A2E);letter-spacing:1px" aria-hidden="true">' + starText(it.avg) + '</span> <b class="num">' + it.avg.toFixed(1) + '</b> <span class="small muted">(' + it.count + ')' + (it.shown ? "" : " · not on menu yet") + '</span></span></summary>' +
+      '<div class="stack" style="margin-top:10px">' + it.ratings.map((r) =>
+        '<div style="border-top:1px solid var(--line);padding-top:8px"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b aria-label="' + r.stars + ' stars">' + starText(r.stars) + '</b> <span class="small muted">' + esc(r.name || "Customer") + ' · ' + new Date(r.at).toLocaleDateString() + '</span></span>' +
+        '<button class="btn sm ghost" data-act="rating-del" data-item="' + esc(it.itemId) + '" data-phone="' + esc(r.phone) + '">Remove</button></div>' +
+        (r.comment ? '<p style="margin:4px 0 0">' + esc(r.comment) + '</p>' : '<p class="small muted" style="margin:4px 0 0">No comment</p>') + '</div>').join("") +
+      '</div></details>').join("");
+  } catch (e) { box.innerHTML = '<div class="card pad"><p class="small muted" style="margin:0">Couldn\'t load ratings.</p></div>'; }
 }
 
 // ---------------------------------------------------------------- PAST ORDERS
@@ -2318,6 +2338,12 @@ document.addEventListener("click", (e) => {
       const src = entryFor(date, true), to = addDays(date, 7), dst = entryFor(to, true);
       Object.assign(dst, clone({ bookedAM: src.bookedAM, bookedPM: src.bookedPM, pickupAM: src.pickupAM, pickupPM: src.pickupPM, catering: src.catering, liveDose: src.liveDose }));
       S.sheetDay = to; refreshDaySheet(); toast("Copied to " + dateParts(to).wd + ", " + dateParts(to).mon + " " + dateParts(to).day + ". Showing that day now."); break;
+    }
+    case "rating-del": {
+      const item = el.dataset.item, phone = el.dataset.phone;
+      confirmSheet({ title: "Remove this rating?", text: "It's taken out of the dish's average. Use this for spam or a mistake.", confirmLabel: "Remove", danger: true,
+        onConfirm: () => api("DELETE", "/admin/api/ratings/" + encodeURIComponent(item) + "/" + encodeURIComponent(phone)).then(() => { toast("Rating removed."); loadRatings(); }).catch((e) => toast(e.message)) });
+      break;
     }
     case "book-del": {
       const id = el.dataset.id, title = el.dataset.title;
