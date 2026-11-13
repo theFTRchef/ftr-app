@@ -364,6 +364,9 @@ button.li:hover { background: var(--surface-2); }
       </div>
     </div>
     <div class="top-actions">
+    <a class="icon-btn" id="bookBtn" href="#book" aria-label="Recipe book" title="Recipe book">
+      <svg viewBox="0 0 24 24"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v16H5.5A1.5 1.5 0 0 0 4 20.5z"/><path d="M4 20.5A1.5 1.5 0 0 0 5.5 22H20v-3"/><path d="M9 7h7M9 11h5"/></svg>
+    </a>
     <a class="icon-btn" id="setupBtn" href="#setup" aria-label="Setup">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
     </a>
@@ -910,7 +913,7 @@ function confirmSheet({ title, text, confirmLabel, danger, typeWord, onConfirm }
 }
 
 // ---------------------------------------------------------------- routing
-const VIEWS = { today: viewToday, orders: viewOrders, calendar: viewCalendar, menu: viewMenu, customers: viewCustomers, reports: viewReports, setup: viewSetup };
+const VIEWS = { today: viewToday, orders: viewOrders, calendar: viewCalendar, menu: viewMenu, customers: viewCustomers, reports: viewReports, setup: viewSetup, book: viewBook };
 function route() {
   const h = location.hash.replace("#", "");
   if (VIEWS[h]) S.view = h;
@@ -926,6 +929,7 @@ function updateDot() {
 function render() {
   document.querySelectorAll("nav.tabs a").forEach((a) => a.setAttribute("aria-current", a.dataset.tab === S.view ? "page" : "false"));
   $("#setupBtn").setAttribute("aria-current", S.view === "setup" ? "page" : "false");
+  $("#bookBtn").setAttribute("aria-current", S.view === "book" ? "page" : "false");
   updateDot();
   $("#view").innerHTML = VIEWS[S.view]();
   markDirty();
@@ -2020,6 +2024,43 @@ async function loadDevices() {
   } catch (e) { box.innerHTML = '<p class="small muted" style="margin:0">Couldn\'t load signed-in devices.</p>'; }
 }
 
+// ---------------------------------------------------------------- recipe book (Chef only)
+function viewBook() {
+  setTimeout(loadBook, 0);
+  return '<div><h2 class="h-page">Recipe book</h2><p class="sub">Your internal recipe cards. Only you can open them, here and in Chef\'s Kitchen inside the FTR-DOSE apps. Customers never see them.</p></div>' +
+    '<div class="card pad stack" id="bookList"><p class="small muted" style="margin:0">Loading…</p></div>' +
+    '<div class="h-sec">Add or update recipes</div><div class="card pad stack"><p class="small muted" style="margin:0">Import an FTR recipe file (.json). Recipes with the same name are replaced; others stay.</p>' +
+    '<label class="btn" style="align-self:flex-start">Import recipe file<input type="file" id="bookFile" accept=".json,application/json" hidden></label></div>';
+}
+async function loadBook() {
+  const box = document.getElementById("bookList");
+  if (!box) return;
+  const f = document.getElementById("bookFile");
+  if (f && !f.dataset.wired) {
+    f.dataset.wired = "1";
+    f.addEventListener("change", async () => {
+      const file = f.files && f.files[0];
+      if (!file) return;
+      try {
+        const body = JSON.parse(await file.text());
+        if (S.mode !== "live") { toast("Preview only: import works on the real admin page."); return; }
+        const r = await api("POST", "/admin/api/book/import", body);
+        toast("Imported " + r.saved + " recipe" + (r.saved === 1 ? "" : "s") + ".");
+        loadBook();
+      } catch (e) { toast(e.message || "That file couldn't be read."); }
+      f.value = "";
+    });
+  }
+  if (S.mode !== "live") { box.innerHTML = '<p class="small muted" style="margin:0">Preview only – on the real admin page this lists your recipe cards.</p>'; return; }
+  try {
+    const { cards } = await api("GET", "/admin/api/book");
+    box.innerHTML = cards.length ? cards.map((c) =>
+      '<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><a href="/admin/book/' + encodeURIComponent(c.id) + '" style="min-width:0;flex:1;text-decoration:none;color:inherit"><b>' + esc(c.title) + '</b><br><span class="small muted">' + esc(c.sub || "") + '</span></a>' +
+      '<span class="row" style="gap:8px"><a class="btn sm" href="/admin/book/' + encodeURIComponent(c.id) + '">Open</a><button class="btn sm ghost" data-act="book-del" data-id="' + esc(c.id) + '" data-title="' + esc(c.title) + '">Remove</button></span></div>').join("")
+      : '<p class="small muted" style="margin:0"><b>No recipes yet.</b> Import your FTR recipe file below.</p>';
+  } catch (e) { box.innerHTML = '<p class="small muted" style="margin:0">Couldn\'t load the recipe book.</p>'; }
+}
+
 async function loadQrLabels() {
   const box = document.getElementById("qrlabels");
   if (!box) return;
@@ -2277,6 +2318,12 @@ document.addEventListener("click", (e) => {
       const src = entryFor(date, true), to = addDays(date, 7), dst = entryFor(to, true);
       Object.assign(dst, clone({ bookedAM: src.bookedAM, bookedPM: src.bookedPM, pickupAM: src.pickupAM, pickupPM: src.pickupPM, catering: src.catering, liveDose: src.liveDose }));
       S.sheetDay = to; refreshDaySheet(); toast("Copied to " + dateParts(to).wd + ", " + dateParts(to).mon + " " + dateParts(to).day + ". Showing that day now."); break;
+    }
+    case "book-del": {
+      const id = el.dataset.id, title = el.dataset.title;
+      confirmSheet({ title: "Remove " + title + "?", text: "It disappears from your recipe book. You can import it again from your recipe file.", confirmLabel: "Remove", danger: true,
+        onConfirm: () => api("DELETE", "/admin/api/book/" + encodeURIComponent(id)).then(() => { toast("Removed."); loadBook(); }).catch((e) => toast(e.message)) });
+      break;
     }
     case "dev-out": {
       api("DELETE", "/admin/api/sessions/" + encodeURIComponent(el.dataset.id)).then(() => { toast("Signed out that device."); loadDevices(); }).catch((e) => toast(e.message));

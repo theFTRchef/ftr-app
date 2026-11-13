@@ -454,6 +454,24 @@ app.post("/admin/api/customers/:phone/family", requireAdminAuth, (req, res) => {
 
 // --- Announcements to customers ---
 // --- Recipes (QR codes on give-away masala packets) ---
+// Chef's recipe book (internal recipe cards, Chef only; content lives in the data folder, not Git)
+app.get("/admin/api/book", requireAdminAuth, (req, res) => res.json({ cards: require("./chefBook").summary() }));
+app.post("/admin/api/book/import", requireAdminAuth, (req, res) => {
+  try {
+    res.json({ ok: true, saved: require("./chefBook").importFile(req.body) });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+app.delete("/admin/api/book/:id", requireAdminAuth, (req, res) => {
+  if (!require("./chefBook").remove(String(req.params.id))) return res.status(404).json({ error: "Recipe not found" });
+  res.json({ ok: true });
+});
+app.get("/admin/book/:id", requireAdminAuth, (req, res) => {
+  const html = require("./chefBook").page(String(req.params.id));
+  if (!html) return res.status(404).type("text").send("Recipe not found.");
+  res.set({ "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" }).type("html").send(html);
+});
 app.get("/admin/api/recipes", requireAdminAuth, (req, res) => res.json({ recipes: require("./recipes").list() }));
 app.post("/admin/api/recipes", requireAdminAuth, (req, res) => res.json(require("./recipes").create(req.body || {})));
 app.put("/admin/api/recipes/:id", requireAdminAuth, (req, res) => {
