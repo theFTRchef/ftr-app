@@ -584,7 +584,18 @@ function register(app, requireAdminAuth) {
     for (const [id, b] of Object.entries(BATCHES)) {
       const used = Object.keys(all).filter((c) => c.startsWith(id + "-") && all[c].claimedAt).length;
       const scans = Object.keys(all).filter((c) => c.startsWith(id + "-")).reduce((t, c) => t + (all[c].scans || 0), 0);
-      out[id] = { title: b.title, codes: b.count, scanned: used, scans, multi: !!b.multi, surveys: surveys().filter((s) => s.batchId === id).length };
+      const mine = Object.entries(all).filter(([c, r]) => c.startsWith(id + "-") && r.claimedAt);
+      const surveyed = new Set(surveys().filter((x) => x.batchId === id).map((x) => x.code));
+      const days = {};
+      mine.forEach(([, r]) => {
+        const d = new Date(r.claimedAt).toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+        days[d] = (days[d] || 0) + 1;
+      });
+      const recent = mine
+        .sort((x, y) => String(y[1].claimedAt).localeCompare(String(x[1].claimedAt)))
+        .slice(0, 8)
+        .map(([c, r]) => ({ gift: giftNo(id, Number(c.split("-")[1])), at: r.claimedAt, device: r.device || "", via: r.device_id ? (/^(user|app):/.test(String(r.device_id)) ? "FTR-DOSE app" : "Phone camera") : "", scans: r.scans || 1, feedback: surveyed.has(c) }));
+      out[id] = { title: b.title, codes: b.count, scanned: used, scans, multi: !!b.multi, surveys: surveys().filter((s) => s.batchId === id).length, lastScanAt: recent[0] ? recent[0].at : null, days, recent };
     }
     res.json({ ready: !!secret(), batches: out });
   });

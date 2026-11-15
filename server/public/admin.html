@@ -1542,11 +1542,47 @@ function viewReports() {
       (S.mode === "live"
         ? '<div class="row"><a class="btn sm" href="/admin/api/orders.csv">Orders for Excel</a><a class="btn sm" href="/admin/api/customers.csv">Customers for Excel</a></div>'
         : '<span class="small muted">Excel downloads work on the live admin page.</span>') + "</div>" +
+    '<div class="h-sec">Recipe QR codes</div><div class="stack" id="qrReport"><div class="card pad"><p class="small muted" style="margin:0">Loading…</p></div></div>' +
+    (setTimeout(loadQrReport, 0), "") +
     '<div class="h-sec">Ratings &amp; comments</div><div class="stack" id="ratingsBox"><div class="card pad"><p class="small muted" style="margin:0">Loading…</p></div></div>' +
     (setTimeout(loadRatings, 0), "");
 }
 
-function starText(n) { return "★★★★★".slice(0, Math.round(n)) + "☆☆☆☆☆".slice(0, 5 - Math.round(n)); }
+function whenText(iso) {
+  const d = new Date(iso), m = Math.round((Date.now() - d) / 60000);
+  if (m < 60) return m <= 1 ? "just now" : m + " min ago";
+  if (m < 60 * 24) return Math.round(m / 60) + " hr ago";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+async function loadQrReport() {
+  const box = document.getElementById("qrReport");
+  if (!box) return;
+  const note = (t) => '<div class="card pad"><p class="small muted" style="margin:0">' + t + '</p></div>';
+  if (S.mode !== "live") { box.innerHTML = note("Preview only. On the live admin page this shows how many recipe QR codes have been scanned."); return; }
+  try {
+    const g = await api("GET", "/admin/api/gift");
+    if (!g.ready) { box.innerHTML = note("QR codes are off until GIFT_CODE_SECRET is set on the server."); return; }
+    box.innerHTML = Object.entries(g.batches).map(([id, b]) => {
+      const pct = b.codes ? Math.round((b.scanned / b.codes) * 100) : 0;
+      const last = b.lastScanAt ? " · last scan " + whenText(b.lastScanAt) : "";
+      const head = b.multi
+        ? '<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><b>' + esc(b.title) + '</b><span><b class="num" style="font-size:1.4rem">' + b.scans + '</b> <span class="muted">scans</span></span></div>' +
+          '<p class="small muted" style="margin:2px 0 0">' + b.scanned + ' of ' + b.codes + ' labels used at least once · ' + b.surveys + ' feedback' + last + '</p>'
+        : '<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><b>' + esc(b.title) + '</b><span><b class="num" style="font-size:1.4rem">' + b.scanned + '</b> <span class="muted">of ' + b.codes + ' scanned (' + pct + '%)</span></span></div>' +
+          '<div class="hbar" style="margin-top:8px"><div class="track" style="margin-bottom:0"><i style="width:' + pct + '%"></i></div></div>' +
+          '<p class="small muted" style="margin:6px 0 0">' + b.surveys + ' sent feedback' + (b.scanned ? ' (' + Math.round((b.surveys / b.scanned) * 100) + '% of scans)' : '') + last + '</p>';
+      const days = Object.entries(b.days || {}).sort((x, y) => x[0].localeCompare(y[0])).slice(-14);
+      const maxDay = Math.max(1, ...days.map((d) => d[1]));
+      const dayBars = days.length ? '<details style="margin-top:10px"><summary class="small" style="cursor:pointer">' + (b.multi ? "Labels first used, by day" : "Scans by day") + '</summary><div class="hbar" style="margin-top:6px">' +
+        days.map(([d, n]) => '<span>' + new Date(d + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + '</span><span class="num muted">' + n + '</span><div class="track"><i style="width:' + Math.round((n / maxDay) * 100) + '%"></i></div>').join("") + '</div></details>' : "";
+      const recent = (b.recent || []).length ? '<details style="margin-top:6px"><summary class="small" style="cursor:pointer">Latest scans</summary><div class="stack" style="margin-top:6px;gap:6px">' +
+        b.recent.map((r) => '<div class="row small" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b>No. ' + r.gift + '</b>' + (r.via ? ' · ' + esc(r.via) : '') + (r.device ? ' · ' + esc(r.device) : '') + (b.multi ? ' · ' + r.scans + (r.scans === 1 ? ' scan' : ' scans') : '') + '</span><span class="muted">' + whenText(r.at) + (r.feedback ? ' · <b style="color:var(--leaf)">feedback ✓</b>' : '') + '</span></div>').join("") + '</div></details>' : "";
+      return '<div class="card pad">' + head + dayBars + recent + '</div>';
+    }).join("") + '<p class="small muted" style="margin:0 4px">Your own previews and the CHEF-TEST code are not counted. Each code\'s full history is in the BBB Gift Codes tab of your Google Sheet.</p>';
+  } catch (e) { box.innerHTML = note("Couldn\'t load QR scans. Open Reports again to retry."); }
+}
+
+function ratingStars(n) { return "★★★★★".slice(0, Math.round(n)) + "☆☆☆☆☆".slice(0, 5 - Math.round(n)); }
 async function loadRatings() {
   const box = document.getElementById("ratingsBox");
   if (!box) return;
@@ -1555,9 +1591,9 @@ async function loadRatings() {
     const { items, minToShow } = await api("GET", "/admin/api/ratings");
     if (!items.length) { box.innerHTML = '<div class="card pad"><p class="small muted" style="margin:0"><b>No ratings yet.</b> Customers can rate a dish in the app once their order is confirmed and its date has passed. Averages show on the menu from ' + minToShow + ' ratings.</p></div>'; return; }
     box.innerHTML = items.map((it) =>
-      '<details class="card pad"><summary class="row" style="justify-content:space-between;gap:8px;cursor:pointer;flex-wrap:wrap"><b>' + esc(it.title) + '</b><span><span style="color:var(--gold-ink,#8A6A2E);letter-spacing:1px" aria-hidden="true">' + starText(it.avg) + '</span> <b class="num">' + it.avg.toFixed(1) + '</b> <span class="small muted">(' + it.count + ')' + (it.shown ? "" : " · not on menu yet") + '</span></span></summary>' +
+      '<details class="card pad"><summary class="row" style="justify-content:space-between;gap:8px;cursor:pointer;flex-wrap:wrap"><b>' + esc(it.title) + '</b><span><span style="color:var(--gold-ink,#8A6A2E);letter-spacing:1px" aria-hidden="true">' + ratingStars(it.avg) + '</span> <b class="num">' + it.avg.toFixed(1) + '</b> <span class="small muted">(' + it.count + ')' + (it.shown ? "" : " · not on menu yet") + '</span></span></summary>' +
       '<div class="stack" style="margin-top:10px">' + it.ratings.map((r) =>
-        '<div style="border-top:1px solid var(--line);padding-top:8px"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b aria-label="' + r.stars + ' stars">' + starText(r.stars) + '</b> <span class="small muted">' + esc(r.name || "Customer") + ' · ' + new Date(r.at).toLocaleDateString() + '</span></span>' +
+        '<div style="border-top:1px solid var(--line);padding-top:8px"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b aria-label="' + r.stars + ' stars">' + ratingStars(r.stars) + '</b> <span class="small muted">' + esc(r.name || "Customer") + ' · ' + new Date(r.at).toLocaleDateString() + '</span></span>' +
         '<button class="btn sm ghost" data-act="rating-del" data-item="' + esc(it.itemId) + '" data-phone="' + esc(r.phone) + '">Remove</button></div>' +
         (r.comment ? '<p style="margin:4px 0 0">' + esc(r.comment) + '</p>' : '<p class="small muted" style="margin:4px 0 0">No comment</p>') + '</div>').join("") +
       '</div></details>').join("");
