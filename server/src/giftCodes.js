@@ -379,6 +379,7 @@ function radios(name, opts, cur) {
 }
 
 function surveyPage(info, r, prev) {
+  r = r || {};
   const a = (prev && prev.answers) || {};
   const q = (name, legend, opts) => `<fieldset><legend>${legend}</legend>${radios(name, opts, a[name])}</fieldset>`;
   const t = (name, text) => `<label for="${name}">${text}</label><textarea id="${name}" name="${name}" maxlength="1500">${esc(a[name] || "")}</textarea>`;
