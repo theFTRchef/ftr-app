@@ -621,6 +621,13 @@ app.get("/r/:token", (req, res) => res.type("html").send(require("./recipes").we
 // Public: single-use gift QR codes on product packets (recipe + survey).
 require("./giftCodes").register(app, requireAdminAuth);
 
+// Last stop for any error: log the details, show the visitor a plain page with no internals.
+app.use((err, req, res, next) => {
+  console.error("Unhandled error on", req.method, req.path, err && err.stack ? err.stack : err);
+  if (res.headersSent) return next(err);
+  res.status(500).type("html").send('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Something went wrong</title><body style="font:16px/1.5 system-ui,sans-serif;background:#F7F1E8;color:#3E2C28;padding:32px 20px;text-align:center"><h1 style="font-size:1.3rem">Something went wrong on our side</h1><p>Please try again in a minute. If it keeps happening, call or text 1-234-FTR-DOSE (387-3673).</p><p><a href="javascript:history.back()" style="color:#8A6A2E">Go back</a></p></body>');
+});
+
 const port = process.env.PORT || 3000;
 payments.startSweeper();
 // Bring the Google Sheet "Customers" tab up to date at start-up.

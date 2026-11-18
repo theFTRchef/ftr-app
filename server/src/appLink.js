@@ -3,9 +3,9 @@
 // Android phones go to Google Play, anything else gets a small page with both.
 const path = require("path");
 
-// Fill APP_STORE_URL in once Apple approves FTR-DOSE (apps.apple.com/app/id...).
+// FTR-DOSE is live on the App Store; APP_STORE_URL in .env can override the link.
 // Until then iPhone visitors see the page below with "coming soon".
-const APP_STORE_URL = process.env.APP_STORE_URL || "";
+const APP_STORE_URL = process.env.APP_STORE_URL || "https://apps.apple.com/us/app/ftr-dose/id6829897741";
 const PLAY_URL = process.env.PLAY_STORE_URL || "https://play.google.com/store/apps/details?id=com.franklintiffinroom.app";
 
 function esc(s) {
