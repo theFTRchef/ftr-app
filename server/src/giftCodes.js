@@ -8,7 +8,7 @@
  * batch and number with GIFT_CODE_SECRET (.env), so no list of codes lives
  * in the repo and nobody can make up a valid one.
  *
- * Single use: the first phone that opens a code claims it (a cookie marks
+ * Up to 3 phones: the first 3 phones that open a code hold it (a cookie marks
  * that phone). The same phone can come back to the recipe and survey any
  * time; any other phone gets a polite "already used" page.
  *
@@ -132,21 +132,29 @@ const SURVEY_FIELDS = [
 function syncSheets() {
   tabSync.schedule(process.env.GIFT_SHEET_CODES_TAB || "BBB Gift Codes", () => {
     const all = codes();
-    const sv = new Set(surveys().map((s) => s.code));
+    const sv = {};
+    surveys().forEach((x) => { sv[x.code] = (sv[x.code] || 0) + 1; });
+    const join = (hs, f) => (hs.some(f) ? hs.map((h) => f(h) || "–").join(" / ") : "");
     const rows = [];
     for (const [id, b] of Object.entries(BATCHES)) {
       for (let n = 1; n <= b.count; n++) {
         const code = makeCode(id, n);
         const r = all[code] || {};
+        if (b.multi) {
+          rows.push([giftNo(id, n), code, r.claimedAt ? "Used" : "Not scanned yet", stamp(r.claimedAt), r.device || "", "", "", "", "", r.scans || 0, "", sv[code] || "", "Any number"]);
+          continue;
+        }
+        const hs = holdersOf(r), max = maxPhones(b);
         rows.push([
-          giftNo(id, n), code, r.claimedAt ? "Used" : "Not scanned yet", stamp(r.claimedAt), r.device || "",
-          r.name || "", r.phone || "", r.email || "", r.contactOk ? "Yes" : r.claimedAt ? "No" : "",
-          r.scans || 0, r.blocked || 0, sv.has(code) ? "Yes" : ""
+          giftNo(id, n), code, hs.length ? (hs.length >= max ? `Full (${max} of ${max} phones)` : `Used (${hs.length} of ${max} phones)`) : "Not scanned yet",
+          stamp(hs[0] && hs[0].at), join(hs, (h) => h.device),
+          join(hs, (h) => h.name), join(hs, (h) => h.phone), join(hs, (h) => h.email), hs.length ? hs.map((h) => (h.contactOk ? "Yes" : "No")).join(" / ") : "",
+          hs.reduce((t, h) => t + (h.scans || 0), 0), r.blocked || 0, sv[code] || "", hs.length
         ]);
       }
     }
     return {
-      header: ["Gift #", "Code", "Status", "First scan", "Device", "Name", "Phone", "Email", "OK to contact", "Scans (same phone)", "Blocked scans (other phones)", "Survey done"],
+      header: ["Gift #", "Code", "Status", "First scan", "Device(s)", "Name(s)", "Phone(s)", "Email(s)", "OK to contact", "Scans", "Blocked scans (code full)", "Surveys", "Phones"],
       rows
     };
   });
@@ -155,9 +163,9 @@ function syncSheets() {
     return {
       header: ["Time", "Gift #", "Code", "Result", "Device", "Name", "Phone"],
       rows: scans().map((s) => {
-        const r = all[s.code] || {};
-        const mine = s.result !== "Blocked: already used";
-        return [stamp(s.at), giftNoOf(s.code, s.n), s.code, s.result, s.device, mine ? r.name || "" : "", mine ? r.phone || "" : ""];
+        const hs = holdersOf(all[s.code]);
+        const h = s.result !== "Blocked: already used" ? (s.holder ? hs.find((x) => x.id === s.holder) : hs[0]) : null;
+        return [stamp(s.at), giftNoOf(s.code, s.n), s.code, s.result, s.device, (h && h.name) || "", (h && h.phone) || ""];
       })
     };
   });
@@ -167,10 +175,10 @@ function syncSheets() {
   }));
 }
 
-function logScan(info, result, device) {
+function logScan(info, result, device, holder) {
   const list = scans();
   if (list.length >= MAX_SCANS_LOGGED) return;
-  list.push({ at: new Date().toISOString(), code: info.code, n: info.n, result, device });
+  list.push({ at: new Date().toISOString(), code: info.code, n: info.n, result, device, holder: holder || undefined });
   store.write(SCANS_FILE, list);
 }
 
@@ -188,12 +196,61 @@ function deviceId(req, res) {
   return id;
 }
 
-/** Who is this visitor for this code? "owner", "new" (unclaimed) or "other". */
+// Each gift code opens on up to this many phones (the first phones to scan it).
+const PHONES_PER_CODE = 3;
+function maxPhones(batch) { return batch.phones || PHONES_PER_CODE; }
+
+/** The phones holding a code. Older records (one owner) read as a one-phone list. */
+function holdersOf(r) {
+  if (!r) return [];
+  if (Array.isArray(r.holders)) return r.holders;
+  if (!r.claimedAt || !r.device_id) return [];
+  return [{ id: r.device_id, at: r.claimedAt, device: r.device || "", scans: r.scans || 1, name: r.name || "", phone: r.phone || "", email: r.email || "", contactOk: !!r.contactOk, skipped: !!r.skipped }];
+}
+/** A code record with this holder list; top-level claimedAt/device_id/device describe the first phone. */
+function withHolders(r, hs) {
+  const { name, phone, email, contactOk, skipped, ...rest } = r || {};
+  const f = hs[0] || {};
+  return { ...rest, holders: hs, claimedAt: f.at || rest.claimedAt, device_id: f.id, device: f.device || rest.device || "", scans: hs.reduce((n, h) => n + (h.scans || 0), 0) };
+}
+function holderOf(info, dev) {
+  return dev ? holdersOf(codes()[info.code]).find((h) => h.id === dev) || null : null;
+}
+
+/** Who is this visitor for this code? "owner" (one of its phones), "new" (a free place) or "other" (full). */
 function standing(info, dev) {
   if (info.test || info.chef || info.batch.multi) return "owner";
-  const r = codes()[info.code];
-  if (!r || !r.claimedAt) return "new";
-  return r.device_id === dev ? "owner" : "other";
+  const hs = holdersOf(codes()[info.code]);
+  if (dev && hs.some((h) => h.id === dev)) return "owner";
+  return hs.length < maxPhones(info.batch) ? "new" : "other";
+}
+
+/** Adds this phone to a code (when there is room) or counts a repeat scan. Returns the holder. */
+function claim(info, dev, device, extra) {
+  const all = codes();
+  const r = all[info.code] || {};
+  const hs = holdersOf(r).slice();
+  let h = hs.find((x) => x.id === dev);
+  if (h) {
+    h = Object.assign(h, { scans: (h.scans || 0) + 1 });
+  } else {
+    h = { id: dev, at: new Date().toISOString(), device, scans: 1, name: "", phone: "", email: "", contactOk: false, skipped: false, ...(extra || {}) };
+    hs.push(h);
+  }
+  all[info.code] = withHolders(r, hs);
+  store.write(CODES_FILE, all);
+  return { h, n: hs.indexOf(h) + 1, first: h.scans === 1 };
+}
+
+/** This phone's feedback for a code. Feedback saved before codes took 3 phones belongs to the first phone. */
+function isMine(s, info, holderId) {
+  if (s.code !== info.code) return false;
+  if (s.holder) return s.holder === holderId;
+  const first = holdersOf(codes()[info.code])[0];
+  return !!first && first.id === holderId;
+}
+function mySurvey(info, holderId) {
+  return holderId ? surveys().find((s) => isMine(s, info, holderId)) || null : null;
 }
 
 /** For Chef's preview: whether a customer has used this code yet. */
@@ -201,9 +258,10 @@ function chefNote(info) {
   if (info.test) return "";
   const r = codes()[info.code] || {};
   if (info.batch.multi) return `Chef preview: shareable QR no. ${info.gift} works on any number of phones. Scanned ${r.scans || 0} time${r.scans === 1 ? "" : "s"} so far; your scan doesn't count.`;
-  if (!r.claimedAt) return `Chef preview: gift no. ${info.gift} is not used yet. Your scan doesn't count, so it still works for a customer.`;
-  const who = [r.name, r.phone].filter(Boolean).join(", ");
-  return `Chef preview: gift no. ${info.gift} was used ${stamp(r.claimedAt)}${who ? ` by ${who}` : ""} on ${r.device || "a phone"}. Your scan doesn't count.`;
+  const hs = holdersOf(r), max = maxPhones(info.batch);
+  if (!hs.length) return `Chef preview: gift no. ${info.gift} is not used yet. It opens on up to ${max} phones; your scan doesn't count.`;
+  const list = hs.map((h, k) => `phone ${k + 1}: ${stamp(h.at)}${h.name || h.phone ? ` by ${[h.name, h.phone].filter(Boolean).join(", ")}` : ""} on ${h.device || "a phone"}`).join("; ");
+  return `Chef preview: gift no. ${info.gift} is on ${hs.length} of ${max} phones (${list}). Your scan doesn't count.`;
 }
 
 // ---------- pages ----------
@@ -360,7 +418,7 @@ function welcomeForm(info, r) {
 }
 
 function giftPage(info, r) {
-  const done = !info.batch.multi && surveys().some((s) => s.code === info.code);
+  const done = !info.batch.multi && !!r && !!r.id && !!mySurvey(info, r.id);
   const kicker = info.test ? "Chef's test code · reusable" : info.chef ? `Chef preview · Gift no. ${info.gift} · not counted` : info.batch.multi ? "Franklin Tiffin Room · Recipe card" : `Franklin Tiffin Room · Gift no. ${info.gift}`;
   const note = info.chef ? `<p class="card hi" style="margin:14px 0 0">${esc(chefNote(info))}</p>` : "";
   return shell("Your FTR Bisi Bele Bhath Pudi recipe", `
@@ -409,8 +467,8 @@ ${q("buyAgain", "Would you buy FTR Bisi Bele Bhath Pudi?", ["Yes", "Maybe", "No"
 function usedPage() {
   return shell("Gift already used", `
 <h1>This gift code has already been used</h1>
-<p class="sub">Each FTR gift QR code works on one phone only.</p>
-<div class="card">If this is your packet, open the code on the phone you first scanned it with. Otherwise, call or text us at <a href="tel:+12343873673">1-234-FTR-DOSE</a> and we'll send you the recipe.</div>
+<p class="sub">Each FTR gift QR code opens on up to ${PHONES_PER_CODE} phones, and this one is on ${PHONES_PER_CODE} already.</p>
+<div class="card">If this is your packet, open the code on a phone you scanned it with before. Otherwise, call or text us at <a href="tel:+12343873673">1-234-FTR-DOSE</a> and we'll send you the recipe.</div>
 <a class="btn" href="/app">Get the FTR-DOSE app</a>`);
 }
 
@@ -423,7 +481,7 @@ function invalidPage(setup) {
 // ---------- FTR-DOSE app ----------
 // The app scans the same printed codes. A signed-in customer is the owner
 // "user:<phone>"; otherwise the app's install id is ("app:<id>"). Same
-// single-use rule as the web page: whoever opens a code first owns it.
+// rule as the web page: the first 3 phones to open a code hold it.
 
 const SURVEY_OPTIONS = {
   verdict: ["Lip-smacking!", "Really good", "Just another BBB", "Not for me"],
@@ -499,18 +557,12 @@ function appScan(raw, who) {
     store.write(CODES_FILE, all);
     logScan(info, "Blocked: already used", device);
     syncSheets();
-    throw new GiftError(410, "This gift code has already been used. Each FTR gift QR code works on one phone only. If this is your packet, call or text 1-234-FTR-DOSE and Chef will send you the recipe.", "gift_used");
+    throw new GiftError(410, `This gift code has already been used on ${PHONES_PER_CODE} phones, the most each FTR gift QR code opens on. If this is your packet, call or text 1-234-FTR-DOSE and Chef will send you the recipe.`, "gift_used");
   }
-  if (st === "new") {
-    all[info.code] = { ...r, claimedAt: new Date().toISOString(), device_id: who.owner, device, scans: 1, name: who.name || "", phone: who.phone || "", skipped: !who.phone };
-    logScan(info, "First scan (app)", device);
-  } else {
-    all[info.code] = { ...r, scans: (r.scans || 0) + 1 };
-    logScan(info, "Repeat (app)", device);
-  }
-  store.write(CODES_FILE, all);
+  const c = claim(info, who.owner, device, { name: who.name || "", phone: who.phone || "", skipped: !who.phone });
+  logScan(info, c.first ? `First scan (app, phone ${c.n})` : "Repeat (app)", device, who.owner);
   syncSheets();
-  const prev = surveys().find((s) => s.code === info.code);
+  const prev = mySurvey(info, who.owner);
   return { gift: base, recipe: appRecipe(info.batch.recipe), survey: { questions: appSurveyForm(), answers: (prev && prev.answers) || {}, done: !!prev } };
 }
 
@@ -525,12 +577,24 @@ function savable(raw, owners, chef) {
   if (!(info.test || chef || info.batch.multi)) {
     const all = codes();
     const r = all[info.code];
-    if (!r || !r.claimedAt) throw new GiftError(403, "Scan this code first, then save the recipe.", "gift_not_scanned");
-    if (!owners.includes(r.device_id)) throw new GiftError(410, "This gift code belongs to another phone.", "gift_used");
-    if (r.device_id !== owners[0]) {
-      all[info.code] = { ...r, device_id: owners[0], phone: r.phone || owners[0].replace(/^user:/, "") };
+    const hs = holdersOf(r).slice();
+    if (!hs.length) throw new GiftError(403, "Scan this code first, then save the recipe.", "gift_not_scanned");
+    const k = hs.findIndex((h) => owners.includes(h.id));
+    if (k < 0) throw new GiftError(410, "This gift code belongs to other phones.", "gift_used");
+    if (hs[k].id !== owners[0]) {
+      // Opened on this phone before signing in: move its place to the account.
+      const old = hs[k].id;
+      const dup = hs.findIndex((h) => h.id === owners[0]);
+      if (dup >= 0) hs.splice(k, 1);
+      else hs[k] = { ...hs[k], id: owners[0], phone: hs[k].phone || owners[0].replace(/^user:/, "") };
+      const wasFirst = k === 0;
+      all[info.code] = withHolders(r, hs);
       store.write(CODES_FILE, all);
-      logScan(info, "Saved to account", r.device || "App");
+      const sv = surveys();
+      let moved = false;
+      for (const x of sv) if (x.code === info.code && (x.holder === old || (!x.holder && wasFirst))) { x.holder = owners[0]; moved = true; }
+      if (moved) store.write(SURVEY_FILE, sv);
+      logScan(info, "Saved to account", hs[0] ? hs[0].device || "App" : "App", owners[0]);
     }
   }
   const recipe = appRecipe(info.batch.recipe);
@@ -541,7 +605,9 @@ function savable(raw, owners, chef) {
 function savedRecipe(code, phone) {
   const info = parse(code);
   if (!info) return null;
-  const prev = surveys().find((x) => x.code === info.code && (!info.batch.multi || (phone && x.phone === phone)));
+  const prev = info.batch.multi
+    ? surveys().find((x) => x.code === info.code && phone && x.phone === phone)
+    : mySurvey(info, phone ? "user:" + phone : "");
   return {
     gift: { code: info.code, label: info.gift, title: info.batch.title, product: info.batch.product, test: !!info.test, chef: false, note: "" },
     recipe: appRecipe(info.batch.recipe),
@@ -561,10 +627,12 @@ function appSurvey(raw, who, body) {
     const v = clean(a[k], 1500);
     answers[k] = SURVEY_OPTIONS[k] && v && !SURVEY_OPTIONS[k].includes(v) ? "" : v;
   }
-  const r = info.batch.multi ? {} : codes()[info.code] || {};
+  const r = info.batch.multi ? {} : holderOf(info, who.owner) || {};
   const phone = who.phone || r.phone || "";
-  const list = surveys().filter((s) => s.code !== info.code || (info.batch.multi && (!phone || s.phone !== phone)));
-  list.push({ at: new Date().toISOString(), code: info.code, n: info.n, batchId: info.batchId, name: who.name || r.name || "", phone, answers, via: "app" });
+  const list = info.batch.multi
+    ? surveys().filter((s) => s.code !== info.code || !phone || s.phone !== phone)
+    : surveys().filter((s) => !isMine(s, info, who.owner));
+  list.push({ at: new Date().toISOString(), code: info.code, n: info.n, batchId: info.batchId, holder: info.batch.multi ? undefined : who.owner, name: who.name || r.name || "", phone, answers, via: "app" });
   store.write(SURVEY_FILE, list);
   syncSheets();
   return { ok: true };
@@ -585,18 +653,30 @@ function register(app, requireAdminAuth) {
     for (const [id, b] of Object.entries(BATCHES)) {
       const used = Object.keys(all).filter((c) => c.startsWith(id + "-") && all[c].claimedAt).length;
       const scans = Object.keys(all).filter((c) => c.startsWith(id + "-")).reduce((t, c) => t + (all[c].scans || 0), 0);
-      const mine = Object.entries(all).filter(([c, r]) => c.startsWith(id + "-") && r.claimedAt);
-      const surveyed = new Set(surveys().filter((x) => x.batchId === id).map((x) => x.code));
+      const surv = surveys().filter((x) => x.batchId === id);
       const days = {};
-      mine.forEach(([, r]) => {
-        const d = new Date(r.claimedAt).toLocaleDateString("en-CA", { timeZone: "America/New_York" });
-        days[d] = (days[d] || 0) + 1;
-      });
-      const recent = mine
-        .sort((x, y) => String(y[1].claimedAt).localeCompare(String(x[1].claimedAt)))
-        .slice(0, 8)
-        .map(([c, r]) => ({ gift: giftNo(id, Number(c.split("-")[1])), at: r.claimedAt, device: r.device || "", via: r.device_id ? (/^(user|app):/.test(String(r.device_id)) ? "FTR-DOSE app" : "Phone camera") : "", scans: r.scans || 1, feedback: surveyed.has(c) }));
-      out[id] = { title: b.title, codes: b.count, scanned: used, scans, multi: !!b.multi, surveys: surveys().filter((s) => s.batchId === id).length, lastScanAt: recent[0] ? recent[0].at : null, days, recent };
+      const dayOf = (at) => new Date(at).toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+      const viaOf = (dev) => dev ? (/^(user|app):/.test(String(dev)) ? "FTR-DOSE app" : "Phone camera") : "";
+      let recent, phones = 0;
+      if (b.multi) {
+        const mine = Object.entries(all).filter(([c, r]) => c.startsWith(id + "-") && r.claimedAt);
+        const surveyed = new Set(surv.map((x) => x.code));
+        mine.forEach(([, r]) => { const d = dayOf(r.claimedAt); days[d] = (days[d] || 0) + 1; });
+        recent = mine.sort((x, y) => String(y[1].claimedAt).localeCompare(String(x[1].claimedAt))).slice(0, 8)
+          .map(([c, r]) => ({ gift: giftNo(id, Number(c.split("-")[1])), at: r.claimedAt, device: r.device || "", via: "", scans: r.scans || 1, feedback: surveyed.has(c) }));
+      } else {
+        const list = [];
+        for (const [c, r] of Object.entries(all)) {
+          if (!c.startsWith(id + "-")) continue;
+          const info = { code: c };
+          holdersOf(r).forEach((h, k) => list.push({ c, h, k, fb: surv.some((x) => isMine(x, info, h.id)) }));
+        }
+        phones = list.length;
+        list.forEach(({ h }) => { const d = dayOf(h.at); days[d] = (days[d] || 0) + 1; });
+        recent = list.sort((x, y) => String(y.h.at).localeCompare(String(x.h.at))).slice(0, 8)
+          .map(({ c, h, k, fb }) => ({ gift: giftNo(id, Number(c.split("-")[1])), at: h.at, device: h.device || "", via: viaOf(h.id), phone: k + 1, scans: h.scans || 1, feedback: fb }));
+      }
+      out[id] = { title: b.title, codes: b.count, scanned: used, scans, multi: !!b.multi, maxPhones: b.multi ? null : maxPhones(b), phones, surveys: surv.length, lastScanAt: recent[0] ? recent[0].at : null, days, recent };
     }
     res.json({ ready: !!secret(), batches: out });
   });
@@ -630,7 +710,7 @@ header{padding:20px 16px 8px;max-width:900px;margin:0 auto}h1{font-size:1.3rem;m
 .lab{margin:0;background:#fff;border:1px solid #E4D8C6;border-radius:14px;padding:14px;display:grid;gap:8px;justify-items:center;text-align:center;break-inside:avoid}
 .lab svg{width:100%;max-width:170px;height:auto}figcaption{display:grid;gap:2px}figcaption b{font-size:1rem}figcaption span{color:#6E5D55;font-size:.85rem}figcaption small{color:#8A6A2E;font-size:.72rem;letter-spacing:.02em}
 @media print{body{background:#fff}header p{display:none}.grid{gap:8px}.lab{border-color:#ccc}}
-</style></head><body><header><h1>${esc(b.title)}</h1><p>${b.count} QR codes${b.multi ? " that work on any number of phones" : ", each works on one phone"}. Each opens the recipe in the Charcoal &amp; Gold card. Print this page, or save it as a PDF, and cut out the labels.</p></header>
+</style></head><body><header><h1>${esc(b.title)}</h1><p>${b.count} QR codes${b.multi ? " that work on any number of phones" : `, each opens on up to ${maxPhones(b)} phones`}. Each opens the recipe in the Charcoal &amp; Gold card. Print this page, or save it as a PDF, and cut out the labels.</p></header>
 <main class="grid">${cells.join("")}</main></body></html>`);
   });
 
@@ -675,16 +755,10 @@ header{padding:20px 16px 8px;max-width:900px;margin:0 auto}h1{font-size:1.3rem;m
       syncSheets();
       return res.status(410).type("html").send(usedPage());
     }
-    if (who === "new") {
-      all[info.code] = { ...r, claimedAt: new Date().toISOString(), device_id: dev, device, scans: 1 };
-      logScan(info, "First scan", device);
-    } else {
-      all[info.code] = { ...r, scans: (r.scans || 0) + 1 };
-      logScan(info, "Repeat (same phone)", device);
-    }
-    store.write(CODES_FILE, all);
+    const c = claim(info, dev, device);
+    logScan(info, c.first ? `First scan (phone ${c.n})` : "Repeat (same phone)", device, dev);
     syncSheets();
-    res.type("html").send(giftPage(info, all[info.code]));
+    res.type("html").send(giftPage(info, c.h));
   });
 
   app.post("/g/:code/hello", (req, res) => {
@@ -694,7 +768,10 @@ header{padding:20px 16px 8px;max-width:900px;margin:0 auto}h1{font-size:1.3rem;m
     if (info.test || info.chef) return res.redirect(303, `/g/${info.code}`);
     const b = req.body || {};
     const all = codes();
-    const r = all[info.code];
+    const dev = readCookie(req);
+    const hs = holdersOf(all[info.code]).slice();
+    const r = hs.find((h) => h.id === dev);
+    if (!r) return res.redirect(303, `/g/${info.code}`);
     if (b.skip) r.skipped = true;
     else {
       r.name = clean(b.name, 80);
@@ -703,6 +780,7 @@ header{padding:20px 16px 8px;max-width:900px;margin:0 auto}h1{font-size:1.3rem;m
       r.contactOk = b.contactOk === "1";
       if (!r.name && !r.phone && !r.email) r.skipped = true;
     }
+    all[info.code] = withHolders(all[info.code], hs);
     store.write(CODES_FILE, all);
     syncSheets();
     res.redirect(303, `/g/${info.code}`);
@@ -712,8 +790,9 @@ header{padding:20px 16px 8px;max-width:900px;margin:0 auto}h1{font-size:1.3rem;m
     const info = load(req, res);
     if (!info) return;
     if (standing(info, readCookie(req)) !== "owner") return res.status(410).type("html").send(usedPage());
-    const prev = info.batch.multi ? null : surveys().find((s) => s.code === info.code);
-    res.type("html").send(surveyPage(info, info.batch.multi ? {} : codes()[info.code], prev));
+    const dev = readCookie(req);
+    const prev = info.batch.multi || info.test || info.chef ? null : mySurvey(info, dev);
+    res.type("html").send(surveyPage(info, info.batch.multi ? {} : holderOf(info, dev), prev));
   });
 
   app.post("/g/:code/survey", (req, res) => {
@@ -724,8 +803,9 @@ header{padding:20px 16px 8px;max-width:900px;margin:0 auto}h1{font-size:1.3rem;m
     const answers = {};
     for (const [k] of SURVEY_FIELDS) answers[k] = clean(b[k], 1500);
     if (info.test || info.chef) return res.type("html").send(shell("Thank you!", `<h1>Test feedback received</h1><p class="sub">Chef's previews don't save answers.</p><a class="btn alt" href="/g/${esc(info.code)}">Back to the recipe</a>`));
-    const list = info.batch.multi ? surveys() : surveys().filter((s) => s.code !== info.code);
-    list.push({ at: new Date().toISOString(), code: info.code, n: info.n, batchId: info.batchId, name: clean(b.name, 80), phone: clean(b.phone, 20), answers });
+    const dev = readCookie(req);
+    const list = info.batch.multi ? surveys() : surveys().filter((s) => !isMine(s, info, dev));
+    list.push({ at: new Date().toISOString(), code: info.code, n: info.n, batchId: info.batchId, holder: info.batch.multi ? undefined : dev, name: clean(b.name, 80), phone: clean(b.phone, 20), answers });
     store.write(SURVEY_FILE, list);
     syncSheets();
     res.type("html").send(shell("Thank you!", `<h1>Thank you!</h1>
