@@ -1570,13 +1570,13 @@ async function loadQrReport() {
           '<p class="small muted" style="margin:2px 0 0">' + b.scanned + ' of ' + b.codes + ' labels used at least once · ' + b.surveys + ' feedback' + last + '</p>'
         : '<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><b>' + esc(b.title) + '</b><span><b class="num" style="font-size:1.4rem">' + b.scanned + '</b> <span class="muted">of ' + b.codes + ' scanned (' + pct + '%)</span></span></div>' +
           '<div class="hbar" style="margin-top:8px"><div class="track" style="margin-bottom:0"><i style="width:' + pct + '%"></i></div></div>' +
-          '<p class="small muted" style="margin:6px 0 0">' + b.surveys + ' sent feedback' + (b.scanned ? ' (' + Math.round((b.surveys / b.scanned) * 100) + '% of scans)' : '') + last + '</p>';
+          '<p class="small muted" style="margin:6px 0 0">Opened on <b>' + (b.phones || 0) + '</b> phones (up to ' + (b.maxPhones || 3) + ' per label) · ' + b.surveys + ' sent feedback' + (b.phones ? ' (' + Math.round((b.surveys / b.phones) * 100) + '% of phones)' : '') + last + '</p>';
       const days = Object.entries(b.days || {}).sort((x, y) => x[0].localeCompare(y[0])).slice(-14);
       const maxDay = Math.max(1, ...days.map((d) => d[1]));
-      const dayBars = days.length ? '<details style="margin-top:10px"><summary class="small" style="cursor:pointer">' + (b.multi ? "Labels first used, by day" : "Scans by day") + '</summary><div class="hbar" style="margin-top:6px">' +
+      const dayBars = days.length ? '<details style="margin-top:10px"><summary class="small" style="cursor:pointer">' + (b.multi ? "Labels first used, by day" : "New phones by day") + '</summary><div class="hbar" style="margin-top:6px">' +
         days.map(([d, n]) => '<span>' + new Date(d + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + '</span><span class="num muted">' + n + '</span><div class="track"><i style="width:' + Math.round((n / maxDay) * 100) + '%"></i></div>').join("") + '</div></details>' : "";
       const recent = (b.recent || []).length ? '<details style="margin-top:6px"><summary class="small" style="cursor:pointer">Latest scans</summary><div class="stack" style="margin-top:6px;gap:6px">' +
-        b.recent.map((r) => '<div class="row small" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b>No. ' + r.gift + '</b>' + (r.via ? ' · ' + esc(r.via) : '') + (r.device ? ' · ' + esc(r.device) : '') + (b.multi ? ' · ' + r.scans + (r.scans === 1 ? ' scan' : ' scans') : '') + '</span><span class="muted">' + whenText(r.at) + (r.feedback ? ' · <b style="color:var(--leaf)">feedback ✓</b>' : '') + '</span></div>').join("") + '</div></details>' : "";
+        b.recent.map((r) => '<div class="row small" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b>No. ' + r.gift + '</b>' + (r.phone ? ' · phone ' + r.phone : '') + (r.via ? ' · ' + esc(r.via) : '') + (r.device ? ' · ' + esc(r.device) : '') + (b.multi ? ' · ' + r.scans + (r.scans === 1 ? ' scan' : ' scans') : '') + '</span><span class="muted">' + whenText(r.at) + (r.feedback ? ' · <b style="color:var(--leaf)">feedback ✓</b>' : '') + '</span></div>').join("") + '</div></details>' : "";
       return '<div class="card pad">' + head + dayBars + recent + '</div>';
     }).join("") + '<p class="small muted" style="margin:0 4px">Your own previews and the CHEF-TEST code are not counted. Each code\'s full history is in the BBB Gift Codes tab of your Google Sheet.</p>';
   } catch (e) { box.innerHTML = note("Couldn\'t load QR scans. Open Reports again to retry."); }
@@ -2126,7 +2126,7 @@ async function loadQrLabels() {
     if (!g.ready) { box.innerHTML = '<p class="small muted" style="margin:0">QR codes are off until GIFT_CODE_SECRET is set on the server.</p>'; return; }
     box.innerHTML = Object.entries(g.batches).map(([id, b]) =>
       '<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b>' + esc(b.title) + '</b><br><span class="small muted">' + b.codes + ' codes · ' +
-      (b.multi ? 'work on any phone · scanned ' + b.scans + ' times' : 'one phone each · ' + b.scanned + ' used') + ' · ' + b.surveys + ' feedback</span></span>' +
+      (b.multi ? 'work on any phone · scanned ' + b.scans + ' times' : 'up to ' + (b.maxPhones || 3) + ' phones each · ' + b.scanned + ' used on ' + (b.phones || 0) + ' phones') + ' · ' + b.surveys + ' feedback</span></span>' +
       '<a class="btn sm" href="/admin/gift/' + encodeURIComponent(id) + '/labels">Open label sheet</a></div>').join("");
   } catch (e) { box.innerHTML = '<p class="small muted" style="margin:0">Couldn\'t load QR labels.</p>'; }
 }

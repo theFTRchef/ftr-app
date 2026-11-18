@@ -74,7 +74,7 @@ import kotlinx.serialization.Serializable
 
 // Recipe QR codes. Two kinds open a recipe, and nothing shows without a scan:
 //  - gift labels on FTR-BBB Powder packets: https://bot.franklintiffinroom.com/g/T50-017-XXXXXXXX
-//    (single use: the first phone to open one keeps it; CHEF-TEST is Chef's reusable test code)
+//    (up to 3 phones: the first 3 phones to open one hold it; CHEF-TEST is Chef's reusable test code)
 //  - recipe codes made in Chef's Kitchen: https://bot.franklintiffinroom.com/r/<token>
 // Same as the iPhone app (RecipeScanView.swift).
 

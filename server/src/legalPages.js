@@ -1,7 +1,7 @@
 // Public pages the app stores require: bot.franklintiffinroom.com/privacy and /support.
 // Plain HTML, same Warm Sand look as /app. Update EFFECTIVE when the policy changes.
 
-const EFFECTIVE = "November 13, 2026";
+const EFFECTIVE = "November 17, 2026";
 const EMAIL = "thechef@franklintiffinroom.com";
 const PHONE = "1-234-FTR-DOSE (387-3673)";
 
@@ -45,7 +45,7 @@ function privacy() {
 <li><b>Delivery or event address</b>, when you choose delivery or book the LIVE Dose Station. We check that it is a real US address.</li>
 <li><b>Payment confirmations</b>: if you send a screenshot of a deposit or payment, we keep it with that order. We do not receive or store card or bank numbers.</li>
 <li><b>Messages</b> between you and Chef, and feedback or quote requests you send.</li>
-<li><b>Gift QR code scans</b>: when you scan the code on an FTR gift packet, we record which code, when, the kind of phone, and your name and number if you are signed in or choose to give them, plus any feedback you send. Gift codes work on one phone only; some recipe codes can be shared.</li>
+<li><b>Gift QR code scans</b>: when you scan the code on an FTR gift packet, we record which code, when, the kind of phone, and your name and number if you are signed in or choose to give them, plus any feedback you send. Each gift code opens on up to 3 phones; some recipe codes can be shared.</li>
 <li><b>Saved recipes</b>: if you tap Save to my account on a recipe, we keep which recipe code you saved and when, so it stays in Account → My recipes. You can remove it there at any time.</li>
 <li><b>Ratings</b>: if you rate a dish you ordered, we keep your stars, any comment and your name. The menu shows only each dish's average and number of ratings, never names or comments; Chef reads the comments.</li>
 <li><b>A notification token</b> from your phone, so we can send order updates and (only if you turn them on) announcements of new dishes.</li>
