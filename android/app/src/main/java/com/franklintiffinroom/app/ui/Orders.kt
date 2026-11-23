@@ -151,7 +151,7 @@ private fun OrderRow(o: Order, onClick: () -> Unit) {
             if (o.chatOpen == true) LabelRow(Icons.Outlined.Message, "Chef sent you a message", P.turmericInk, 14.0, FontWeight.SemiBold)
             Row {
                 Text(o.orderId, style = Type.body(13.0), color = P.muted, modifier = Modifier.weight(1f))
-                if (o.subtotal > 0) Text(Money.text(o.subtotal, true), style = Type.bold(15.0), color = P.ink)
+                if (o.subtotal > 0) Text(Money.text(o.total ?: o.subtotal, true), style = Type.bold(15.0), color = P.ink)
             }
         }
     }
@@ -298,9 +298,29 @@ fun OrderDetailScreen(model: AppModel, nav: Nav, orderId: String) {
                 }
                 if (o.subtotal > 0) {
                     Divider()
+                    val tax = o.tax
+                    if (tax != null && tax > 0) {
+                        Row {
+                            Text("Subtotal", style = Type.body(15.0), color = P.ink, modifier = Modifier.weight(1f))
+                            Text(Money.text(o.subtotal, true), style = Type.body(15.0), color = P.ink)
+                        }
+                        Row {
+                            Text("NJ sales tax" + (o.taxRate?.let { " (${Money.percent(it)})" } ?: ""), style = Type.body(15.0), color = P.ink, modifier = Modifier.weight(1f))
+                            Text(Money.text(tax, true), style = Type.body(15.0), color = P.ink)
+                        }
+                    }
                     Row {
                         Text("Total", style = Type.bold(16.0), color = P.ink, modifier = Modifier.weight(1f))
-                        Text(Money.text(o.subtotal, true), style = Type.bold(17.0), color = P.ink)
+                        Text(Money.text(o.total ?: o.subtotal, true), style = Type.bold(17.0), color = P.ink)
+                    }
+                    val due = o.balanceDue
+                    if (o.paidInFull == true) {
+                        Text("Paid in full. Thank you!", style = Type.semi(15.0), color = P.leaf)
+                    } else if (o.stage == "confirmed" && due != null && due > 0) {
+                        Row {
+                            Text("Balance due", style = Type.semi(15.0), color = P.ink, modifier = Modifier.weight(1f))
+                            Text(Money.text(due, true), style = Type.semi(15.0), color = P.ink)
+                        }
                     }
                 }
                 val f = o.fulfillment

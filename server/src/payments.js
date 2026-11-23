@@ -15,6 +15,11 @@
  *      -> order is "Confirmed" and the customer gets FTR's acknowledgement.
  *   4. No deposit within the deadline -> a reminder, then the order is
  *      released ("Released - Unpaid") and both sides are told.
+ *   5. The order stays open ("Confirmed", balance due) until Chef marks it
+ *      paid in full (Chef's Kitchen or the WhatsApp button) -> "Paid in Full".
+ *
+ * NJ sales tax (tax.js): the deposit is 50% of the subtotal plus ALL of the tax,
+ * so the balance is the other half of the subtotal.
  *
  * A screenshot is never treated as proof on its own - only the chef's tap
  * confirms a payment.
@@ -27,6 +32,7 @@ const menuStore = require("./menuStore");
 const { sendText, sendButtons, sendImage } = require("./messaging");
 const { updateOrderStatus, updateOrderPayment } = require("./records");
 const { paymentText, money, deadlineLabel } = require("./paymentText");
+const tax = require("./tax");
 
 const DATA_DIR = process.env.FTR_DATA_DIR || path.join(__dirname, "..", "data");
 const PROOF_DIR = path.join(DATA_DIR, "payments");
@@ -36,7 +42,8 @@ const STATUS = {
   awaiting: "Awaiting Deposit",
   review: "Deposit Under Review",
   paid: "Confirmed",
-  released: "Released - Unpaid"
+  released: "Released - Unpaid",
+  closed: "Paid in Full"
 };
 
 function baseUrl() {
@@ -137,14 +144,19 @@ function ruleSentence(menu) {
   const [hh, mm] = s.ldsTime.split(":").map(Number);
   const time = `${((hh + 11) % 12) + 1}:${String(mm).padStart(2, "0")} ${hh < 12 ? "AM" : "PM"}`;
   return (
-    `A ${s.depositPercent}% Zelle deposit locks in your date: catering is due ${days} before the day of your order, ` +
+    `A Zelle deposit of ${s.depositPercent}% of the order plus all of the NJ sales tax locks in your date: catering is due ${days} before the day of your order, ` +
     `and the LIVE Dose Station by ${time} ${s.ldsDaysBefore} days before the event (e.g. Wednesday for a Saturday).`
   );
 }
 
+/** The deposit for a new order: depositPercent of the subtotal plus all NJ sales tax. */
 function depositFor(subtotal, menu) {
-  const pct = settings(menu).depositPercent;
-  return Math.round(Number(subtotal || 0) * pct) / 100;
+  return tax.split(subtotal, tax.currentRate(menu), settings(menu).depositPercent).deposit;
+}
+
+/** Subtotal / tax / total lines for messages. */
+function totalsText(t) {
+  return `Subtotal: ${money(t.subtotal)}\nNJ sales tax (${tax.rateLabel(t.taxRate)}): ${money(t.tax)}\nTotal: ${money(t.total)}`;
 }
 
 // ---------------------------------------------------------------- QR code
@@ -188,9 +200,12 @@ function balanceWhere(order) {
 function payInstructions(order) {
   const s = settings();
   const p = order.payment;
+  const t = tax.forOrder(order);
+  const taxPart = p.taxRate != null ? ` (${p.depositPercent}% of ${money(t.subtotal)} + ${money(t.tax)} NJ sales tax)` : "";
   return (
-    `To lock in order ${order.orderId}, please send a ${s.depositPercent}% deposit by Zelle:\n\n` +
-    `Amount: ${money(p.depositDue)}\n` +
+    `To lock in order ${order.orderId}, please send the deposit by Zelle:\n\n` +
+    (p.taxRate != null ? `${totalsText(t)}\n\n` : "") +
+    `Deposit: ${money(p.depositDue)}${taxPart}\n` +
     `Send to: ${s.zelleTo}${s.zelleName ? ` (${s.zelleName})` : ""}\n` +
     `Memo: ${order.orderId}\n\n` +
     `Please pay by ${deadlineLabel(p.deadline)}. ` +
@@ -208,13 +223,18 @@ async function requestDeposit(order, intro = "") {
   const menu = menuStore.getMenu();
   if (!enabled(menu)) return false;
   const s = settings(menu);
-  const depositDue = depositFor(order.subtotal, menu);
+  const rate = order.taxRate != null ? Number(order.taxRate) : tax.currentRate(menu);
+  const t = tax.split(order.subtotal, rate, s.depositPercent);
+  const depositDue = t.deposit;
   const due = depositDeadline(order, s);
   const payment = {
     state: "awaiting",
     depositPercent: s.depositPercent,
+    taxRate: rate,
+    tax: t.tax,
+    total: t.total,
     depositDue,
-    balance: Math.round((Number(order.subtotal) - depositDue) * 100) / 100,
+    balance: t.balance,
     requestedAt: new Date().toISOString(),
     deadline: new Date(due.deadline).toISOString(),
     deadlineRule: due.rule,
@@ -222,7 +242,7 @@ async function requestDeposit(order, intro = "") {
     reminded: false,
     proofs: []
   };
-  const updated = orderDb.update(order.orderId, { payment, status: STATUS.awaiting, pending: false }) || {
+  const updated = orderDb.update(order.orderId, { payment, taxRate: rate, status: STATUS.awaiting, pending: false }) || {
     ...order,
     payment
   };
@@ -464,7 +484,7 @@ async function handleCustomerImage(from, image) {
   const card = {
     body: (
       `${order.customerName || "Customer"} (${order.customerPhone}) sent a Zelle screenshot for ${order.orderId}.\n` +
-      `Deposit due: ${money(order.payment.depositDue)} (order total ${money(order.subtotal)})\n` +
+      `Deposit due: ${money(order.payment.depositDue)} (order total ${money(tax.forOrder(order).total)} incl. NJ tax)\n` +
       (parsed.code ? `Confirmation: ${parsed.code}\n` : "") +
       `\n${verdict}\n\nOpen your bank app - tap Payment received only once you see the money.`
     ).slice(0, 1024),
@@ -528,13 +548,17 @@ async function handleOwnerPaymentReply(ownerNumber, action, id) {
         `.\n\nYour order is confirmed` +
         (order.requestedTime ? ` for ${order.requestedTime}` : "") +
         `.` +
-        (p.balance > 0 ? `\nBalance due ${balanceWhere(order)}: ${money(p.balance)}.` : "") +
+        (p.balance > 0 ? `\nBalance due ${balanceWhere(order)}: ${money(p.balance)}${p.taxRate != null ? " (all NJ sales tax is already paid in your deposit)" : ""}.` : "") +
         `\n\nSee you then!`
     ).catch((err) => {
       console.error(`Couldn't send payment acknowledgement for ${id}:`, err.message);
       return sendText(ownerNumber, `Couldn't message the customer for ${id} (WhatsApp 24-hour limit?). Please text them at ${order.customerPhone}.`);
     });
-    return sendText(ownerNumber, `${id} marked PAID - customer sent the payment acknowledgement. Order confirmed.`);
+    const t = tax.forOrder(updated || order);
+    return sendButtons(ownerNumber, {
+      body: `${id} deposit marked PAID - customer sent the payment acknowledgement. Order confirmed.\n\nBalance still due: ${money(t.balance)} (total ${money(t.total)} incl. ${money(t.tax)} NJ tax). The order stays open until you tap Paid in full.`,
+      buttons: [{ id: `fullpaid:${id}`, title: "Paid in full" }]
+    }).catch(() => sendText(ownerNumber, `${id} deposit marked PAID. Balance due ${money(t.balance)}. Mark it paid in full in Chef's Kitchen when you have it.`));
   }
 
   // Not received: back to waiting, deadline unchanged.
@@ -548,6 +572,51 @@ async function handleOwnerPaymentReply(ownerNumber, action, id) {
     `Chef hasn't received your Zelle deposit for order ${id} yet. Zelle usually arrives within minutes - please check it went to ${s.zelleTo} for ${money(p.depositDue)}, then *PLEASE UPLOAD THE SCREENSHOT CONFIRMATION HERE* again. Deposit is due by ${deadlineLabel(p.deadline)}.`
   ).catch((err) => console.error(`Couldn't send not-received note for ${id}:`, err.message));
   return sendText(ownerNumber, `${id}: customer asked to check their payment and resend.`);
+}
+
+// ---------------------------------------------------------------- paid in full
+
+/** Can Chef close this order out as paid in full? */
+function canMarkPaidInFull(order) {
+  if (!order || order.paidInFull) return false;
+  if (order.payment) return order.payment.state === "paid";
+  return order.status === STATUS.paid; // confirmed without a deposit (deposits off, or custom paid in person)
+}
+
+/**
+ * Chef has the full amount (deposit + balance, NJ tax included). Closes the order:
+ * status "Paid in Full", the customer gets a receipt. Returns the updated order.
+ */
+async function markPaidInFull(id, ownerNumber) {
+  const order = orderDb.get(id);
+  if (!order) throw new Error(`Order ${id} not found.`);
+  if (order.paidInFull) return order;
+  if (!canMarkPaidInFull(order)) throw new Error(order.payment && order.payment.state !== "paid" ? `The deposit for ${id} isn't confirmed yet.` : `Order ${id} isn't confirmed yet.`);
+  const rate = tax.rateFor(order);
+  const t = tax.forOrder({ ...order, taxRate: rate });
+  const at = new Date().toISOString();
+  const updated = orderDb.update(id, { paidInFull: true, paidInFullAt: at, taxRate: rate, status: STATUS.closed, amountPaid: t.total, taxPaid: t.tax });
+  await updateOrderStatus(id, STATUS.closed).catch(() => {});
+  await syncPaymentCell(updated);
+  const name = ((menuStore.getMenu().settings || {}).shortName || "").trim() || "FTR";
+  await sendText(
+    order.customerPhone,
+    `Paid in full - thank you!\n\n${name} has received full payment for order ${id}:\n${totalsText(t)}\n\nYour order is closed. We hope you enjoyed it!`
+  ).catch((err) => {
+    console.error(`Couldn't send paid-in-full receipt for ${id}:`, err.message);
+    if (ownerNumber) return sendText(ownerNumber, `Couldn't message the customer for ${id} (WhatsApp 24-hour limit?). Their receipt is in the app.`).catch(() => {});
+  });
+  if (ownerNumber) await sendText(ownerNumber, `${id} PAID IN FULL (${money(t.total)}, incl. ${money(t.tax)} NJ tax). Order closed.`).catch(() => {});
+  return updated;
+}
+
+/** Chef tapped "Paid in full" in WhatsApp. */
+async function handleOwnerFullPaid(ownerNumber, id) {
+  try {
+    await markPaidInFull(id, ownerNumber);
+  } catch (err) {
+    await sendText(ownerNumber, err.message).catch(() => {});
+  }
 }
 
 // ---------------------------------------------------------------- reminders and release
@@ -614,6 +683,10 @@ module.exports = {
   handleCustomerImage,
   maybeHandlePaymentText,
   handleOwnerPaymentReply,
+  handleOwnerFullPaid,
+  canMarkPaidInFull,
+  markPaidInFull,
+  totalsText,
   sweep,
   startSweeper,
   saveQr,

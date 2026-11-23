@@ -15,6 +15,7 @@ const { normalizeDateEntry, pickupTimes, offersCatering, offersLiveDose, isBooke
 function botMenu() {
   return customerView(menuStore.getMenu());
 }
+const tax = require("./tax");
 const payments = require("./payments");
 const { deadlineLabel } = require("./paymentText");
 
@@ -953,11 +954,10 @@ async function sendOrderSummary(to, session) {
   const feeLine = isCateringDelivery
     ? "\nDelivery fee: based on distance - the chef will add it when confirming"
     : "";
-  const summary = `Here's your order:\n\n${lines}\n\nSubtotal: $${subtotal.toFixed(
-    2
-  )}${feeLine}\n${fulfillmentLine}\nRequested time: ${session.requestedTime}\nPayment: ${
+  const t = tax.split(subtotal, tax.currentRate(), payments.enabled() ? payments.settings().depositPercent : null);
+  const summary = `Here's your order:\n\n${lines}\n\n${payments.totalsText(t)}${feeLine}\n${fulfillmentLine}\nRequested time: ${session.requestedTime}\nPayment: ${
     payments.enabled()
-      ? `${payments.settings().depositPercent}% Zelle deposit after Chef approves, balance ${balanceWhen}`
+      ? `$${t.deposit.toFixed(2)} Zelle deposit after Chef approves (${t.depositPercent}% of the order + all NJ sales tax), balance $${t.balance.toFixed(2)} ${balanceWhen}`
       : `collected ${balanceWhen}`
   }${session.orderNote ? `\nYour note: ${session.orderNote}` : ""}${preorderStatusBlock(session)}\n\nShall I send this in for approval?`;
   await sendButtons(to, {
@@ -1003,11 +1003,11 @@ async function requestApproval(to, session) {
   }
 
   const payNote = payments.enabled()
-    ? `Once Chef approves, you'll get Zelle details for the ${payments.settings().depositPercent}% deposit.`
+    ? `Once Chef approves, you'll get Zelle details for the deposit (${payments.settings().depositPercent}% of the order + all NJ sales tax).`
     : `Payment will be collected at ${session.fulfillment}.`;
   await sendText(
     to,
-    `Thanks! Your order ${id} ($${subtotal.toFixed(2)}) is being reviewed - we'll confirm shortly. ${payNote}\n\nNeed to cancel? Just send "cancel".`
+    `Thanks! Your order ${id} ($${tax.split(subtotal, tax.currentRate()).total.toFixed(2)} incl. NJ sales tax) is being reviewed - we'll confirm shortly. ${payNote}\n\nNeed to cancel? Just send "cancel".`
   );
 
   const ownerNumber = process.env.OWNER_WHATSAPP_NUMBER;
@@ -1042,7 +1042,7 @@ async function sendApprovalPrompt(ownerNumber, id, order) {
     header: order.channel === "app" ? "New app order needs approval" : "New order needs approval",
     body: `Order ${id} from ${order.customerName || "customer"} (${order.customerPhone})${order.channel === "app" ? " via the FTR app" : ""}\n${itemsSummary}\nSubtotal: $${order.subtotal.toFixed(
       2
-    )}\n${fulfillmentLine}\nRequested time: ${order.requestedTime}${rangeLine}${order.orderNote ? `\nCustomer note: ${order.orderNote}` : ""}`.slice(0, 1024),
+    )} + NJ tax $${tax.split(order.subtotal, tax.currentRate()).tax.toFixed(2)}\n${fulfillmentLine}\nRequested time: ${order.requestedTime}${rangeLine}${order.orderNote ? `\nCustomer note: ${order.orderNote}` : ""}`.slice(0, 1024),
     buttons: [
       { id: `approve:${id}`, title: "Approve" },
       { id: `editprice:${id}`, title: "Edit / message" },
@@ -1152,7 +1152,7 @@ async function approveOrder(id, order, ownerNumber) {
     try {
       const pay = await payments.requestDeposit(
         order,
-        `Good news - Chef approved your order ${id}! Total: $${order.subtotal.toFixed(2)}.\nTime: ${order.requestedTime}` + chefTimeNote(order)
+        `Good news - Chef approved your order ${id}! Total: $${tax.split(order.subtotal, tax.currentRate()).total.toFixed(2)} incl. NJ sales tax.\nTime: ${order.requestedTime}` + chefTimeNote(order)
       );
       if (ownerNumber && pay) {
         await sendButtons(ownerNumber, {
@@ -1174,17 +1174,22 @@ async function approveOrder(id, order, ownerNumber) {
     }
     return;
   }
+  const rate = tax.currentRate();
+  require("./orderDb").update(id, { taxRate: rate });
   await updateOrderStatus(id, "Confirmed").catch((err) =>
     console.error(`Failed to update sheet status for ${id}:`, err.message)
   );
   await sendText(
     order.customerPhone,
-    `Good news - your order ${id} is confirmed! Subtotal: $${order.subtotal.toFixed(2)}.\nTime: ${order.requestedTime}` +
+    `Good news - your order ${id} is confirmed!\n${payments.totalsText(tax.split(order.subtotal, rate))}\nTime: ${order.requestedTime}` +
       chefTimeNote(order) +
       `\n\nPayment will be collected ${(order.cart || []).some((l) => l.isLiveDoseStation) ? "on the day of your event" : `at ${order.fulfillment}`}. See you then!`
   );
   if (ownerNumber) {
-    await sendText(ownerNumber, `Order ${id} confirmed - customer notified.`);
+    await sendButtons(ownerNumber, {
+      body: `Order ${id} confirmed - customer notified. Total due $${tax.split(order.subtotal, rate).total.toFixed(2)} incl. NJ tax. It stays open until you tap Paid in full.`,
+      buttons: [{ id: `fullpaid:${id}`, title: "Paid in full" }]
+    }).catch(() => sendText(ownerNumber, `Order ${id} confirmed - customer notified.`));
   }
 }
 
@@ -1526,7 +1531,7 @@ async function handleOwnerCustomStep(ownerNumber, state, order, text) {
     ownerState.set(ownerNumber, { orderId: id, mode: "custom-comment", price });
     return sendText(
       ownerNumber,
-      `Quote $${price.toFixed(2)} for ${id}. Any comments for the customer (what's included, timing, pickup/delivery)? Reply with your note, or "skip".`
+      `Quote $${price.toFixed(2)} (before NJ tax) for ${id}. Any comments for the customer (what's included, timing, pickup/delivery)? Reply with your note, or "skip".`
     );
   }
 
@@ -1547,7 +1552,7 @@ async function handleOwnerCustomStep(ownerNumber, state, order, text) {
       await sendButtons(order.customerPhone, {
         header: "Your quote is ready",
         body: (
-          `Request ${id}\n"${order.request}"\n\nPrice: $${state.price.toFixed(2)}` +
+          `Request ${id}\n"${order.request}"\n\nPrice: $${state.price.toFixed(2)} + $${tax.split(state.price, tax.currentRate()).tax.toFixed(2)} NJ sales tax = $${tax.split(state.price, tax.currentRate()).total.toFixed(2)}` +
           (comment ? `\nChef's note: ${comment}` : "") +
           `\n\n${paymentSentence(botMenu())} Would you like to go ahead?`
         ).slice(0, 1024),
@@ -1614,12 +1619,15 @@ async function handleQuoteResponse(from, replyId) {
   }
 
   if (action === "caccept") {
+    const rate = tax.currentRate();
+    require("./orderDb").update(id, { taxRate: rate });
+    const ct = tax.split(order.subtotal, rate);
     await updateOrderStatus(id, "Confirmed").catch((err) =>
       console.error(`Failed to update sheet status for ${id}:`, err.message)
     );
     await sendText(
       from,
-      `Confirmed! Your custom order ${id} is booked for ${price}.` +
+      `Confirmed! Your custom order ${id} is booked for ${price} + $${ct.tax.toFixed(2)} NJ sales tax = $${ct.total.toFixed(2)}.` +
         (order.quoteComment ? `\nChef's note: ${order.quoteComment}` : "") +
         `\nPayment is collected in person. Thank you!`
     );
@@ -2581,7 +2589,7 @@ function chefTimeNote(order) {
 // Cancelling: the customer (or Chef) can cancel an order while it's
 // waiting for Chef's approval or for the 50% deposit - not after payment.
 // ---------------------------------------------------------------------
-const CLOSED_STATUS = /declined|cancelled|released|completed/i;
+const CLOSED_STATUS = /declined|cancelled|released|completed|paid in full/i;
 
 /** Can this order still be cancelled? Returns null if yes, else the reason. */
 function cancelBlock(order) {
@@ -2941,6 +2949,10 @@ async function handleIncoming(payload) {
   if (from === ownerNumber && replyId && /^(paid|unpaid):/.test(replyId)) {
     const [action, id] = replyId.split(":");
     return payments.handleOwnerPaymentReply(ownerNumber, action, id);
+  }
+  // Chef's "Paid in full" button: closes the order out.
+  if (from === ownerNumber && replyId && /^fullpaid:/.test(replyId)) {
+    return payments.handleOwnerFullPaid(ownerNumber, replyId.split(":")[1]);
   }
 
   // Chef has a chat open with this customer: their messages go to Chef.

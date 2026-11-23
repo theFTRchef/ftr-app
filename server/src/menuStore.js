@@ -175,7 +175,9 @@ function saveMenu(menu) {
     zelleTo: String(pay.zelleTo || "").trim(),
     zelleName: String(pay.zelleName || "").trim(),
     depositPercent: pct > 0 && pct <= 100 ? pct : 50,
-    deadlineHours: hrs > 0 ? hrs : 24
+    deadlineHours: hrs > 0 ? hrs : 24,
+    // NJ sales tax on every order (percent). 6.625 is the statewide rate.
+    taxPercent: Number(pay.taxPercent) >= 0 && Number(pay.taxPercent) < 20 && pay.taxPercent !== "" && pay.taxPercent != null ? Number(pay.taxPercent) : 6.625
   };
   menu.settings.maxOrderQtyPerItem =
     Number(menu.settings.maxOrderQtyPerItem) > 0
