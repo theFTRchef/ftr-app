@@ -583,37 +583,90 @@ function canMarkPaidInFull(order) {
   return order.status === STATUS.paid; // confirmed without a deposit (deposits off, or custom paid in person)
 }
 
+/** What is still owed when Chef closes the order: the balance after a paid deposit, else the whole total. */
+function dueAtClose(order, t) {
+  return order.payment && order.payment.state === "paid" ? t.balance : t.total;
+}
+
+/** Amount Chef typed: a number from 0 to 100,000, rounded to the cent. */
+function cleanAmount(v) {
+  if (v === undefined || v === null || v === "") return null;
+  const str = String(v).replace(/[$,\s]/g, "");
+  const n = /^\d+(\.\d{1,2})?$/.test(str) ? Number(str) : NaN;
+  if (!(n >= 0) || n > 100000) throw new Error("Enter the amount you received, e.g. 150 or 150.00.");
+  return tax.cents(n);
+}
+function cleanNote(v) {
+  return String(v || "").replace(/[\u0000-\u001f]/g, " ").trim().slice(0, 500);
+}
+
 /**
  * Chef has the full amount (deposit + balance, NJ tax included). Closes the order:
- * status "Paid in Full", the customer gets a receipt. Returns the updated order.
+ * status "Paid in Full", the customer gets a receipt. Chef can record what was
+ * actually received at close (defaults to the balance due) and a private note.
  */
-async function markPaidInFull(id, ownerNumber) {
+async function markPaidInFull(id, ownerNumber, opts = {}) {
   const order = orderDb.get(id);
   if (!order) throw new Error(`Order ${id} not found.`);
   if (order.paidInFull) return order;
   if (!canMarkPaidInFull(order)) throw new Error(order.payment && order.payment.state !== "paid" ? `The deposit for ${id} isn't confirmed yet.` : `Order ${id} isn't confirmed yet.`);
   const rate = tax.rateFor(order);
   const t = tax.forOrder({ ...order, taxRate: rate });
+  const due = dueAtClose(order, t);
+  const typed = cleanAmount(opts.received);
+  const received = typed == null ? due : typed;
+  const deposit = order.payment && order.payment.state === "paid" ? tax.cents(order.payment.depositDue) : 0;
   const at = new Date().toISOString();
-  const updated = orderDb.update(id, { paidInFull: true, paidInFullAt: at, taxRate: rate, status: STATUS.closed, amountPaid: t.total, taxPaid: t.tax });
+  const closeOut = { due, received, note: cleanNote(opts.note), at, via: opts.via || "kitchen" };
+  const updated = orderDb.update(id, {
+    paidInFull: true, paidInFullAt: at, taxRate: rate, status: STATUS.closed,
+    amountPaid: tax.cents(deposit + received), taxPaid: t.tax, closeOut
+  });
   await updateOrderStatus(id, STATUS.closed).catch(() => {});
   await syncPaymentCell(updated);
   const name = ((menuStore.getMenu().settings || {}).shortName || "").trim() || "FTR";
+  const paidLine = deposit
+    ? `\nPaid: ${money(deposit)} deposit + ${money(received)} balance = ${money(deposit + received)}`
+    : `\nPaid: ${money(received)}`;
   await sendText(
     order.customerPhone,
-    `Paid in full - thank you!\n\n${name} has received full payment for order ${id}:\n${totalsText(t)}\n\nYour order is closed. We hope you enjoyed it!`
+    `Paid in full - thank you!\n\n${name} has received payment for order ${id}:\n${totalsText(t)}${paidLine}\n\nYour order is closed. We hope you enjoyed it!`
   ).catch((err) => {
     console.error(`Couldn't send paid-in-full receipt for ${id}:`, err.message);
     if (ownerNumber) return sendText(ownerNumber, `Couldn't message the customer for ${id} (WhatsApp 24-hour limit?). Their receipt is in the app.`).catch(() => {});
   });
-  if (ownerNumber) await sendText(ownerNumber, `${id} PAID IN FULL (${money(t.total)}, incl. ${money(t.tax)} NJ tax). Order closed.`).catch(() => {});
+  const diff = tax.cents(received - due);
+  if (ownerNumber) {
+    await sendText(
+      ownerNumber,
+      `${id} PAID IN FULL. Received ${money(received)} at close` +
+        (diff ? ` (${diff > 0 ? money(diff) + " more" : money(-diff) + " less"} than the ${money(due)} due)` : "") +
+        `. Order total ${money(t.total)} incl. ${money(t.tax)} NJ tax. Order closed.` +
+        (closeOut.via === "whatsapp" ? `\nTo record a different amount or a note, open the order in Chef's Kitchen > Payment note.` : "")
+    ).catch(() => {});
+  }
   return updated;
 }
 
-/** Chef tapped "Paid in full" in WhatsApp. */
+/** Chef corrects the amount received or the note on a closed order. Nothing is sent to the customer. */
+function updateCloseOut(id, opts = {}) {
+  const order = orderDb.get(id);
+  if (!order || !order.paidInFull) throw new Error(`Order ${id} isn't marked paid in full.`);
+  const t = tax.forOrder(order);
+  const prev = order.closeOut || { due: dueAtClose(order, t), received: dueAtClose(order, t), note: "", at: order.paidInFullAt, via: "kitchen" };
+  const typed = cleanAmount(opts.received);
+  const received = typed == null ? prev.received : typed;
+  const deposit = order.payment && order.payment.state === "paid" ? tax.cents(order.payment.depositDue) : 0;
+  const closeOut = { ...prev, received, note: opts.note !== undefined ? cleanNote(opts.note) : prev.note, editedAt: new Date().toISOString() };
+  const updated = orderDb.update(id, { closeOut, amountPaid: tax.cents(deposit + received) });
+  syncPaymentCell(updated);
+  return updated;
+}
+
+/** Chef tapped "Paid in full" in WhatsApp: records the balance due as received. */
 async function handleOwnerFullPaid(ownerNumber, id) {
   try {
-    await markPaidInFull(id, ownerNumber);
+    await markPaidInFull(id, ownerNumber, { via: "whatsapp" });
   } catch (err) {
     await sendText(ownerNumber, err.message).catch(() => {});
   }
@@ -686,6 +739,7 @@ module.exports = {
   handleOwnerFullPaid,
   canMarkPaidInFull,
   markPaidInFull,
+  updateCloseOut,
   totalsText,
   sweep,
   startSweeper,
