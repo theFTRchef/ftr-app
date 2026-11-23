@@ -18,7 +18,7 @@ function rateable(phone) {
   const seen = new Map();
   orderDb
     .all()
-    .filter((o) => o.customerPhone === phone && o.status === "Confirmed" && o.eventDate && o.eventDate <= today)
+    .filter((o) => o.customerPhone === phone && (o.status === "Confirmed" || o.status === "Paid in Full") && o.eventDate && o.eventDate <= today)
     .sort((a, b) => String(b.eventDate).localeCompare(String(a.eventDate)))
     .forEach((o) => {
       (o.cart || []).forEach((l) => {

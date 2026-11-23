@@ -710,7 +710,7 @@ function ensureShape(menu) {
   if (!menu.settings.shortName) menu.settings.shortName = "FTR";
   if (menu.settings.minOrderHalfTray == null) menu.settings.minOrderHalfTray = 0;
   if (!menu.settings.halfTrayPercent) menu.settings.halfTrayPercent = 65;
-  menu.settings.payment = Object.assign({ zelleTo: "", zelleName: "", depositPercent: 50, deadlineHours: 24, cateringHoursBefore: 48, ldsDaysBefore: 3, ldsTime: "10:00" }, menu.settings.payment || {});
+  menu.settings.payment = Object.assign({ zelleTo: "", zelleName: "", depositPercent: 50, taxPercent: 6.625, deadlineHours: 24, cateringHoursBefore: 48, ldsDaysBefore: 3, ldsTime: "10:00" }, menu.settings.payment || {});
   menu.settings.payment.enabled = menu.settings.payment.enabled === true;
   menu.availability = menu.availability || {};
   menu.availability.dates = (menu.availability.dates || []).map(normalizeDate);
@@ -936,10 +936,27 @@ function render() {
 }
 
 // ---------------------------------------------------------------- shared bits
+/** Booked orders: confirmed (balance may be due) or closed out as paid in full. */
+function isBooked(o) { return o.status === "Confirmed" || o.status === "Paid in Full"; }
+function taxPct() { const p = (S.menu && S.menu.settings && S.menu.settings.payment) || {}; return p.taxPercent != null && p.taxPercent !== "" ? Number(p.taxPercent) : 6.625; }
+/** Subtotal / NJ tax / total / deposit / balance (from the server; worked out here in preview). */
+function totalsOf(o) {
+  if (o.totals) return o.totals;
+  const r2 = (n) => Math.round(n * 100) / 100, sub = r2(Number(o.subtotal || 0)), rate = o.taxRate != null ? o.taxRate : taxPct();
+  const tax = r2((sub * rate) / 100), total = r2(sub + tax), p = o.payment;
+  const deposit = p ? Number(p.depositDue) : null;
+  return { subtotal: sub, taxRate: rate, tax, total, deposit, balance: p ? r2(total - deposit) : total, paidInFull: !!o.paidInFull };
+}
+function balanceDue(o) {
+  const t = totalsOf(o);
+  if (o.paidInFull) return 0;
+  return o.payment && o.payment.state === "paid" ? t.balance : t.total;
+}
 function statusPill(o) {
   const st = o.status || "Pending";
   let cls = "p-wait";
-  if (st === "Confirmed") cls = "p-good";
+  if (st === "Paid in Full") return '<span class="pill p-good">Paid in full</span>';
+  if (st === "Confirmed") return '<span class="pill p-good">Confirmed</span> <span class="pill p-wait">Balance due</span>';
   else if (/declined|cancelled/i.test(st)) cls = "p-bad";
   if (o.source === "past") return '<span class="pill p-off">Past order</span>';
   else if (/^released/i.test(st)) cls = "p-off";
@@ -961,7 +978,8 @@ function lineHTML(l) {
 }
 function depositHTML(p) {
   const code = p.confirmationCode || ((p.proofs || []).map((x) => x.code).filter(Boolean).slice(-1)[0]);
-  const amt = '<span class="num">' + money(p.depositDue, true) + "</span>";
+  let amt = '<span class="num">' + money(p.depositDue, true) + "</span>";
+  if (p.tax != null) amt += ' <span class="small muted">(' + (p.depositPercent || 50) + "% + " + money(p.tax, true) + " tax)</span>";
   if (p.state === "paid") return amt + " paid" + (code ? ' <span class="muted num">Zelle ' + esc(code) + "</span>" : "") + (p.balance > 0 ? ' · <span class="muted">balance <span class="num">' + money(p.balance, true) + "</span></span>" : "");
   if (p.state === "review") {
     const last = (p.proofs || []).slice(-1)[0] || {};
@@ -972,7 +990,7 @@ function depositHTML(p) {
   return amt + " due by " + esc(new Date(p.deadline).toLocaleString("en-US", { timeZone: TZ, weekday: "short", hour: "numeric", minute: "2-digit" }));
 }
 function canCancel(o) {
-  if (o.source === "past" || /declined|cancelled|released|completed/i.test(o.status || "")) return false;
+  if (o.source === "past" || o.paidInFull || /declined|cancelled|released|completed|paid in full/i.test(o.status || "")) return false;
   if (o.pending) return true;
   return !!(o.payment && o.payment.state === "awaiting");
 }
@@ -981,7 +999,12 @@ function orderCard(o, compact) {
     ? "<div>“" + esc(o.request) + "”</div>" + (o.quoteComment ? '<div class="note">Your note: ' + esc(o.quoteComment) + "</div>" : "")
     : (o.cart || []).map(lineHTML).join("");
   const kind = o.type === "custom" ? "Custom request" : (o.cart || []).some((l) => l.isLiveDoseStation) ? "LIVE Dose Station" : o.fulfillment === "delivery" ? "Catering delivery" : "Catering pickup";
-  const total = o.type === "custom" && !o.quoted ? '<span class="muted small">Not quoted yet</span>' : '<span class="o-total">' + money(o.subtotal, true) + "</span>";
+  const tt = totalsOf(o);
+  const total = o.type === "custom" && !o.quoted ? '<span class="muted small">Not quoted yet</span>' : '<span><span class="o-total">' + money(tt.total, true) + '</span> <span class="small muted">incl. ' + money(tt.tax, true) + " NJ tax</span></span>";
+  const moneyFacts = o.type === "custom" && !o.quoted ? "" :
+    "<dt>Money</dt><dd><span class=\"num\">" + money(tt.subtotal, true) + '</span> + NJ tax ' + esc(String(tt.taxRate)) + '% <span class="num">' + money(tt.tax, true) + '</span> = <b class="num">' + money(tt.total, true) + "</b>" +
+      (o.paidInFull ? '<div class="small" style="color:var(--leaf)"><b>Paid in full</b>' + (o.paidInFullAt ? " · " + esc(when(o.paidInFullAt)) : "") + "</div>"
+        : isBooked(o) ? '<div class="small"><b>Balance due: <span class="num">' + money(balanceDue(o), true) + "</span></b> – order stays open until you mark it paid in full</div>" : "") + "</dd>";
   const facts =
     "<dt>Type</dt><dd>" + kind + "</dd>" +
     (o.orderNote ? "<dt>Note</dt><dd>" + esc(o.orderNote) + "</dd>" : "") +
@@ -991,6 +1014,7 @@ function orderCard(o, compact) {
     (o.address ? "<dt>Address</dt><dd>" + esc(o.address) +
       (o.distanceMiles != null ? ' <span class="muted num">~' + esc(o.distanceMiles) + " mi</span>" : "") +
       (o.addressVerified === false ? ' <span class="pill p-wait">not verified</span>' : "") + "</dd>" : "") +
+    moneyFacts +
     (o.payment ? "<dt>Deposit</dt><dd>" + depositHTML(o.payment) + "</dd>" : "") +
     ((o.chat || []).length ? "<dt>Chat</dt><dd>" + o.chat.slice(-6).map((m) => '<div class="small"><b>' + (m.from === "chef" ? "You" : esc((o.customerName || "Customer").split(" ")[0])) + ":</b> " + esc(m.text) + "</div>").join("") + (o.chat.length > 6 ? '<div class="small muted">' + (o.chat.length - 6) + " earlier messages</div>" : "") + "</dd>" : "");
   return '<article class="card order' + (o.pending ? " wait" : "") + '">' +
@@ -1020,6 +1044,10 @@ function decisionRow(o) {
   if (p && (p.state === "awaiting" || p.state === "review")) {
     return '<div class="row decide">' + b("paid", "Payment received", "primary") + b("unpaid", "Not received") +
       '<span class="small muted">' + (p.state === "review" ? "Check your bank app first." : "No screenshot yet - only mark it if you see the money.") + "</span></div>";
+  }
+  if (o.canPaidInFull || (S.mode !== "live" && o.status === "Confirmed" && !o.paidInFull && o.source !== "past")) {
+    return '<div class="row decide">' + b("fullpaid", "Paid in full", "primary") +
+      '<span class="small muted">Tap once you have the balance of <b class="num">' + money(balanceDue(o), true) + "</b>. The order then closes.</span></div>";
   }
   return "";
 }
@@ -1075,7 +1103,7 @@ function viewToday() {
   const waiting = S.orders.filter((o) => o.pending || (o.payment && o.payment.state === "review"));
   const rangeCount = (S.rangeReqs || []).length;
   const t = todayISO(), ym = t.slice(0, 7);
-  const confirmed = S.orders.filter((o) => o.status === "Confirmed");
+  const confirmed = S.orders.filter(isBooked);
   const month = confirmed.filter((o) => (o.createdAt || "").slice(0, 7) === ym);
   const next = upcomingOpenDays(3);
   const hour = Number(new Date().toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: TZ }));
@@ -1110,7 +1138,8 @@ const FILTERS = [
   ["all", "All", () => true],
   ["wait", "Waiting", (o) => o.pending],
   ["dep", "Deposits", (o) => o.payment && (o.payment.state === "awaiting" || o.payment.state === "review")],
-  ["ok", "Confirmed", (o) => o.status === "Confirmed"],
+  ["ok", "Balance due", (o) => o.status === "Confirmed"],
+  ["full", "Paid in full", (o) => o.status === "Paid in Full"],
   ["no", "Declined / cancelled", (o) => /declined|cancelled/i.test(o.status || "")],
   ["past", "Past", (o) => o.source === "past"],
   ["custom", "Custom", (o) => o.type === "custom"],
@@ -1188,7 +1217,7 @@ function viewCalendar() {
     const weekend = dow(iso) === 0 || dow(iso) === 6;
     const e = entryFor(iso);
     const list = byDay[iso] || [];
-    const confirmed = list.filter((o) => o.status === "Confirmed").length;
+    const confirmed = list.filter(isBooked).length;
     const pending = list.filter((o) => o.pending).length;
     let cls = "dc", state = "";
     if (iso < t) { cls += " past"; state = "past"; }
@@ -1236,7 +1265,7 @@ function viewCalendar() {
     (agenda.length
       ? '<div class="card list agenda">' + agenda.map(({ iso, e, list }) => {
           const p = dateParts(iso);
-          const conf = list.filter((o) => o.status === "Confirmed");
+          const conf = list.filter(isBooked);
           const sum = conf.reduce((s2, o) => s2 + Number(o.subtotal || 0), 0);
           return '<button class="li" data-act="open-day" data-date="' + iso + '">' +
             '<div class="cal' + (conf.length ? "" : "") + '"><i style="background:' + (conf.length || (!isOpen(e) && isMarkedBooked(e)) ? "var(--booked-bg)" : isOpen(e) ? "var(--leaf)" : "var(--surface-2)") + ';color:' + (conf.length || (!isOpen(e) && isMarkedBooked(e)) ? "var(--booked-fg)" : isOpen(e) ? "#fff" : "var(--muted)") + '">' + p.wd + "</i><b>" + p.day + "</b></div>" +
@@ -1484,10 +1513,13 @@ function viewReports() {
   const days = S.reportRange === "all" ? null : Number(S.reportRange);
   const since = days ? Date.now() - days * 864e5 : 0;
   const inRange = S.orders.filter((o) => new Date(o.createdAt || 0).getTime() >= since);
-  const ok = inRange.filter((o) => o.status === "Confirmed");
+  const ok = inRange.filter(isBooked);
   const revenue = ok.reduce((s, o) => s + Number(o.subtotal || 0), 0);
   const avg = ok.length ? revenue / ok.length : 0;
-  const decided = inRange.filter((o) => o.status === "Confirmed" || /declined/i.test(o.status || ""));
+  const decided = inRange.filter((o) => isBooked(o) || /declined/i.test(o.status || ""));
+  const closed = inRange.filter((o) => o.status === "Paid in Full");
+  const taxCollected = closed.reduce((t, o) => t + Number(o.taxPaid != null ? o.taxPaid : totalsOf(o).tax), 0);
+  const owed = ok.filter((o) => !o.paidInFull).reduce((t, o) => t + balanceDue(o), 0);
   const rate = decided.length ? Math.round((ok.length / decided.length) * 100) : null;
 
   // weekly revenue - last 8 weeks (or range)
@@ -1519,7 +1551,7 @@ function viewReports() {
   const repeat = Object.values(custs).filter((n) => n > 1).length;
 
   const ranges = [["30", "Last 30 days"], ["90", "Last 90 days"], ["all", "All time"]];
-  return '<div><h2 class="h-page">Reports</h2><p class="sub">Confirmed orders only, by the day they were placed.</p></div>' +
+  return '<div><h2 class="h-page">Reports</h2><p class="sub">Confirmed and paid-in-full orders, by the day they were placed. Sales are before NJ sales tax.</p></div>' +
     '<div class="chips" role="group" aria-label="Report range">' + ranges.map((r) => '<button class="chip" data-act="range" data-r="' + r[0] + '" aria-pressed="' + (S.reportRange === r[0]) + '">' + r[1] + "</button>").join("") + "</div>" +
     '<div class="kpis four">' +
       '<div class="card kpi"><b>' + money(revenue) + "</b><span>Confirmed sales</span></div>" +
@@ -1527,6 +1559,8 @@ function viewReports() {
       '<div class="card kpi"><b>' + money(avg) + "</b><span>Average order</span></div>" +
       '<div class="card kpi"><b>' + (rate == null ? "–" : rate + "%") + "</b><span>Accepted vs declined</span></div>" +
     "</div>" +
+    '<div class="card pad row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b class="num">' + money(taxCollected, true) + '</b> <span class="muted">NJ sales tax collected</span><div class="small muted">On ' + closed.length + " order" + (closed.length === 1 ? "" : "s") + " paid in full. Set this aside for your NJ sales tax return.</div></div>" +
+      '<div><b class="num">' + money(owed, true) + '</b> <span class="muted">balance still due</span><div class="small muted">' + ok.filter((o) => !o.paidInFull).length + " confirmed order(s) not closed yet</div></div></div>" +
     '<div class="card pad"><div class="row" style="justify-content:space-between"><b>Sales by week</b><span class="small muted">week starting Sunday</span></div>' +
       '<div class="bars" role="img" aria-label="Confirmed sales by week">' + byWeek.map((v, i) => {
         const p = dateParts(weeks[i]);
@@ -1570,13 +1604,13 @@ async function loadQrReport() {
           '<p class="small muted" style="margin:2px 0 0">' + b.scanned + ' of ' + b.codes + ' labels used at least once · ' + b.surveys + ' feedback' + last + '</p>'
         : '<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><b>' + esc(b.title) + '</b><span><b class="num" style="font-size:1.4rem">' + b.scanned + '</b> <span class="muted">of ' + b.codes + ' scanned (' + pct + '%)</span></span></div>' +
           '<div class="hbar" style="margin-top:8px"><div class="track" style="margin-bottom:0"><i style="width:' + pct + '%"></i></div></div>' +
-          '<p class="small muted" style="margin:6px 0 0">' + b.surveys + ' sent feedback' + (b.scanned ? ' (' + Math.round((b.surveys / b.scanned) * 100) + '% of scans)' : '') + last + '</p>';
+          '<p class="small muted" style="margin:6px 0 0">Opened on <b>' + (b.phones || 0) + '</b> phones (up to ' + (b.maxPhones || 3) + ' per label) · ' + b.surveys + ' sent feedback' + (b.phones ? ' (' + Math.round((b.surveys / b.phones) * 100) + '% of phones)' : '') + last + '</p>';
       const days = Object.entries(b.days || {}).sort((x, y) => x[0].localeCompare(y[0])).slice(-14);
       const maxDay = Math.max(1, ...days.map((d) => d[1]));
-      const dayBars = days.length ? '<details style="margin-top:10px"><summary class="small" style="cursor:pointer">' + (b.multi ? "Labels first used, by day" : "Scans by day") + '</summary><div class="hbar" style="margin-top:6px">' +
+      const dayBars = days.length ? '<details style="margin-top:10px"><summary class="small" style="cursor:pointer">' + (b.multi ? "Labels first used, by day" : "New phones by day") + '</summary><div class="hbar" style="margin-top:6px">' +
         days.map(([d, n]) => '<span>' + new Date(d + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + '</span><span class="num muted">' + n + '</span><div class="track"><i style="width:' + Math.round((n / maxDay) * 100) + '%"></i></div>').join("") + '</div></details>' : "";
       const recent = (b.recent || []).length ? '<details style="margin-top:6px"><summary class="small" style="cursor:pointer">Latest scans</summary><div class="stack" style="margin-top:6px;gap:6px">' +
-        b.recent.map((r) => '<div class="row small" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b>No. ' + r.gift + '</b>' + (r.via ? ' · ' + esc(r.via) : '') + (r.device ? ' · ' + esc(r.device) : '') + (b.multi ? ' · ' + r.scans + (r.scans === 1 ? ' scan' : ' scans') : '') + '</span><span class="muted">' + whenText(r.at) + (r.feedback ? ' · <b style="color:var(--leaf)">feedback ✓</b>' : '') + '</span></div>').join("") + '</div></details>' : "";
+        b.recent.map((r) => '<div class="row small" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b>No. ' + r.gift + '</b>' + (r.phone ? ' · phone ' + r.phone : '') + (r.via ? ' · ' + esc(r.via) : '') + (r.device ? ' · ' + esc(r.device) : '') + (b.multi ? ' · ' + r.scans + (r.scans === 1 ? ' scan' : ' scans') : '') + '</span><span class="muted">' + whenText(r.at) + (r.feedback ? ' · <b style="color:var(--leaf)">feedback ✓</b>' : '') + '</span></div>').join("") + '</div></details>' : "";
       return '<div class="card pad">' + head + dayBars + recent + '</div>';
     }).join("") + '<p class="small muted" style="margin:0 4px">Your own previews and the CHEF-TEST code are not counted. Each code\'s full history is in the BBB Gift Codes tab of your Google Sheet.</p>';
   } catch (e) { box.innerHTML = note("Couldn\'t load QR scans. Open Reports again to retry."); }
@@ -1698,7 +1732,7 @@ function demoCustomers() {
     const c = map[o.customerPhone] || (map[o.customerPhone] = { phone: o.customerPhone, firstName: first || "", lastName: rest.join(" "), address: "", addressVerified: false, orders: 0, confirmedOrders: 0, confirmedTotal: 0, lastOrder: null, createdAt: o.createdAt });
     c.orders++;
     if (o.address && !c.address) { c.address = o.address; c.addressVerified = o.addressVerified !== false; }
-    if (o.status === "Confirmed") { c.confirmedOrders++; c.confirmedTotal += Number(o.subtotal || 0); }
+    if (isBooked(o)) { c.confirmedOrders++; c.confirmedTotal += Number(o.subtotal || 0); }
     if (!c.lastOrder || o.createdAt > c.lastOrder) c.lastOrder = o.createdAt;
     if (o.createdAt < c.createdAt) c.createdAt = o.createdAt;
   });
@@ -2126,7 +2160,7 @@ async function loadQrLabels() {
     if (!g.ready) { box.innerHTML = '<p class="small muted" style="margin:0">QR codes are off until GIFT_CODE_SECRET is set on the server.</p>'; return; }
     box.innerHTML = Object.entries(g.batches).map(([id, b]) =>
       '<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b>' + esc(b.title) + '</b><br><span class="small muted">' + b.codes + ' codes · ' +
-      (b.multi ? 'work on any phone · scanned ' + b.scans + ' times' : 'one phone each · ' + b.scanned + ' used') + ' · ' + b.surveys + ' feedback</span></span>' +
+      (b.multi ? 'work on any phone · scanned ' + b.scans + ' times' : 'up to ' + (b.maxPhones || 3) + ' phones each · ' + b.scanned + ' used on ' + (b.phones || 0) + ' phones') + ' · ' + b.surveys + ' feedback</span></span>' +
       '<a class="btn sm" href="/admin/gift/' + encodeURIComponent(id) + '/labels">Open label sheet</a></div>').join("");
   } catch (e) { box.innerHTML = '<p class="small muted" style="margin:0">Couldn\'t load QR labels.</p>'; }
 }
@@ -2195,6 +2229,7 @@ function viewSetup() {
         f("s-ldsmi", "LIVE Dose: max miles", d.ldsMaxMiles || "", 'type="number" inputmode="numeric" min="1" placeholder="No limit"') +
       '</div><p class="small muted" style="margin:0">Straight-line miles. Driving distance is usually 20–30% more, so about 40 here matches a 50-mile drive.</p></div>' +
     '<div class="h-sec">Zelle deposits</div><div class="card pad stack">' +
+      f("s-ztax", "NJ sales tax (%)", s.payment.taxPercent != null ? s.payment.taxPercent : 6.625, 'type="number" inputmode="decimal" min="0" max="19" step="0.001"', "Added to every order. The deposit includes all of it. NJ's statewide rate is 6.625%.") +
       '<label class="switch" style="padding-top:0"><input type="checkbox" data-bind="s-zon"' + (s.payment.enabled ? " checked" : "") + ' /><span><b>Ask for a Zelle deposit</b><small>' +
         (s.payment.enabled ? "On – customers pay a deposit after you approve. You confirm it on WhatsApp." : "Off – payment is collected in person, as before.") + "</small></span></label>" +
       (!s.payment.enabled ? "" :
@@ -2243,6 +2278,7 @@ const BIND = {
   "s-zto": (v) => { S.menu.settings.payment.zelleTo = v; },
   "s-zname": (v) => { S.menu.settings.payment.zelleName = v; },
   "s-zpct": (v) => { S.menu.settings.payment.depositPercent = Math.min(100, parseInt(v) || 50); },
+  "s-ztax": (v) => { const n = parseFloat(v); S.menu.settings.payment.taxPercent = n >= 0 && n < 20 ? n : 6.625; },
   "s-zhrs": (v) => { S.menu.settings.payment.deadlineHours = parseInt(v) || 24; },
   "s-zon": (v) => { S.menu.settings.payment.enabled = !!v; render(); },
   "s-zcat": (v) => { S.menu.settings.payment.cateringHoursBefore = v === "" ? 48 : Math.max(0, parseInt(v) || 0); },
@@ -2565,10 +2601,10 @@ document.addEventListener("click", (e) => {
             const updated = await api("POST", "/admin/api/orders/" + encodeURIComponent(id) + "/decision", Object.assign({ action: act }, extra || {}));
             S.orders = S.orders.map((x) => (x.orderId === id ? updated : x));
           } else {
-            const st = { endchat: o.status, approve: "Awaiting Deposit", decline: "Declined", paid: "Confirmed", unpaid: "Awaiting Deposit", quote: "Quote Sent", cdecline: "Declined" }[act];
-            S.orders = S.orders.map((x) => (x.orderId === id ? Object.assign({}, x, act === "endchat" ? {} : { status: st, pending: act === "quote", quoted: act === "quote" }) : x));
+            const st = { endchat: o.status, approve: "Awaiting Deposit", decline: "Declined", paid: "Confirmed", unpaid: "Awaiting Deposit", quote: "Quote Sent", cdecline: "Declined", fullpaid: "Paid in Full" }[act];
+            S.orders = S.orders.map((x) => (x.orderId === id ? Object.assign({}, x, act === "endchat" ? {} : act === "fullpaid" ? { status: st, paidInFull: true, paidInFullAt: new Date().toISOString() } : { status: st, pending: act === "quote", quoted: act === "quote" }) : x));
           }
-          toast({ approve: "Approved - " + (o.customerName || "customer") + " has been told", decline: "Declined - customer told", endchat: "Chat ended - customer told Chef will confirm shortly", paid: "Deposit marked paid - order confirmed", unpaid: "Customer asked to check their payment", quote: "Quote sent", cdecline: "Request declined - customer told" }[act]);
+          toast({ approve: "Approved - " + (o.customerName || "customer") + " has been told", decline: "Declined - customer told", endchat: "Chat ended - customer told Chef will confirm shortly", paid: "Deposit marked paid - order confirmed", unpaid: "Customer asked to check their payment", quote: "Quote sent", cdecline: "Request declined - customer told", fullpaid: "Paid in full - receipt sent, order closed" }[act]);
           render();
         } catch (err) { toast(err.message, true); }
       };
@@ -2609,7 +2645,7 @@ document.addEventListener("click", (e) => {
         openSheet({
           title: act === "quote" ? "Send a quote" : "Decline this request",
           body: (o.request ? '<p style="margin:0">“' + esc(o.request) + "”</p>" : "") +
-            (act === "quote" ? '<label class="field"><span>Price ($)</span><input id="qPrice" type="number" inputmode="decimal" min="1" /></label>' : "") +
+            (act === "quote" ? '<label class="field"><span>Price before NJ tax ($)</span><input id="qPrice" type="number" inputmode="decimal" min="1" /></label>' : "") +
             '<label class="field"><span>' + (act === "quote" ? "Note for the customer (optional)" : "Reason for the customer (optional)") + '</span><textarea id="qNote" rows="3"></textarea></label>',
           foot: '<button class="btn" data-close>Cancel</button><button class="btn ' + (act === "quote" ? "primary" : "danger solid") + '" id="qGo">' + (act === "quote" ? "Send quote" : "Decline") + "</button>",
           onMount: (sh) => sh.querySelector("#qGo").addEventListener("click", async () => {
@@ -2626,7 +2662,8 @@ document.addEventListener("click", (e) => {
         approve: ["Approve " + id + "?", who + " will be told it's approved" + (S.menu && S.menu.settings.payment && S.menu.settings.payment.enabled ? " and get the Zelle deposit details." : "."), "Approve", false],
         decline: ["Decline " + id + "?", who + " will be told you can't take this order.", "Decline", true],
         paid: ["Mark the deposit paid?", "Only if you can see the money in your bank app. " + who + " gets a payment confirmation and the order is confirmed.", "Payment received", false],
-        unpaid: ["Payment not received?", who + " will be asked to check their Zelle payment and send a new screenshot.", "Not received", true]
+        unpaid: ["Payment not received?", who + " will be asked to check their Zelle payment and send a new screenshot.", "Not received", true],
+        fullpaid: ["Mark " + id + " paid in full?", "Only once you have the whole " + money(totalsOf(o).total, true) + " (incl. " + money(totalsOf(o).tax, true) + " NJ sales tax) – the balance due is " + money(balanceDue(o), true) + ". " + who + " gets a receipt and the order closes. You can't undo this here.", "Paid in full", false]
       }[act];
       confirmSheet({ title: copy[0], text: copy[1], confirmLabel: copy[2], danger: copy[3], onConfirm: () => send() });
       break;

@@ -259,6 +259,10 @@ struct OrderPreview: Decodable {
 
     let lines: [OrderLine]
     let subtotal: Double
+    /// NJ sales tax (percent and dollars) and the total including it.
+    let taxRate: Double?
+    let tax: Double?
+    let total: Double?
     let deliveryFeeNote: String?
     let travelFee: Double?
     let travelFeeUnknown: Bool
@@ -311,6 +315,12 @@ struct Order: Decodable, Identifiable, Hashable {
     let fulfillment: String?
     let address: String?
     let subtotal: Double
+    /// NJ sales tax, total including it, and whether Chef has closed the order out.
+    let taxRate: Double?
+    let tax: Double?
+    let total: Double?
+    let paidInFull: Bool?
+    let balanceDue: Double?
     let lines: [OrderLine]
     let itemsText: String
     let request: String?
@@ -398,6 +408,13 @@ enum Money {
         f.minimumFractionDigits = showCents ? 2 : 0
         f.maximumFractionDigits = showCents ? 2 : 0
         return f.string(from: NSNumber(value: value)) ?? "$\(value)"
+    }
+    /// 6.625 -> "6.625%"
+    static func percent(_ value: Double) -> String {
+        let f = NumberFormatter()
+        f.minimumFractionDigits = 0
+        f.maximumFractionDigits = 3
+        return (f.string(from: NSNumber(value: value)) ?? "\(value)") + "%"
     }
 }
 

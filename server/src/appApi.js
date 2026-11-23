@@ -18,6 +18,7 @@ const orderDb = require("./orderDb");
 const pendingOrderStore = require("./pendingOrderStore");
 const records = require("./records");
 const payments = require("./payments");
+const tax = require("./tax");
 const appUsers = require("./appUsers");
 const appInbox = require("./appInbox");
 const phoneVerify = require("./phoneVerify");
@@ -667,9 +668,13 @@ async function buildOrder(phone, body) {
   };
 
   const pay = payments.settings(menu);
+  const tx = tax.split(subtotal, tax.currentRate(menu), payments.enabled(menu) ? pay.depositPercent : null);
   const summary = {
     lines: cart.map(linePayload),
     subtotal,
+    taxRate: tx.taxRate,
+    tax: tx.tax,
+    total: tx.total,
     deliveryFeeNote:
       fulfillment === "delivery" && kind === "catering" ? "Delivery fee based on distance - Chef adds it when confirming." : null,
     travelFee: kind === "lds" ? cart[0].travelFee : null,
@@ -687,12 +692,12 @@ async function buildOrder(phone, body) {
       ? {
           deposit: true,
           percent: pay.depositPercent,
-          amount: payments.depositFor(subtotal, menu),
-          text: `${pay.depositPercent}% Zelle deposit after Chef approves, balance ${
+          amount: tx.deposit,
+          text: `$${tx.deposit.toFixed(2)} Zelle deposit after Chef approves (${pay.depositPercent}% of the order + $${tx.tax.toFixed(2)} NJ sales tax), balance $${tx.balance.toFixed(2)} ${
             kind === "lds" ? "on the day of your event" : fulfillment === "pickup" ? "at pickup" : "at delivery"
-          }.`
+          }. Total $${tx.total.toFixed(2)} incl. NJ sales tax.`
         }
-      : { deposit: false, text: `Payment is collected ${kind === "lds" ? "on the day of your event" : `at ${fulfillment}`}.` }
+      : { deposit: false, text: `$${tx.total.toFixed(2)} incl. $${tx.tax.toFixed(2)} NJ sales tax, collected ${kind === "lds" ? "on the day of your event" : `at ${fulfillment}`}.` }
   };
   return { order, summary, addressMatch };
 }
@@ -746,9 +751,13 @@ async function buildPreorder(phone, body) {
     orderNote: String(body.orderNote || "").trim().slice(0, 500) || null
   };
   const pay = payments.settings(menu);
+  const tx = tax.split(subtotal, tax.currentRate(menu), payments.enabled(menu) ? pay.depositPercent : null);
   const summary = {
     lines: cart.map(linePayload),
     subtotal,
+    taxRate: tx.taxRate,
+    tax: tx.tax,
+    total: tx.total,
     deliveryFeeNote: null,
     travelFee: null,
     travelFeeUnknown: false,
@@ -768,8 +777,8 @@ async function buildPreorder(phone, body) {
       notes: preorders.statusLines(menu, date, adding).filter((l) => cart.some((c) => l.startsWith(c.title + ":")))
     },
     payment: payments.enabled(menu)
-      ? { deposit: true, percent: pay.depositPercent, amount: payments.depositFor(subtotal, menu), text: `${pay.depositPercent}% Zelle deposit after Chef approves, balance at pickup.` }
-      : { deposit: false, text: "Payment is collected at pickup." }
+      ? { deposit: true, percent: pay.depositPercent, amount: tx.deposit, text: `$${tx.deposit.toFixed(2)} Zelle deposit after Chef approves (${pay.depositPercent}% of the order + $${tx.tax.toFixed(2)} NJ sales tax), balance $${tx.balance.toFixed(2)} at pickup. Total $${tx.total.toFixed(2)} incl. NJ sales tax.` }
+      : { deposit: false, text: `$${tx.total.toFixed(2)} incl. $${tx.tax.toFixed(2)} NJ sales tax, collected at pickup.` }
   };
   return { order, summary, addressMatch: null };
 }
@@ -814,7 +823,7 @@ function stageFor(o) {
   const s = String(o.status || "");
   if (o.source === "past") return "confirmed";
   if (/declined|released|cancelled/i.test(s)) return "closed";
-  if (/confirmed/i.test(s)) return "confirmed";
+  if (/confirmed|paid in full/i.test(s)) return "confirmed"; // older apps know "confirmed"; paidInFull says the rest
   if (/deposit under review/i.test(s)) return "deposit_review";
   if (/awaiting deposit/i.test(s)) return "deposit_due";
   if (/quote sent/i.test(s)) return "quote_ready";
@@ -842,6 +851,10 @@ function orderPayload(o) {
     fulfillment: o.fulfillment || null,
     address: o.address || null,
     subtotal: money2(o.subtotal),
+    ...(() => {
+      const t = tax.forOrder(o);
+      return { taxRate: t.taxRate, tax: t.tax, total: t.total, paidInFull: !!o.paidInFull, paidInFullAt: o.paidInFullAt || null, balanceDue: o.paidInFull ? 0 : p ? (p.state === "paid" ? t.balance : t.total) : t.total };
+    })(),
     lines: isCustom ? [] : (o.cart || []).map(linePayload),
     itemsText: itemsText(o),
     request: isCustom ? o.request || "" : null,
@@ -1186,11 +1199,11 @@ function router() {
       );
 
       const payNote = payments.enabled()
-        ? `Once Chef approves, you'll get Zelle details for the ${payments.settings().depositPercent}% deposit.`
+        ? `Once Chef approves, you'll get Zelle details for the deposit (${payments.settings().depositPercent}% of the order + all NJ sales tax).`
         : `Payment will be collected at ${full.fulfillment}.`;
       await sendText(
         req.phone,
-        `Thanks! Your order ${id} ($${full.subtotal.toFixed(2)}) is being reviewed - we'll confirm shortly. ${payNote}`
+        `Thanks! Your order ${id} ($${tax.split(full.subtotal, tax.currentRate()).total.toFixed(2)} incl. NJ sales tax) is being reviewed - we'll confirm shortly. ${payNote}`
       ).catch((err) => console.error(`App order ${id} confirmation message failed:`, err.message));
 
       if (ownerReady()) {

@@ -150,6 +150,7 @@ fun CartSheet(model: AppModel, onDismiss: () -> Unit) {
                         Text("Subtotal", style = Type.semi(17.0), color = P.ink, modifier = Modifier.weight(1f))
                         Text(Money.text(model.cart.subtotal, true), style = Type.bold(19.0), color = P.ink)
                     }
+                    Text("Plus NJ sales tax, shown before you send the order.", style = Type.body(13.0), color = P.muted, modifier = Modifier.padding(horizontal = 4.dp))
                     if (belowMin) model.config?.orderMinimum?.let { min ->
                         Notice("Catering orders start at ${Money.text(min)}. Add ${Money.text(min - model.cart.subtotal, true)} more to check out.", Tone.WARN, Icons.Outlined.AddShoppingCart)
                     }
@@ -289,7 +290,7 @@ private fun CheckoutSheet(model: AppModel, onBack: () -> Unit, onDismiss: () -> 
     val p = preview
     FullSheet(onDismiss = onBack, title = "Checkout", closeLabel = "Back", bottomBar = {
         BottomBar {
-            PrimaryButton(if (p != null) "Send to Chef · ${Money.auto(p.subtotal)}" else "Send to Chef", enabled = p != null && ready, busy = placing) { place() }
+            PrimaryButton(if (p != null) "Send to Chef · ${Money.auto(p.total ?: p.subtotal)}" else "Send to Chef", enabled = p != null && ready, busy = placing) { place() }
         }
     }) { pad ->
         ScrollBody(pad, contentPadding = 16, spacing = 26) {
@@ -429,6 +430,18 @@ private fun CheckoutSheet(model: AppModel, onBack: () -> Unit, onDismiss: () -> 
                         Text("Subtotal", style = Type.bold(17.0), color = P.ink, modifier = Modifier.weight(1f))
                         Text(Money.text(p.subtotal, true), style = Type.bold(18.0), color = P.ink)
                     }
+                    val tax = p.tax
+                    val total = p.total
+                    if (tax != null && total != null) {
+                        Row {
+                            Text("NJ sales tax" + (p.taxRate?.let { " (${Money.percent(it)})" } ?: ""), style = Type.body(16.0), color = P.ink, modifier = Modifier.weight(1f))
+                            Text(Money.text(tax, true), style = Type.body(16.0), color = P.ink)
+                        }
+                        Row {
+                            Text("Total", style = Type.bold(17.0), color = P.ink, modifier = Modifier.weight(1f))
+                            Text(Money.text(total, true), style = Type.bold(19.0), color = P.ink)
+                        }
+                    }
                 }
                 Panel {
                     LabelRow(Icons.Outlined.CalendarMonth, p.requestedTime)
@@ -521,7 +534,7 @@ private fun shift(label: String, minutes: Int): String? = runCatching {
 private fun OrderPlaced(model: AppModel, order: Order, pad: androidx.compose.foundation.layout.PaddingValues, close: () -> Unit) {
     ScrollBody(pad, spacing = 22) {
         Text("Sent to Chef", style = Type.display(34), color = P.ink)
-        Text("Order ${order.orderId} · ${Money.text(order.subtotal, true)}", style = Type.semi(17.0), color = P.ink)
+        Text("Order ${order.orderId} · ${Money.text(order.total ?: order.subtotal, true)}", style = Type.semi(17.0), color = P.ink)
         TiffinProgress(order)
         MutedText(
             if (model.config?.deposit?.enabled == true) "Chef reviews every order personally. Once approved, you'll get Zelle details for the ${model.config?.deposit?.percent?.toInt() ?: 50}% deposit right here."

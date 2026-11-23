@@ -230,6 +230,10 @@ data class OrderLine(
 data class OrderPreview(
     val lines: List<OrderLine> = emptyList(),
     val subtotal: Double = 0.0,
+    /** NJ sales tax (percent and dollars) and the total including it. */
+    val taxRate: Double? = null,
+    val tax: Double? = null,
+    val total: Double? = null,
     val deliveryFeeNote: String? = null,
     val travelFee: Double? = null,
     val travelFeeUnknown: Boolean = false,
@@ -265,6 +269,12 @@ data class Order(
     val fulfillment: String? = null,
     val address: String? = null,
     val subtotal: Double = 0.0,
+    /** NJ sales tax, total including it, and whether Chef has closed the order out. */
+    val taxRate: Double? = null,
+    val tax: Double? = null,
+    val total: Double? = null,
+    val paidInFull: Boolean? = null,
+    val balanceDue: Double? = null,
     val lines: List<OrderLine> = emptyList(),
     val itemsText: String = "",
     val request: String? = null,
@@ -352,6 +362,13 @@ object Money {
         return f.format(value)
     }
     fun auto(value: Double) = text(value, value.roundToLong().toDouble() != value)
+    /** 6.625 -> "6.625%" */
+    fun percent(value: Double): String {
+        val f = NumberFormat.getNumberInstance(Locale.US)
+        f.minimumFractionDigits = 0
+        f.maximumFractionDigits = 3
+        return f.format(value) + "%"
+    }
 }
 
 object Qty {

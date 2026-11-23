@@ -217,7 +217,9 @@ function localStamp(iso) {
 app.get("/admin/orders", requireAdminAuth, sendAdminApp);
 
 app.get("/admin/api/orders", requireAdminAuth, (req, res) => {
-  res.json(ordersNewestFirst().map((o) => ({ ...o, itemsText: itemsText(o) })));
+  const tax = require("./tax");
+  const payments = require("./payments");
+  res.json(ordersNewestFirst().map((o) => ({ ...o, itemsText: itemsText(o), totals: tax.forOrder(o), canPaidInFull: payments.canMarkPaidInFull(o) })));
 });
 
 const records = require("./records");
@@ -338,7 +340,8 @@ app.post("/admin/api/orders/:id/decision", requireAdminAuth, async (req, res) =>
   const ok =
     (["approve", "decline", "time", "message", "endchat"].includes(action) && o.pending && !custom && /pending approval/i.test(o.status || "")) ||
     (["paid", "unpaid"].includes(action) && pay) ||
-    (["quote", "cdecline"].includes(action) && o.pending && custom && !o.quoted);
+    (["quote", "cdecline"].includes(action) && o.pending && custom && !o.quoted) ||
+    (action === "fullpaid" && require("./payments").canMarkPaidInFull(o));
   if (!ok) return res.status(409).send("This order isn't waiting on that any more - refresh to see where it is.");
   if (action === "quote" && !(Number(price) > 0)) return res.status(400).send("Enter the price for the quote.");
   if (action === "time" && !String(time || "").trim()) return res.status(400).send('Enter the new time, e.g. "12:30 PM".');
@@ -348,7 +351,13 @@ app.post("/admin/api/orders/:id/decision", requireAdminAuth, async (req, res) =>
   }
   const reply = (rid) => handleIncoming({ from: owner, message_type: "reply", reply: { id: rid, title: rid } });
   const text = (t) => handleIncoming({ from: owner, message_type: "text", text: t });
-  try {
+  if (action === "fullpaid") {
+    try {
+      await require("./payments").markPaidInFull(id, owner);
+    } catch (err) {
+      return res.status(409).send(err.message);
+    }
+  } else try {
     if (action === "approve") await reply(`approve:${id}`);
     else if (action === "decline") await reply(`decline:${id}`);
     else if (action === "time") {
@@ -374,7 +383,7 @@ app.post("/admin/api/orders/:id/decision", requireAdminAuth, async (req, res) =>
     console.error(`Admin decision ${action} for ${id}: WhatsApp note failed:`, err.message);
   }
   const updated = orderDb.get(id);
-  res.json({ ...updated, itemsText: itemsText(updated) });
+  res.json({ ...updated, itemsText: itemsText(updated), totals: require("./tax").forOrder(updated), canPaidInFull: require("./payments").canMarkPaidInFull(updated) });
 });
 
 // FTR app: Chef's Kitchen opens here with a one-time code (see appApi.js /admin/handoff).
@@ -419,9 +428,11 @@ app.get("/admin/api/orders.csv", requireAdminAuth, (req, res) => {
     o.address || "",
     o.requestedTime || "",
     o.status || "",
-    paymentText(o)
+    paymentText(o),
+    require("./tax").forOrder(o).tax.toFixed(2),
+    require("./tax").forOrder(o).total.toFixed(2)
   ]);
-  sendCsv(res, "ftr-orders.csv", HEADER, rows);
+  sendCsv(res, "ftr-orders.csv", [...HEADER, "NJ sales tax", "Total incl. tax"], rows);
 });
 
 app.get("/admin/api/customers.csv", requireAdminAuth, (req, res) => {

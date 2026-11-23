@@ -94,7 +94,7 @@ struct OrdersView: View {
                     HStack {
                         Text(o.orderId).font(Typeface.body(13)).foregroundStyle(Palette.muted)
                         Spacer()
-                        if o.subtotal > 0 { Text(Money.text(o.subtotal, cents: true)).font(Typeface.body(15, weight: .bold)).monospacedDigit().foregroundStyle(Palette.ink) }
+                        if o.subtotal > 0 { Text(Money.text(o.total ?? o.subtotal, cents: true)).font(Typeface.body(15, weight: .bold)).monospacedDigit().foregroundStyle(Palette.ink) }
                     }
                 }
             }
@@ -443,10 +443,32 @@ struct OrderDetailView: View {
             }
             if o.subtotal > 0 {
                 Divider()
+                if let tax = o.tax, tax > 0 {
+                    HStack {
+                        Text("Subtotal").font(Typeface.body(15))
+                        Spacer()
+                        Text(Money.text(o.subtotal, cents: true)).font(Typeface.body(15)).monospacedDigit()
+                    }
+                    HStack {
+                        Text("NJ sales tax\(o.taxRate.map { " (\(Money.percent($0)))" } ?? "")").font(Typeface.body(15))
+                        Spacer()
+                        Text(Money.text(tax, cents: true)).font(Typeface.body(15)).monospacedDigit()
+                    }
+                }
                 HStack {
                     Text("Total").font(Typeface.body(16, weight: .bold))
                     Spacer()
-                    Text(Money.text(o.subtotal, cents: true)).font(Typeface.body(17, weight: .bold)).monospacedDigit()
+                    Text(Money.text(o.total ?? o.subtotal, cents: true)).font(Typeface.body(17, weight: .bold)).monospacedDigit()
+                }
+                if o.paidInFull == true {
+                    Label("Paid in full. Thank you!", systemImage: "checkmark.seal.fill")
+                        .font(Typeface.body(15, weight: .semibold)).foregroundStyle(Palette.leaf)
+                } else if o.stage == .confirmed, let due = o.balanceDue, due > 0 {
+                    HStack {
+                        Text("Balance due").font(Typeface.body(15, weight: .semibold))
+                        Spacer()
+                        Text(Money.text(due, cents: true)).font(Typeface.body(15, weight: .semibold)).monospacedDigit()
+                    }
                 }
             }
             if let f = o.fulfillment, !o.isCustom {

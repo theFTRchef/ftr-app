@@ -51,7 +51,7 @@ function customers() {
   return Object.entries(customerStore.all())
     .map(([phone, c]) => {
       const theirs = orders.filter((o) => o.customerPhone === phone);
-      const confirmed = theirs.filter((o) => o.status === "Confirmed");
+      const confirmed = theirs.filter((o) => o.status === "Confirmed" || o.status === "Paid in Full");
       const lastOrder = theirs.map((o) => o.createdAt).filter(Boolean).sort().pop() || null;
       return {
         phone,

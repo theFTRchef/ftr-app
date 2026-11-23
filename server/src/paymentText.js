@@ -20,9 +20,11 @@ function deadlineLabel(iso) {
 
 function paymentText(order) {
   const p = order && order.payment;
+  const taxNote = (t) => (t && t.taxRate != null ? ` incl. $${Number(t.tax || 0).toFixed(2)} NJ tax` : "");
+  if (order && order.paidInFull) return `PAID IN FULL ${money(order.amountPaid)}${order.taxPaid != null ? ` incl. ${money(order.taxPaid)} NJ tax` : ""}`;
   if (!p) return "";
   const conf = p.confirmationCode || (p.proofs || []).map((x) => x.code).filter(Boolean).slice(-1)[0];
-  if (p.state === "paid") return `Deposit ${money(p.depositDue)} PAID${conf ? ` (Zelle ${conf})` : ""}; balance ${money(p.balance)}`;
+  if (p.state === "paid") return `Deposit ${money(p.depositDue)}${taxNote(p)} PAID${conf ? ` (Zelle ${conf})` : ""}; balance ${money(p.balance)} due`;
   if (p.state === "review") return `Deposit ${money(p.depositDue)} - screenshot received, chef to confirm`;
   if (p.state === "released") return `Deposit ${money(p.depositDue)} not paid - released`;
   return `Deposit ${money(p.depositDue)} due by ${deadlineLabel(p.deadline)}`;

@@ -109,6 +109,9 @@ struct CartView: View {
                     Text(Money.text(model.cart.subtotal, cents: true)).font(Typeface.body(19, weight: .bold)).monospacedDigit()
                 }
                 .padding(.horizontal, 4)
+                Text("Plus NJ sales tax, shown before you send the order.")
+                    .font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                    .padding(.horizontal, 4)
 
                 if let min = model.config?.orderMinimum, min > 0, !model.cart.isLiveDose, !model.cartIsPreorder, model.cart.subtotal < min {
                     Notice(tone: .warn, icon: "cart.badge.plus", text: "Catering orders start at \(Money.text(min)). Add \(Money.text(min - model.cart.subtotal, cents: true)) more to check out.")
@@ -264,7 +267,7 @@ struct CheckoutView: View {
     }
 
     private var placeTitle: String {
-        if let p = preview { return "Send to Chef · \(Money.text(p.subtotal, cents: p.subtotal.rounded() != p.subtotal))" }
+        if let p = preview { let t = p.total ?? p.subtotal; return "Send to Chef · \(Money.text(t, cents: t.rounded() != t))" }
         return "Send to Chef"
     }
 
@@ -507,6 +510,18 @@ struct CheckoutView: View {
                         Spacer()
                         Text(Money.text(p.subtotal, cents: true)).font(Typeface.body(18, weight: .bold)).monospacedDigit()
                     }
+                    if let tax = p.tax, let total = p.total {
+                        HStack {
+                            Text("NJ sales tax\(p.taxRate.map { " (\(Money.percent($0)))" } ?? "")").font(Typeface.body(16))
+                            Spacer()
+                            Text(Money.text(tax, cents: true)).font(Typeface.body(16)).monospacedDigit()
+                        }
+                        HStack {
+                            Text("Total").font(Typeface.body(17, weight: .bold))
+                            Spacer()
+                            Text(Money.text(total, cents: true)).font(Typeface.body(19, weight: .bold)).monospacedDigit()
+                        }
+                    }
                 }
                 Panel {
                     Label(p.requestedTime, systemImage: "calendar").font(Typeface.body(15))
@@ -656,7 +671,7 @@ struct OrderPlacedView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 Text("Sent to Chef").font(Typeface.display(34)).padding(.top, 12)
-                Text("Order \(order.orderId) · \(Money.text(order.subtotal, cents: true))")
+                Text("Order \(order.orderId) · \(Money.text(order.total ?? order.subtotal, cents: true))")
                     .font(Typeface.body(17, weight: .semibold)).monospacedDigit()
                 TiffinProgress(order: order)
                 Text(model.config?.deposit.enabled == true

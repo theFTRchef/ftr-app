@@ -5,7 +5,7 @@ import VisionKit
 //
 // Two kinds of codes open a recipe here, and nothing shows without a scan:
 //  - gift labels on FTR-BBB Powder packets: https://bot.franklintiffinroom.com/g/T50-017-XXXXXXXX
-//    (single use: the first phone to open one keeps it; CHEF-TEST is Chef's reusable test code)
+//    (up to 3 phones: the first 3 phones to open one hold it; CHEF-TEST is Chef's reusable test code)
 //  - recipe codes made in Chef's Kitchen: https://bot.franklintiffinroom.com/r/<token>
 
 struct Recipe: Decodable, Equatable {
@@ -254,7 +254,7 @@ struct RecipeScanFlow: View {
             } else {
                 Notice(tone: .warn, text: "This iPhone can't scan codes in the app. Check that FTR-DOSE is allowed to use the camera in Settings → Privacy & Security → Camera.")
             }
-            Text("Point your camera at the QR code on your FTR masala packet. Each gift code opens on one phone only.")
+            Text("Point your camera at the QR code on your FTR masala packet. Each gift code opens on up to 3 phones.")
                 .font(Typeface.body(15))
                 .foregroundStyle(Palette.muted)
                 .multilineTextAlignment(.center)
