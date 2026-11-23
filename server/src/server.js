@@ -334,14 +334,15 @@ app.post("/admin/api/orders/:id/decision", requireAdminAuth, async (req, res) =>
   const id = req.params.id;
   const o = orderDb.get(id);
   if (!o) return res.status(404).send("Order not found");
-  const { action, price, note, time, message } = req.body || {};
+  const { action, price, note, time, message, received } = req.body || {};
   const pay = o.payment && ["awaiting", "review"].includes(o.payment.state);
   const custom = o.type === "custom";
   const ok =
     (["approve", "decline", "time", "message", "endchat"].includes(action) && o.pending && !custom && /pending approval/i.test(o.status || "")) ||
     (["paid", "unpaid"].includes(action) && pay) ||
     (["quote", "cdecline"].includes(action) && o.pending && custom && !o.quoted) ||
-    (action === "fullpaid" && require("./payments").canMarkPaidInFull(o));
+    (action === "fullpaid" && require("./payments").canMarkPaidInFull(o)) ||
+    (action === "paynote" && !!o.paidInFull);
   if (!ok) return res.status(409).send("This order isn't waiting on that any more - refresh to see where it is.");
   if (action === "quote" && !(Number(price) > 0)) return res.status(400).send("Enter the price for the quote.");
   if (action === "time" && !String(time || "").trim()) return res.status(400).send('Enter the new time, e.g. "12:30 PM".');
@@ -351,11 +352,12 @@ app.post("/admin/api/orders/:id/decision", requireAdminAuth, async (req, res) =>
   }
   const reply = (rid) => handleIncoming({ from: owner, message_type: "reply", reply: { id: rid, title: rid } });
   const text = (t) => handleIncoming({ from: owner, message_type: "text", text: t });
-  if (action === "fullpaid") {
+  if (action === "fullpaid" || action === "paynote") {
     try {
-      await require("./payments").markPaidInFull(id, owner);
+      if (action === "fullpaid") await require("./payments").markPaidInFull(id, owner, { received, note, via: "kitchen" });
+      else require("./payments").updateCloseOut(id, { received, note });
     } catch (err) {
-      return res.status(409).send(err.message);
+      return res.status(/amount/i.test(err.message) ? 400 : 409).send(err.message);
     }
   } else try {
     if (action === "approve") await reply(`approve:${id}`);

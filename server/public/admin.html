@@ -947,6 +947,16 @@ function totalsOf(o) {
   const deposit = p ? Number(p.depositDue) : null;
   return { subtotal: sub, taxRate: rate, tax, total, deposit, balance: p ? r2(total - deposit) : total, paidInFull: !!o.paidInFull };
 }
+/** What Chef recorded when closing the order: amount received and a private note. */
+function closeOutHTML(o) {
+  const c = o.closeOut;
+  if (!c) return "";
+  const diff = Math.round((c.received - c.due) * 100) / 100;
+  return '<div class="small">Received at close: <b class="num">' + money(c.received, true) + "</b>" +
+    (diff ? ' <span class="pill ' + (diff > 0 ? "p-info" : "p-wait") + '">' + (diff > 0 ? money(diff, true) + " more" : money(-diff, true) + " less") + " than " + money(c.due, true) + " due</span>" : "") +
+    (c.via === "whatsapp" && !c.editedAt ? ' <span class="muted">(WhatsApp button)</span>' : "") + "</div>" +
+    (c.note ? '<div class="note">Your note: ' + esc(c.note) + "</div>" : "");
+}
 function balanceDue(o) {
   const t = totalsOf(o);
   if (o.paidInFull) return 0;
@@ -1003,7 +1013,7 @@ function orderCard(o, compact) {
   const total = o.type === "custom" && !o.quoted ? '<span class="muted small">Not quoted yet</span>' : '<span><span class="o-total">' + money(tt.total, true) + '</span> <span class="small muted">incl. ' + money(tt.tax, true) + " NJ tax</span></span>";
   const moneyFacts = o.type === "custom" && !o.quoted ? "" :
     "<dt>Money</dt><dd><span class=\"num\">" + money(tt.subtotal, true) + '</span> + NJ tax ' + esc(String(tt.taxRate)) + '% <span class="num">' + money(tt.tax, true) + '</span> = <b class="num">' + money(tt.total, true) + "</b>" +
-      (o.paidInFull ? '<div class="small" style="color:var(--leaf)"><b>Paid in full</b>' + (o.paidInFullAt ? " · " + esc(when(o.paidInFullAt)) : "") + "</div>"
+      (o.paidInFull ? '<div class="small" style="color:var(--leaf)"><b>Paid in full</b>' + (o.paidInFullAt ? " · " + esc(when(o.paidInFullAt)) : "") + "</div>" + closeOutHTML(o)
         : isBooked(o) ? '<div class="small"><b>Balance due: <span class="num">' + money(balanceDue(o), true) + "</span></b> – order stays open until you mark it paid in full</div>" : "") + "</dd>";
   const facts =
     "<dt>Type</dt><dd>" + kind + "</dd>" +
@@ -1045,6 +1055,7 @@ function decisionRow(o) {
     return '<div class="row decide">' + b("paid", "Payment received", "primary") + b("unpaid", "Not received") +
       '<span class="small muted">' + (p.state === "review" ? "Check your bank app first." : "No screenshot yet - only mark it if you see the money.") + "</span></div>";
   }
+  if (o.paidInFull) return '<div class="row decide">' + b("paynote", o.closeOut && o.closeOut.note ? "Edit payment note" : "Payment note") + '<span class="small muted">Correct the amount received or add a note. Only you see it.</span></div>';
   if (o.canPaidInFull || (S.mode !== "live" && o.status === "Confirmed" && !o.paidInFull && o.source !== "past")) {
     return '<div class="row decide">' + b("fullpaid", "Paid in full", "primary") +
       '<span class="small muted">Tap once you have the balance of <b class="num">' + money(balanceDue(o), true) + "</b>. The order then closes.</span></div>";
@@ -2604,7 +2615,7 @@ document.addEventListener("click", (e) => {
             const st = { endchat: o.status, approve: "Awaiting Deposit", decline: "Declined", paid: "Confirmed", unpaid: "Awaiting Deposit", quote: "Quote Sent", cdecline: "Declined", fullpaid: "Paid in Full" }[act];
             S.orders = S.orders.map((x) => (x.orderId === id ? Object.assign({}, x, act === "endchat" ? {} : act === "fullpaid" ? { status: st, paidInFull: true, paidInFullAt: new Date().toISOString() } : { status: st, pending: act === "quote", quoted: act === "quote" }) : x));
           }
-          toast({ approve: "Approved - " + (o.customerName || "customer") + " has been told", decline: "Declined - customer told", endchat: "Chat ended - customer told Chef will confirm shortly", paid: "Deposit marked paid - order confirmed", unpaid: "Customer asked to check their payment", quote: "Quote sent", cdecline: "Request declined - customer told", fullpaid: "Paid in full - receipt sent, order closed" }[act]);
+          toast({ approve: "Approved - " + (o.customerName || "customer") + " has been told", decline: "Declined - customer told", endchat: "Chat ended - customer told Chef will confirm shortly", paid: "Deposit marked paid - order confirmed", unpaid: "Customer asked to check their payment", quote: "Quote sent", cdecline: "Request declined - customer told", fullpaid: "Paid in full - receipt sent, order closed", paynote: "Payment note saved" }[act]);
           render();
         } catch (err) { toast(err.message, true); }
       };
@@ -2638,6 +2649,44 @@ document.addEventListener("click", (e) => {
               toast(isTime ? "Time changed (demo)" : "Sent (demo)"); closeSheet(); render();
             }
           })
+        });
+        break;
+      }
+      if (act === "fullpaid" || act === "paynote") {
+        const t = totalsOf(o), closing = act === "fullpaid";
+        const due = closing ? balanceDue(o) : (o.closeOut ? o.closeOut.due : balanceDue(o));
+        const cur = closing ? due : (o.closeOut ? o.closeOut.received : due);
+        const dep = o.payment && o.payment.state === "paid" ? Number(o.payment.depositDue) : 0;
+        openSheet({
+          title: closing ? "Mark " + id + " paid in full" : "Payment note for " + id,
+          body: '<p style="margin:0" class="small">Order total <b class="num">' + money(t.total, true) + "</b> (incl. " + money(t.tax, true) + " NJ tax)" +
+              (dep ? " · deposit paid <b class=\"num\">" + money(dep, true) + "</b>" : "") + " · due now <b class=\"num\">" + money(due, true) + "</b></p>" +
+            '<label class="field"><span>Amount actually received ($)</span><input id="qRecv" type="number" inputmode="decimal" min="0" step="0.01" value="' + esc(cur.toFixed(2)) + '" /></label>' +
+            '<p class="small muted" id="qDiff" style="margin:-6px 0 0"></p>' +
+            '<label class="field"><span>Note (only you see this)</span><textarea id="qNote" rows="3" maxlength="500" placeholder="e.g. Paid $150 cash at pickup. Gave a $10 discount for the late start.">' + esc((o.closeOut && o.closeOut.note) || "") + "</textarea></label>" +
+            (closing ? '<p class="small muted" style="margin:0">' + who + " gets a receipt and the order closes. You can still edit the amount and note afterwards.</p>" : '<p class="small muted" style="margin:0">Nothing is sent to the customer.</p>'),
+          foot: '<button class="btn" data-close>Cancel</button><button class="btn primary" id="qGo">' + (closing ? "Paid in full" : "Save") + "</button>",
+          onMount: (sh) => {
+            const inp = sh.querySelector("#qRecv"), out = sh.querySelector("#qDiff");
+            const show = () => {
+              const v = parseFloat(inp.value), d = Math.round(((v || 0) - due) * 100) / 100;
+              out.textContent = !(v >= 0) ? "Enter the amount you received." : d > 0 ? money(d, true) + " more than due (e.g. a tip)." : d < 0 ? money(-d, true) + " less than due. Add a note saying why." : "Matches the amount due.";
+            };
+            inp.addEventListener("input", show); show();
+            sh.querySelector("#qGo").addEventListener("click", async () => {
+              const v = parseFloat(inp.value);
+              if (!(v >= 0)) { toast("Enter the amount you received", true); return; }
+              const note = sh.querySelector("#qNote").value.trim();
+              sh.querySelector("#qGo").disabled = true;
+              if (S.mode === "live") await send({ received: v, note });
+              else {
+                const closeOut = { due, received: v, note, at: new Date().toISOString(), via: "kitchen", editedAt: closing ? undefined : new Date().toISOString() };
+                S.orders = S.orders.map((x) => (x.orderId === id ? Object.assign({}, x, { status: "Paid in Full", paidInFull: true, paidInFullAt: x.paidInFullAt || new Date().toISOString(), closeOut, amountPaid: dep + v }) : x));
+                toast(closing ? "Paid in full (demo)" : "Saved (demo)"); render();
+              }
+              closeSheet();
+            });
+          }
         });
         break;
       }

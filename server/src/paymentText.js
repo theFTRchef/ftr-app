@@ -21,7 +21,11 @@ function deadlineLabel(iso) {
 function paymentText(order) {
   const p = order && order.payment;
   const taxNote = (t) => (t && t.taxRate != null ? ` incl. $${Number(t.tax || 0).toFixed(2)} NJ tax` : "");
-  if (order && order.paidInFull) return `PAID IN FULL ${money(order.amountPaid)}${order.taxPaid != null ? ` incl. ${money(order.taxPaid)} NJ tax` : ""}`;
+  if (order && order.paidInFull) {
+    const c = order.closeOut;
+    return `PAID IN FULL ${money(order.amountPaid)}${order.taxPaid != null ? ` (tax ${money(order.taxPaid)})` : ""}` +
+      (c ? `; received ${money(c.received)} at close${Math.abs(c.received - c.due) >= 0.01 ? ` vs ${money(c.due)} due` : ""}${c.note ? ` - note: ${c.note}` : ""}` : "");
+  }
   if (!p) return "";
   const conf = p.confirmationCode || (p.proofs || []).map((x) => x.code).filter(Boolean).slice(-1)[0];
   if (p.state === "paid") return `Deposit ${money(p.depositDue)}${taxNote(p)} PAID${conf ? ` (Zelle ${conf})` : ""}; balance ${money(p.balance)} due`;
