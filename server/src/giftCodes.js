@@ -680,6 +680,21 @@ function register(app, requireAdminAuth) {
     }
     res.json({ ready: !!secret(), batches: out });
   });
+  // Recipe feedback for Chef's Kitchen > Reports, newest first.
+  app.get("/admin/api/gift/feedback", requireAdminAuth, (req, res) => {
+    const items = surveys()
+      .slice()
+      .sort((a, b) => String(b.at).localeCompare(String(a.at)))
+      .map((x) => {
+        const b = BATCHES[x.batchId] || {};
+        return {
+          at: x.at, gift: giftNoOf(x.code, x.n), batch: x.batchId || "", title: b.title || "", shareable: !!b.multi,
+          name: x.name || "", phone: x.phone || "", via: x.via === "app" ? "FTR-DOSE app" : "Phone camera", answers: x.answers || {}
+        };
+      });
+    res.json({ fields: SURVEY_FIELDS.map(([key, label]) => ({ key, label })), items });
+  });
+
   app.get("/admin/api/gift/:batch/labels.csv", requireAdminAuth, (req, res) => {
     const id = String(req.params.batch).toUpperCase();
     const b = BATCHES[id];
