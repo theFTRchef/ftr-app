@@ -1589,6 +1589,8 @@ function viewReports() {
         : '<span class="small muted">Excel downloads work on the live admin page.</span>') + "</div>" +
     '<div class="h-sec">Recipe QR codes</div><div class="stack" id="qrReport"><div class="card pad"><p class="small muted" style="margin:0">Loading…</p></div></div>' +
     (setTimeout(loadQrReport, 0), "") +
+    '<div class="h-sec">Recipe feedback</div><div class="stack" id="fbReport"><div class="card pad"><p class="small muted" style="margin:0">Loading…</p></div></div>' +
+    (setTimeout(loadFeedback, 0), "") +
     '<div class="h-sec">Ratings &amp; comments</div><div class="stack" id="ratingsBox"><div class="card pad"><p class="small muted" style="margin:0">Loading…</p></div></div>' +
     (setTimeout(loadRatings, 0), "");
 }
@@ -1599,6 +1601,59 @@ function whenText(iso) {
   if (m < 60 * 24) return Math.round(m / 60) + " hr ago";
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
+/** Recipe feedback from the QR recipe pages, newest first. */
+let FB = { items: [], fields: [], filter: "all", shown: 10 };
+async function loadFeedback() {
+  const box = document.getElementById("fbReport");
+  if (!box) return;
+  const note = (t) => '<div class="card pad"><p class="small muted" style="margin:0">' + t + "</p></div>";
+  if (S.mode !== "live") { box.innerHTML = note("Preview only. On the live admin page this lists what customers wrote on the recipe feedback form."); return; }
+  try {
+    const d = await api("GET", "/admin/api/gift/feedback");
+    FB = { items: d.items || [], fields: d.fields || [], filter: FB.filter, shown: 10 };
+    drawFeedback();
+  } catch (e) { box.innerHTML = note("Couldn't load feedback. Open Reports again to retry."); }
+}
+function drawFeedback() {
+  const box = document.getElementById("fbReport");
+  if (!box) return;
+  const all = FB.items;
+  if (!all.length) { box.innerHTML = '<div class="card pad"><p class="small muted" style="margin:0">No feedback yet. It appears here as soon as someone sends the form from a recipe QR page.</p></div>'; return; }
+  const list = all.filter((x) => FB.filter === "all" || (FB.filter === "share" ? x.shareable : !x.shareable));
+  const num = (k) => list.map((x) => parseFloat(x.answers[k])).filter((n) => n > 0);
+  const avg = (a) => (a.length ? (a.reduce((t, n) => t + n, 0) / a.length).toFixed(1) : "–");
+  const buy = list.filter((x) => x.answers.buyAgain);
+  const yes = buy.filter((x) => /^y/i.test(String(x.answers.buyAgain))).length;
+  const chips = [["all", "All"], ["gift", "Gift labels"], ["share", "Shareable labels"]]
+    .map(([k, t]) => '<button class="chip" aria-pressed="' + (FB.filter === k) + '" data-fb="' + k + '">' + t + "</button>").join("");
+  const head = '<div class="card pad"><div class="row" style="gap:6px;flex-wrap:wrap">' + chips + "</div>" +
+    '<div class="row" style="gap:16px;flex-wrap:wrap;margin-top:12px">' +
+      '<span><b class="num" style="font-size:1.3rem">' + list.length + '</b> <span class="muted">responses</span></span>' +
+      '<span><b class="num" style="font-size:1.3rem">' + avg(num("taste")) + '</b> <span class="muted">taste / 5</span></span>' +
+      '<span><b class="num" style="font-size:1.3rem">' + avg(num("ease")) + '</b> <span class="muted">ease / 5</span></span>' +
+      (buy.length ? '<span><b class="num" style="font-size:1.3rem">' + Math.round((yes / buy.length) * 100) + '%</b> <span class="muted">would buy the pudi</span></span>' : "") +
+    "</div></div>";
+  const quick = ["verdict", "taste", "spice", "masala", "consistency", "ease", "buyAgain"];
+  const cards = list.slice(0, FB.shown).map((x) => {
+    const a = x.answers;
+    const tags = quick.filter((k) => a[k]).map((k) => {
+      const f = FB.fields.find((y) => y.key === k);
+      const label = k === "taste" ? "Taste" : k === "ease" ? "Ease" : k === "buyAgain" ? "Buy again" : k === "verdict" ? "" : f ? f.label : k;
+      return '<span class="pill p-info">' + (label ? esc(label) + ": " : "") + esc(String(a[k])) + (k === "taste" || k === "ease" ? "/5" : "") + "</span>";
+    }).join(" ");
+    const text = FB.fields.filter((f) => !quick.includes(f.key) && a[f.key]).map((f) =>
+      '<div style="margin-top:8px"><div class="small muted">' + esc(f.label) + '</div><div style="white-space:pre-wrap">' + esc(String(a[f.key])) + "</div></div>").join("");
+    return '<div class="card pad"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><b>No. ' + esc(String(x.gift)) + (x.name ? " · " + esc(x.name) : "") + '</b><span class="small muted">' + esc(whenText(x.at)) + "</span></div>" +
+      '<div class="small muted">' + (x.shareable ? "Shareable label" : "Gift label") + " · " + esc(x.via) + (x.phone ? " · " + esc(x.phone) : "") + "</div>" +
+      (tags ? '<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px">' + tags + "</div>" : "") + text + "</div>";
+  }).join("");
+  const more = list.length > FB.shown ? '<button class="btn" data-fbmore style="align-self:center">Show ' + Math.min(10, list.length - FB.shown) + " more (" + (list.length - FB.shown) + " left)</button>" : "";
+  box.innerHTML = head + cards + more;
+  box.querySelectorAll("[data-fb]").forEach((b) => b.addEventListener("click", () => { FB.filter = b.dataset.fb; FB.shown = 10; drawFeedback(); }));
+  const m = box.querySelector("[data-fbmore]");
+  if (m) m.addEventListener("click", () => { FB.shown += 10; drawFeedback(); });
+}
+
 async function loadQrReport() {
   const box = document.getElementById("qrReport");
   if (!box) return;
