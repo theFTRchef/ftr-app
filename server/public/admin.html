@@ -955,8 +955,27 @@ function closeOutHTML(o) {
   return '<div class="small">Received at close: <b class="num">' + money(c.received, true) + "</b>" +
     (diff ? ' <span class="pill ' + (diff > 0 ? "p-info" : "p-wait") + '">' + (diff > 0 ? money(diff, true) + " more" : money(-diff, true) + " less") + " than " + money(c.due, true) + " due</span>" : "") +
     (c.via === "whatsapp" && !c.editedAt ? ' <span class="muted">(WhatsApp button)</span>' : "") + "</div>" +
-    (c.note ? '<div class="note">Your note: ' + esc(c.note) + "</div>" : "");
+    (c.note ? '<div class="note">Your note: ' + esc(c.note) + "</div>" : "") + receiptHTML(o);
 }
+/** Chef's copy of the paid-in-full receipt, and whether WhatsApp delivered it. */
+function receiptHTML(o) {
+  const r = o.receipt;
+  if (!r) return "";
+  return '<details class="small" style="margin-top:6px"><summary style="cursor:pointer">Thank-you receipt ' +
+    (r.sent ? '<span class="pill p-good">Sent ' + esc(when(r.at)) + "</span>" : '<span class="pill p-bad">Not delivered</span>') + "</summary>" +
+    (r.sent ? "" : '<p class="small muted" style="margin:6px 0 0">WhatsApp didn\'t take it (usually the 24-hour limit). Copy it and send it yourself.</p>') +
+    '<pre style="white-space:pre-wrap;font:inherit;background:var(--surface-2);border-radius:10px;padding:10px;margin:6px 0">' + esc(r.text) + "</pre>" +
+    '<button class="btn" data-copyreceipt="' + esc(o.orderId) + '">Copy text</button></details>';
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest && e.target.closest("[data-copyreceipt]");
+  if (!b) return;
+  const o = (S.orders || []).find((x) => x.orderId === b.dataset.copyreceipt);
+  if (!o || !o.receipt) return;
+  const pre = b.parentElement.querySelector("pre");
+  const pick = () => { const r = document.createRange(); r.selectNodeContents(pre); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); toast("Text selected – tap Copy"); };
+  try { navigator.clipboard.writeText(o.receipt.text).then(() => toast("Receipt copied"), pick); } catch (err) { pick(); }
+});
 function balanceDue(o) {
   const t = totalsOf(o);
   if (o.paidInFull) return 0;
