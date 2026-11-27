@@ -1549,6 +1549,7 @@ function viewReports() {
   const decided = inRange.filter((o) => isBooked(o) || /declined/i.test(o.status || ""));
   const closed = inRange.filter((o) => o.status === "Paid in Full");
   const taxCollected = closed.reduce((t, o) => t + Number(o.taxPaid != null ? o.taxPaid : totalsOf(o).tax), 0);
+  const preTax = closed.filter((o) => Number(o.taxPaid != null ? o.taxPaid : totalsOf(o).tax) === 0).length;
   const owed = ok.filter((o) => !o.paidInFull).reduce((t, o) => t + balanceDue(o), 0);
   const rate = decided.length ? Math.round((ok.length / decided.length) * 100) : null;
 
@@ -1589,7 +1590,8 @@ function viewReports() {
       '<div class="card kpi"><b>' + money(avg) + "</b><span>Average order</span></div>" +
       '<div class="card kpi"><b>' + (rate == null ? "–" : rate + "%") + "</b><span>Accepted vs declined</span></div>" +
     "</div>" +
-    '<div class="card pad row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b class="num">' + money(taxCollected, true) + '</b> <span class="muted">NJ sales tax collected</span><div class="small muted">On ' + closed.length + " order" + (closed.length === 1 ? "" : "s") + " paid in full. Set this aside for your NJ sales tax return.</div></div>" +
+    '<div class="card pad row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b class="num">' + money(taxCollected, true) + '</b> <span class="muted">NJ sales tax collected</span><div class="small muted">On ' + closed.length + " order" + (closed.length === 1 ? "" : "s") + " paid in full" +
+        (preTax ? " (" + preTax + " placed before NJ tax started on Nov 23, 2026, so charged without tax)" : "") + ". Set this aside for your NJ sales tax return.</div></div>" +
       '<div><b class="num">' + money(owed, true) + '</b> <span class="muted">balance still due</span><div class="small muted">' + ok.filter((o) => !o.paidInFull).length + " confirmed order(s) not closed yet</div></div></div>" +
     '<div class="card pad"><div class="row" style="justify-content:space-between"><b>Sales by week</b><span class="small muted">week starting Sunday</span></div>' +
       '<div class="bars" role="img" aria-label="Confirmed sales by week">' + byWeek.map((v, i) => {
