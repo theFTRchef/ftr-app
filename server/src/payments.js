@@ -610,8 +610,9 @@ async function markPaidInFull(id, ownerNumber, opts = {}) {
   if (!order) throw new Error(`Order ${id} not found.`);
   if (order.paidInFull) return order;
   if (!canMarkPaidInFull(order)) throw new Error(order.payment && order.payment.state !== "paid" ? `The deposit for ${id} isn't confirmed yet.` : `Order ${id} isn't confirmed yet.`);
+  const pre = tax.isPreTax(order); // priced before NJ tax: tax counted as included
   const rate = tax.rateFor(order);
-  const t = tax.forOrder({ ...order, taxRate: rate });
+  const t = pre ? tax.forOrder(order) : tax.forOrder({ ...order, taxRate: rate });
   const due = dueAtClose(order, t);
   const typed = cleanAmount(opts.received);
   const received = typed == null ? due : typed;
@@ -619,7 +620,7 @@ async function markPaidInFull(id, ownerNumber, opts = {}) {
   const at = new Date().toISOString();
   const closeOut = { due, received, note: cleanNote(opts.note), at, via: opts.via || "kitchen" };
   let updated = orderDb.update(id, {
-    paidInFull: true, paidInFullAt: at, taxRate: rate, status: STATUS.closed,
+    paidInFull: true, paidInFullAt: at, ...(pre ? {} : { taxRate: rate }), status: STATUS.closed,
     amountPaid: tax.cents(deposit + received), taxPaid: t.tax, closeOut
   });
   await updateOrderStatus(id, STATUS.closed).catch(() => {});
