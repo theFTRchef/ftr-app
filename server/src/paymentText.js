@@ -23,7 +23,8 @@ function paymentText(order) {
   const taxNote = (t) => (t && t.taxRate != null ? ` incl. $${Number(t.tax || 0).toFixed(2)} NJ tax` : "");
   if (order && order.paidInFull) {
     const c = order.closeOut;
-    return `PAID IN FULL ${money(order.amountPaid)}${order.taxPaid != null ? ` (tax ${money(order.taxPaid)})` : ""}` +
+    const tx = require("./tax").forOrder(order);
+    return `PAID IN FULL ${money(order.amountPaid)} (tax ${money(tx.tax)}${tx.taxIncluded ? " included" : ""})` +
       (c ? `; received ${money(c.received)} at close${Math.abs(c.received - c.due) >= 0.01 ? ` vs ${money(c.due)} due` : ""}${c.note ? ` - note: ${c.note}` : ""}` : "");
   }
   if (!p) return "";

@@ -610,16 +610,17 @@ async function markPaidInFull(id, ownerNumber, opts = {}) {
   if (!order) throw new Error(`Order ${id} not found.`);
   if (order.paidInFull) return order;
   if (!canMarkPaidInFull(order)) throw new Error(order.payment && order.payment.state !== "paid" ? `The deposit for ${id} isn't confirmed yet.` : `Order ${id} isn't confirmed yet.`);
+  const pre = tax.isPreTax(order); // priced before NJ tax: tax counted as included
   const rate = tax.rateFor(order);
-  const t = tax.forOrder({ ...order, taxRate: rate });
+  const t = pre ? tax.forOrder(order) : tax.forOrder({ ...order, taxRate: rate });
   const due = dueAtClose(order, t);
   const typed = cleanAmount(opts.received);
   const received = typed == null ? due : typed;
   const deposit = order.payment && order.payment.state === "paid" ? tax.cents(order.payment.depositDue) : 0;
   const at = new Date().toISOString();
   const closeOut = { due, received, note: cleanNote(opts.note), at, via: opts.via || "kitchen" };
-  const updated = orderDb.update(id, {
-    paidInFull: true, paidInFullAt: at, taxRate: rate, status: STATUS.closed,
+  let updated = orderDb.update(id, {
+    paidInFull: true, paidInFullAt: at, ...(pre ? {} : { taxRate: rate }), status: STATUS.closed,
     amountPaid: tax.cents(deposit + received), taxPaid: t.tax, closeOut
   });
   await updateOrderStatus(id, STATUS.closed).catch(() => {});
@@ -628,13 +629,18 @@ async function markPaidInFull(id, ownerNumber, opts = {}) {
   const paidLine = deposit
     ? `\nPaid: ${money(deposit)} deposit + ${money(received)} balance = ${money(deposit + received)}`
     : `\nPaid: ${money(received)}`;
-  await sendText(
-    order.customerPhone,
-    `Paid in full - thank you!\n\n${name} has received payment for order ${id}:\n${totalsText(t)}${paidLine}\n\nYour order is closed. We hope you enjoyed it!`
-  ).catch((err) => {
-    console.error(`Couldn't send paid-in-full receipt for ${id}:`, err.message);
-    if (ownerNumber) return sendText(ownerNumber, `Couldn't message the customer for ${id} (WhatsApp 24-hour limit?). Their receipt is in the app.`).catch(() => {});
-  });
+  const receiptText = `Paid in full - thank you!\n\n${name} has received payment for order ${id}:\n${totalsText(t)}${paidLine}\n\nYour order is closed. We hope you enjoyed it!`;
+  // Keep Chef's copy of exactly what was sent, and whether WhatsApp took it.
+  const receipt = { text: receiptText, to: order.customerPhone, at: new Date().toISOString(), sent: false };
+  try {
+    await sendText(order.customerPhone, receiptText);
+    receipt.sent = true;
+  } catch (err) {
+    receipt.error = String(err.message || err).slice(0, 200);
+    console.error(`Couldn't send paid-in-full receipt for ${id}:`, receipt.error);
+    if (ownerNumber) await sendText(ownerNumber, `Couldn't message the customer for ${id} (WhatsApp only allows messages within 24 hours of their last one). The receipt is saved on the order in Chef's Kitchen, so you can copy it and send it yourself.`).catch(() => {});
+  }
+  updated = orderDb.update(id, { receipt }) || updated;
   const diff = tax.cents(received - due);
   if (ownerNumber) {
     await sendText(

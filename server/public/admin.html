@@ -955,8 +955,29 @@ function closeOutHTML(o) {
   return '<div class="small">Received at close: <b class="num">' + money(c.received, true) + "</b>" +
     (diff ? ' <span class="pill ' + (diff > 0 ? "p-info" : "p-wait") + '">' + (diff > 0 ? money(diff, true) + " more" : money(-diff, true) + " less") + " than " + money(c.due, true) + " due</span>" : "") +
     (c.via === "whatsapp" && !c.editedAt ? ' <span class="muted">(WhatsApp button)</span>' : "") + "</div>" +
-    (c.note ? '<div class="note">Your note: ' + esc(c.note) + "</div>" : "");
+    (c.note ? '<div class="note">Your note: ' + esc(c.note) + "</div>" : "") + receiptHTML(o);
 }
+/** Chef's copy of the paid-in-full receipt, and whether WhatsApp delivered it. */
+function receiptHTML(o) {
+  const r = o.receipt;
+  if (!r) return "";
+  return '<details class="small" style="margin-top:6px"><summary style="cursor:pointer">Thank-you receipt ' +
+    (r.sent ? '<span class="pill p-good">Sent ' + esc(when(r.at)) + "</span>" : '<span class="pill p-bad">Not delivered</span>') + "</summary>" +
+    (r.sent ? "" : '<p class="small muted" style="margin:6px 0 0">WhatsApp didn\'t take it (usually the 24-hour limit). Copy it and send it yourself.</p>') +
+    '<pre style="white-space:pre-wrap;font:inherit;background:var(--surface-2);border-radius:10px;padding:10px;margin:6px 0">' + esc(r.text) + "</pre>" +
+    '<button class="btn" data-copyreceipt="' + esc(o.orderId) + '">Copy text</button></details>';
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest && e.target.closest("[data-copyreceipt]");
+  if (!b) return;
+  const o = (S.orders || []).find((x) => x.orderId === b.dataset.copyreceipt);
+  if (!o || !o.receipt) return;
+  const pre = b.parentElement.querySelector("pre");
+  const pick = () => { const r = document.createRange(); r.selectNodeContents(pre); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); toast("Text selected – tap Copy"); };
+  try { navigator.clipboard.writeText(o.receipt.text).then(() => toast("Receipt copied"), pick); } catch (err) { pick(); }
+});
+/** Sales before NJ tax (older orders priced with tax inside count only the food part). */
+function netOf(o) { const t = totalsOf(o); return Number((t && t.subtotal) != null ? t.subtotal : o.subtotal || 0); }
 function balanceDue(o) {
   const t = totalsOf(o);
   if (o.paidInFull) return 0;
@@ -1525,11 +1546,12 @@ function viewReports() {
   const since = days ? Date.now() - days * 864e5 : 0;
   const inRange = S.orders.filter((o) => new Date(o.createdAt || 0).getTime() >= since);
   const ok = inRange.filter(isBooked);
-  const revenue = ok.reduce((s, o) => s + Number(o.subtotal || 0), 0);
+  const revenue = ok.reduce((s, o) => s + netOf(o), 0);
   const avg = ok.length ? revenue / ok.length : 0;
   const decided = inRange.filter((o) => isBooked(o) || /declined/i.test(o.status || ""));
   const closed = inRange.filter((o) => o.status === "Paid in Full");
-  const taxCollected = closed.reduce((t, o) => t + Number(o.taxPaid != null ? o.taxPaid : totalsOf(o).tax), 0);
+  const taxCollected = closed.reduce((t, o) => t + Number(totalsOf(o).tax || 0), 0);
+  const preTax = closed.filter((o) => totalsOf(o).taxIncluded).length;
   const owed = ok.filter((o) => !o.paidInFull).reduce((t, o) => t + balanceDue(o), 0);
   const rate = decided.length ? Math.round((ok.length / decided.length) * 100) : null;
 
@@ -1538,7 +1560,7 @@ function viewReports() {
   let ws = weekStart(new Date().toISOString());
   const nWeeks = days && days <= 30 ? 5 : 8;
   for (let i = nWeeks - 1; i >= 0; i--) weeks.push(addDays(ws, -7 * i));
-  const byWeek = weeks.map((w) => ok.filter((o) => weekStart(o.createdAt) === w).reduce((s, o) => s + Number(o.subtotal || 0), 0));
+  const byWeek = weeks.map((w) => ok.filter((o) => weekStart(o.createdAt) === w).reduce((s, o) => s + netOf(o), 0));
   const maxW = Math.max(...byWeek, 1);
 
   // dishes
@@ -1553,7 +1575,7 @@ function viewReports() {
   // mix
   const kind = (o) => o.type === "custom" ? "Custom requests" : (o.cart || []).some((l) => l.isLiveDoseStation) ? "LIVE Dose Station" : o.fulfillment === "delivery" ? "Catering delivery" : "Catering pickup";
   const mix = {};
-  ok.forEach((o) => { const k = kind(o); mix[k] = mix[k] || { n: 0, v: 0 }; mix[k].n++; mix[k].v += Number(o.subtotal || 0); });
+  ok.forEach((o) => { const k = kind(o); mix[k] = mix[k] || { n: 0, v: 0 }; mix[k].n++; mix[k].v += netOf(o); });
   const mixRows = Object.entries(mix).sort((a, b) => b[1].v - a[1].v);
   const maxM = Math.max(1, ...mixRows.map((x) => x[1].v));
 
@@ -1570,7 +1592,8 @@ function viewReports() {
       '<div class="card kpi"><b>' + money(avg) + "</b><span>Average order</span></div>" +
       '<div class="card kpi"><b>' + (rate == null ? "–" : rate + "%") + "</b><span>Accepted vs declined</span></div>" +
     "</div>" +
-    '<div class="card pad row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b class="num">' + money(taxCollected, true) + '</b> <span class="muted">NJ sales tax collected</span><div class="small muted">On ' + closed.length + " order" + (closed.length === 1 ? "" : "s") + " paid in full. Set this aside for your NJ sales tax return.</div></div>" +
+    '<div class="card pad row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b class="num">' + money(taxCollected, true) + '</b> <span class="muted">NJ sales tax collected</span><div class="small muted">On ' + closed.length + " order" + (closed.length === 1 ? "" : "s") + " paid in full" +
+        (preTax ? " (" + preTax + " priced before NJ tax started on Nov 23, 2026, with the tax counted as included in its price)" : "") + ". Set this aside for your NJ sales tax return.</div></div>" +
       '<div><b class="num">' + money(owed, true) + '</b> <span class="muted">balance still due</span><div class="small muted">' + ok.filter((o) => !o.paidInFull).length + " confirmed order(s) not closed yet</div></div></div>" +
     '<div class="card pad"><div class="row" style="justify-content:space-between"><b>Sales by week</b><span class="small muted">week starting Sunday</span></div>' +
       '<div class="bars" role="img" aria-label="Confirmed sales by week">' + byWeek.map((v, i) => {
